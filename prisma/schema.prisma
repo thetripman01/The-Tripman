@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model EventType {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  durationMin Int
+  priceCents  Int?
+  isActive    Boolean  @default(true)
+  bookings    Booking[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  eventTypeId     String
+  eventType       EventType     @relation(fields: [eventTypeId], references: [id])
+  fullName        String
+  email           String
+  phone           String?
+  notes           String?
+  timezone        String
+  startsAt        DateTime
+  endsAt          DateTime
+  pickup          String?
+  peopleCount     Int?
+  status          BookingStatus @default(PENDING)
+  googleEventId   String?       // For custom mode: store Google Calendar event ID
+  paymentIntentId String?        // Stripe payment intent ID
+  paymentStatus   PaymentStatus @default(PENDING)
+  amountPaid      Int?          // Amount paid in cents
+  ride            Ride?         // Real-time tracking
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Ride {
+  id          String      @id @default(cuid())
+  bookingId   String      @unique
+  booking     Booking     @relation(fields: [bookingId], references: [id])
+  driverId    String?
+  driverName  String?
+  driverPhone String?
+  vehicleInfo String?
+  status      RideStatus  @default(ASSIGNED)
+  startTime   DateTime?
+  endTime     DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  locations   Location[]
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  rideId    String
+  ride      Ride     @relation(fields: [rideId], references: [id])
+  latitude  Float
+  longitude Float
+  address   String?
+  timestamp DateTime @default(now())
+  accuracy  Float?
+  speed     Float?
+  heading   Float?
+}
+
+enum RideStatus {
+  ASSIGNED
+  DRIVER_EN_ROUTE
+  ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}

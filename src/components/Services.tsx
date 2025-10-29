@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Car, Users, Calendar, MapPin, Clock, Shield } from 'lucide-react'
+import Image from 'next/image'
 
 interface Service {
   id: number
@@ -105,9 +106,11 @@ export function Services() {
        <div className="max-w-7xl mx-auto">
                                      <div className="text-center mb-16">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500 rounded-full mb-6 animate-scale-in overflow-hidden">
-              <img 
+              <Image 
                 src="/tripman-logo.jpg" 
                 alt="The Tripman" 
+                width={64}
+                height={64}
                 className="w-full h-full object-cover rounded-full"
               />
             </div>

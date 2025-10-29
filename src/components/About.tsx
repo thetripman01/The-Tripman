@@ -2,6 +2,7 @@
 
 // Removed unused Card imports
 import { Star, Shield, Clock, MapPin } from 'lucide-react'
+import Image from 'next/image'
 
 export function About() {
   return (
@@ -21,9 +22,11 @@ export function About() {
            {/* TripMan Photo */}
            <div className="relative">
              <div className="relative rounded-3xl overflow-hidden shadow-2xl group">
-                               <img 
+                               <Image 
                   src="/tripman-logo.jpg" 
                   alt="The Tripman - Professional Driver" 
+                  width={600}
+                  height={400}
                   className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>

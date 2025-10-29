@@ -176,7 +176,7 @@ export function PaymentForm(props: PaymentFormProps) {
     }
 
     createPaymentIntent()
-  }, [props.bookingId, props.amount, props.currency, props.onPaymentError])
+  }, [props.bookingId, props.amount, props.currency, props.onPaymentError, props])
 
   if (!clientSecret) {
     return (

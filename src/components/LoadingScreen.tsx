@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-// Removed unused Car import
+import Image from 'next/image'
 
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true)
@@ -23,9 +23,11 @@ export function LoadingScreen() {
                  <div className="relative">
            <div className="w-24 h-24 mx-auto mb-8">
              <div className="w-full h-full bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center animate-pulse border border-white/20 shadow-2xl overflow-hidden">
-                                <img 
+                                <Image 
                    src="/tripman-logo.jpg" 
                    alt="The Tripman" 
+                   width={96}
+                   height={96}
                    className="w-full h-full object-cover rounded-full"
                  />
              </div>

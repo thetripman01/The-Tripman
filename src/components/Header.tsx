@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -44,9 +45,11 @@ export function Header() {
                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden ${
                isScrolled ? 'bg-green-500 shadow-lg' : 'bg-white/10 backdrop-blur-sm border border-white/20'
              }`}>
-                             <img 
+                             <Image 
                  src="/tripman-logo.jpg" 
                  alt="The Tripman" 
+                 width={40}
+                 height={40}
                  className="w-full h-full object-cover rounded-full"
                />
             </div>

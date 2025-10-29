@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Star, Clock, MapPin } from 'lucide-react'
+import Image from 'next/image'
 
 export function Hero() {
   const scrollToEvents = () => {
@@ -28,9 +29,11 @@ export function Hero() {
          {/* Logo/Brand */}
          <div className="mb-8 md:mb-12 animate-fade-in">
                        <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-white/10 backdrop-blur-sm rounded-full mb-6 md:mb-8 border border-white/20 shadow-2xl overflow-hidden group hover:scale-105 transition-transform duration-300">
-                           <img 
+                           <Image 
                 src="/tripman-logo.jpg" 
                 alt="The Tripman - Professional Driver" 
+                width={96}
+                height={96}
                 className="w-full h-full object-cover rounded-full"
               />
              <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full"></div>

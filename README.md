@@ -165,9 +165,7 @@ The application sends automated emails using Resend:
 
 ## 🔐 Admin Access
 
-Access the admin dashboard at `/admin` with basic authentication:
-- Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in environment variables
-- Manage bookings, update statuses, and view analytics
+Coming Soon
 
 ## 🚀 Deployment
 
@@ -254,8 +252,8 @@ This project is licensed under the MIT License.
 ## 🆘 Support
 
 For support and questions:
-- Email: hello@tripmansite.com
-- WhatsApp: Contact via the website
+- Email: thetripman01@gmail.com
+- WhatsApp: Coming Soon
 - Issues: Use GitHub issues
 
 ## 🔄 Updates

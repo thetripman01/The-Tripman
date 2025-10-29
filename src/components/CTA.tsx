@@ -26,7 +26,7 @@ export function CTA() {
             Ready to Experience Premium Transportation?
           </h2>
           <p className="text-xl text-green-100 max-w-3xl mx-auto leading-relaxed">
-            Don't wait! Book your ride now and discover why thousands of customers choose The Tripman 
+            Don&apos;t wait! Book your ride now and discover why thousands of customers choose The Tripman 
             for their transportation needs. Experience the difference today.
           </p>
         </div>
@@ -48,7 +48,7 @@ export function CTA() {
             </div>
             <h3 className="text-xl font-semibold text-white mb-4">24/7 Support</h3>
             <p className="text-green-100">
-              Round-the-clock customer support. We're here whenever you need us.
+              Round-the-clock customer support. We&apos;re here whenever you need us.
             </p>
           </div>
 
@@ -58,7 +58,7 @@ export function CTA() {
             </div>
             <h3 className="text-xl font-semibold text-white mb-4">Real-time Updates</h3>
             <p className="text-green-100">
-              Track your ride in real-time. Know exactly when we'll arrive.
+              Track your ride in real-time. Know exactly when we&apos;ll arrive.
             </p>
           </div>
         </div>

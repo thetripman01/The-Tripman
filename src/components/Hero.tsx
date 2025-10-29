@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Car, Star, Clock, MapPin } from 'lucide-react'
+import { Star, Clock, MapPin } from 'lucide-react'
 
 export function Hero() {
   const scrollToEvents = () => {

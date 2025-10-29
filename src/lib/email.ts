@@ -140,7 +140,7 @@ export async function sendCancellationNotification(booking: BookingWithEventType
   }
 }
 
-export async function sendPaymentConfirmation(booking: BookingWithEventType, paymentIntent: any) {
+export async function sendPaymentConfirmation(booking: BookingWithEventType, paymentIntent: unknown) {
   if (!resend) {
     console.log('Resend not configured, skipping payment confirmation')
     return

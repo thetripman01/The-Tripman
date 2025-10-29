@@ -10,7 +10,7 @@ import {
 } from '@stripe/react-stripe-js'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, CreditCard, CheckCircle } from 'lucide-react'
+import { Loader2, CreditCard } from 'lucide-react'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 

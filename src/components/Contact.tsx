@@ -68,7 +68,7 @@ export function Contact() {
                 Send Us a Message
               </CardTitle>
               <p className="text-gray-600">
-                Fill out the form below and we'll get back to you within 24 hours.
+                Fill out the form below and we&apos;ll get back to you within 24 hours.
               </p>
             </CardHeader>
             <CardContent>
@@ -79,7 +79,7 @@ export function Contact() {
                     Message Sent Successfully!
                   </h3>
                   <p className="text-gray-600">
-                    Thank you for contacting us. We'll get back to you soon.
+                    Thank you for contacting us. We&apos;ll get back to you soon.
                   </p>
                 </div>
               ) : (

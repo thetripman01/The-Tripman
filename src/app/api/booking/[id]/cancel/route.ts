@@ -74,7 +74,7 @@ export async function POST(
         const refundAmountCents = Math.floor((booking.amountPaid || 0) * refundPercentage)
         
         if (refundAmountCents > 0) {
-          const refund = await stripe.refunds.create({
+          await stripe.refunds.create({
             payment_intent: booking.paymentIntentId,
             amount: refundAmountCents,
             reason: 'requested_by_customer',

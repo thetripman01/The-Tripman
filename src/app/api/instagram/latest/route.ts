@@ -15,7 +15,7 @@ interface InstagramOEmbed {
   height: number
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check if Instagram credentials are configured
     const igUserId = process.env.IG_USER_ID

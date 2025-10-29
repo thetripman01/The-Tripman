@@ -55,7 +55,7 @@ export function Testimonials() {
             What Our Clients Say
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Don't just take our word for it. Here's what our satisfied customers have to say about their experience with The Tripman.
+            Don&apos;t just take our word for it. Here&apos;s what our satisfied customers have to say about their experience with The Tripman.
           </p>
         </div>
 
@@ -70,7 +70,7 @@ export function Testimonials() {
                 </div>
                 
                 <blockquote className="text-gray-700 mb-4 italic">
-                  "{testimonial.content}"
+                  &ldquo;{testimonial.content}&rdquo;
                 </blockquote>
                 
                 <div className="flex items-center">

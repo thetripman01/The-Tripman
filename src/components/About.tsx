@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardContent } from '@/components/ui/card'
+// Removed unused Card imports
 import { Star, Shield, Clock, MapPin } from 'lucide-react'
 
 export function About() {

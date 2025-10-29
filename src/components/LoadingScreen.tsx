@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Car } from 'lucide-react'
+// Removed unused Car import
 
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true)

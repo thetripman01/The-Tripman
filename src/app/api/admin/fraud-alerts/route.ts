@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Simulate fraud alerts for demonstration
-    const fraudAlerts = recentBookings.map((booking, index) => ({
+    const fraudAlerts = recentBookings.map((booking) => ({
       id: `fraud-${booking.id}`,
       bookingId: booking.id,
       riskScore: Math.floor(Math.random() * 80) + 20, // Random score 20-100

@@ -18,7 +18,6 @@ import {
   CreditCard, 
   AlertTriangle,
   X,
-  CheckCircle,
   Navigation
 } from 'lucide-react'
 

@@ -11,7 +11,11 @@ export function FloatingActionButton() {
   }
 
   const handleWhatsApp = () => {
-    window.open('https://wa.me/15551234567?text=Hi! I need transportation services.', '_blank')
+    // TODO: Replace with actual WhatsApp number
+    // Format: country code + number (e.g., 14161234567 for Canada)
+    const whatsappNumber = '14161234567' // Placeholder - update with real number
+    const message = encodeURIComponent('Hi! I need transportation services.')
+    window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank')
   }
 
   const handleBooking = () => {

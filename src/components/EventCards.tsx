@@ -86,6 +86,27 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
     )
   }
 
+  if (eventTypes.length === 0) {
+    return (
+      <section id="events" className="py-20 px-4 bg-gradient-to-br from-green-50 to-green-100">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Choose Your Experience
+            </h2>
+            <p className="text-lg text-gray-600">
+              Select from our premium transportation services
+            </p>
+          </div>
+          <div className="text-center py-12">
+            <p className="text-gray-600 mb-4">No event types available at the moment.</p>
+            <p className="text-sm text-gray-500">Please check back later or contact us for more information.</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section id="events" className="py-20 px-4 bg-gradient-to-br from-green-50 to-green-100">
       <div className="max-w-6xl mx-auto">

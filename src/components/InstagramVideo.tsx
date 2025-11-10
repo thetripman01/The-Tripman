@@ -228,12 +228,7 @@ export function InstagramVideo() {
                    />
                  )}
 
-                {instagramData?.fallback && (
-                  <div className="p-4 text-center text-sm text-gray-500 bg-yellow-50 border-t">
-                    <AlertCircle className="w-4 h-4 inline mr-2" />
-                    Showing fallback content. Configure Instagram API for automatic updates.
-                  </div>
-                )}
+                {/* Fallback message hidden from customers */}
               </div>
             </CardContent>
           </Card>

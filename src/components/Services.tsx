@@ -154,7 +154,15 @@ export function Services() {
                  </ul>
                  
                   <div className="pt-6 border-t border-gray-200">
-                   <button className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 px-6 rounded-2xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 text-lg">
+                   <button 
+                     onClick={() => {
+                       const eventsSection = document.getElementById('events')
+                       if (eventsSection) {
+                         eventsSection.scrollIntoView({ behavior: 'smooth' })
+                       }
+                     }}
+                     className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 px-6 rounded-2xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 text-lg"
+                   >
                      Book Now
                    </button>
                  </div>
@@ -173,10 +181,26 @@ export function Services() {
               for unique requirements. Contact us to discuss your specific needs.
             </p>
                          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-               <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105">
+               <button 
+                 onClick={() => {
+                   const contactSection = document.getElementById('contact')
+                   if (contactSection) {
+                     contactSection.scrollIntoView({ behavior: 'smooth' })
+                   }
+                 }}
+                 className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+               >
                  Get Custom Quote
                </button>
-               <button className="border-2 border-green-500 text-green-600 px-8 py-4 rounded-xl hover:bg-green-50 transition-all duration-300 font-semibold transform hover:scale-105">
+               <button 
+                 onClick={() => {
+                   const contactSection = document.getElementById('contact')
+                   if (contactSection) {
+                     contactSection.scrollIntoView({ behavior: 'smooth' })
+                   }
+                 }}
+                 className="border-2 border-green-500 text-green-600 px-8 py-4 rounded-xl hover:bg-green-50 transition-all duration-300 font-semibold transform hover:scale-105"
+               >
                  Contact Us
                </button>
              </div>

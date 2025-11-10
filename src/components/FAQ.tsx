@@ -102,15 +102,25 @@ export function FAQ() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               onClick={() => {
+                // TODO: Replace with actual WhatsApp number
+                const whatsappNumber = '14161234567' // Placeholder - update with real number
                 const message = "Hi! I have a question about The Tripman services. Can you help me?"
-                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
+                const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
                 window.open(whatsappUrl, '_blank')
               }}
               className="bg-green-600 hover:bg-green-700"
             >
               Contact via WhatsApp
             </Button>
-            <Button variant="outline">
+            <Button 
+              onClick={() => {
+                const contactSection = document.getElementById('contact')
+                if (contactSection) {
+                  contactSection.scrollIntoView({ behavior: 'smooth' })
+                }
+              }}
+              variant="outline"
+            >
               Send us an Email
             </Button>
           </div>

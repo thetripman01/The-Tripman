@@ -49,10 +49,21 @@ export default function AdminPage() {
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom)
       if (filters.dateTo) params.append('dateTo', filters.dateTo)
 
-      const response = await fetch(`/api/admin/bookings?${params}`)
+      const response = await fetch(`/api/admin/bookings?${params}`, {
+        credentials: 'include',
+      })
+      
+      if (response.status === 401) {
+        // Authentication required - reload to trigger middleware
+        window.location.reload()
+        return
+      }
+      
       if (response.ok) {
         const data = await response.json()
         setBookings(data)
+      } else {
+        console.error('Failed to fetch bookings:', response.statusText)
       }
     } catch (error) {
       console.error('Failed to fetch bookings:', error)
@@ -72,8 +83,14 @@ export default function AdminPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ status }),
       })
+
+      if (response.status === 401) {
+        window.location.reload()
+        return
+      }
 
       if (response.ok) {
         fetchBookings()

@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { Booking, EventType } from '@prisma/client'
 import { generateICS } from './ics'
+import type Stripe from 'stripe'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -140,7 +141,7 @@ export async function sendCancellationNotification(booking: BookingWithEventType
   }
 }
 
-export async function sendPaymentConfirmation(booking: BookingWithEventType, paymentIntent: unknown) {
+export async function sendPaymentConfirmation(booking: BookingWithEventType, paymentIntent: Stripe.PaymentIntent) {
   if (!resend) {
     console.log('Resend not configured, skipping payment confirmation')
     return

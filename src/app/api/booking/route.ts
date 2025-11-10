@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       eventTypeId: validatedData.eventTypeId,
       startsAt: new Date(validatedData.startsAt),
       endsAt: new Date(validatedData.endsAt),
-      amountPaid: eventType.priceCents,
+      amountPaid: eventType.priceCents ?? undefined,
     })
 
     // Log fraud attempt if detected
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         eventTypeId: validatedData.eventTypeId,
         startsAt: new Date(validatedData.startsAt),
         endsAt: new Date(validatedData.endsAt),
-        amountPaid: eventType.priceCents,
+        amountPaid: eventType.priceCents ?? undefined,
       })
     }
 

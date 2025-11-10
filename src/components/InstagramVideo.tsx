@@ -129,7 +129,9 @@ export function InstagramVideo() {
             document.body.appendChild(script)
           } else {
             try {
-              window.instgrm.Embeds.process()
+              if (window.instgrm?.Embeds?.process) {
+                window.instgrm.Embeds.process()
+              }
             } catch (error) {
               console.warn('Instagram embed processing failed:', error)
             }

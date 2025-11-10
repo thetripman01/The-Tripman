@@ -39,9 +39,9 @@ export async function POST(request: NextRequest) {
     // Send status update email to customer
     try {
       await sendRideStatusUpdate(updatedRide.booking, status, {
-        driverName: updatedRide.driverName,
-        driverPhone: updatedRide.driverPhone,
-        vehicleInfo: updatedRide.vehicleInfo,
+        driverName: updatedRide.driverName ?? undefined,
+        driverPhone: updatedRide.driverPhone ?? undefined,
+        vehicleInfo: updatedRide.vehicleInfo ?? undefined,
       })
     } catch (error) {
       console.error('Failed to send status update email:', error)

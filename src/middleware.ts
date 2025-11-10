@@ -2,25 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const config = {
   matcher: '/admin/:path*',
-  runtime: 'nodejs', // Use Node.js runtime for database access
 }
 
 export async function middleware(request: NextRequest) {
-  // Dynamically import to avoid Edge runtime issues
-  const { verifyBasicAuth } = await import('./lib/auth')
+  // Check if Basic Auth header is present
+  // The actual verification happens in the layout (server component)
+  const authHeader = request.headers.get('authorization')
   
-  // Protect /admin routes
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    const user = await verifyBasicAuth(request)
-    
-    if (!user) {
-      return new NextResponse('Authentication required', {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': 'Basic realm="Admin Access"',
-        },
-      })
-    }
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    return new NextResponse('Authentication required', {
+      status: 401,
+      headers: {
+        'WWW-Authenticate': 'Basic realm="Admin Access"',
+      },
+    })
   }
 
   return NextResponse.next()

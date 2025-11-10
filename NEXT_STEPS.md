@@ -18,7 +18,7 @@
 Open these in separate browser tabs and create accounts:
 
 #### 1. Neon Database (5 min)
-- **Go to**: https://neon.tech
+- **Go to**:   
 - **Action**: Sign up → Create project → Copy `DATABASE_URL`
 - **Guide**: `docs/setup/01_NEON_DATABASE_SETUP.md`
 - **Save**: Connection string (starts with `postgresql://`)

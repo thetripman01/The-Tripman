@@ -49,13 +49,22 @@ export default function AdminPage() {
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom)
       if (filters.dateTo) params.append('dateTo', filters.dateTo)
 
+      // Get stored credentials from sessionStorage
+      const auth = sessionStorage.getItem('adminAuth')
+      const headers: HeadersInit = {}
+      if (auth) {
+        headers['Authorization'] = `Basic ${auth}`
+      }
+
       const response = await fetch(`/api/admin/bookings?${params}`, {
         credentials: 'include',
+        headers,
       })
       
       if (response.status === 401) {
-        // Authentication required - reload to trigger middleware
-        window.location.reload()
+        // Not authenticated - redirect to login
+        sessionStorage.removeItem('adminAuth')
+        window.location.href = '/admin/login'
         return
       }
       
@@ -78,17 +87,24 @@ export default function AdminPage() {
 
   const updateBookingStatus = async (bookingId: string, status: string) => {
     try {
+      const auth = sessionStorage.getItem('adminAuth')
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (auth) {
+        headers['Authorization'] = `Basic ${auth}`
+      }
+
       const response = await fetch(`/api/admin/bookings/${bookingId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ status }),
       })
 
       if (response.status === 401) {
-        window.location.reload()
+        sessionStorage.removeItem('adminAuth')
+        window.location.href = '/admin/login'
         return
       }
 

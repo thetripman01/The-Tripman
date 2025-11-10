@@ -8,15 +8,8 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Allow login page without auth
+  // Check authentication for admin pages (login page is handled by middleware)
   const headersList = await headers()
-  const pathname = headersList.get('x-pathname') || ''
-  
-  if (pathname.includes('/admin/login')) {
-    return <>{children}</>
-  }
-
-  // Check authentication for other admin pages
   const authHeader = headersList.get('authorization')
   
   if (!authHeader || !authHeader.startsWith('Basic ')) {

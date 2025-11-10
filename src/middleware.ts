@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyBasicAuth } from './lib/auth'
+
+export const config = {
+  matcher: '/admin/:path*',
+  runtime: 'nodejs', // Use Node.js runtime for database access
+}
 
 export async function middleware(request: NextRequest) {
+  // Dynamically import to avoid Edge runtime issues
+  const { verifyBasicAuth } = await import('./lib/auth')
+  
   // Protect /admin routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
     const user = await verifyBasicAuth(request)
@@ -17,9 +24,5 @@ export async function middleware(request: NextRequest) {
   }
 
   return NextResponse.next()
-}
-
-export const config = {
-  matcher: '/admin/:path*',
 }
 

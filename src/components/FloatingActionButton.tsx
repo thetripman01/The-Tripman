@@ -7,7 +7,8 @@ export function FloatingActionButton() {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const handleCall = () => {
-    window.location.href = 'tel:+15551234567'
+    // Phone number coming soon
+    alert('Phone number will be available soon!')
   }
 
   const handleWhatsApp = () => {

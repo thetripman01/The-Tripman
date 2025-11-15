@@ -1,7 +1,5 @@
 'use client'
 
-// Removed unused Card imports
-import { Star, Shield, Clock, MapPin } from 'lucide-react'
 import Image from 'next/image'
 
 export function About() {
@@ -13,8 +11,7 @@ export function About() {
               Meet The Tripman
             </h2>
            <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-             Your trusted partner for premium transportation experiences. 
-             Professional, reliable, and committed to making every journey special.
+             Your favorite driver on social media turning every trip into a viral karaoke night under the party lights with goofy glasses.
            </p>
          </div>
 
@@ -32,84 +29,23 @@ export function About() {
                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
                <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
              </div>
-            
-                         {/* Floating Stats */}
-             <div className="absolute -bottom-8 -right-8 bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-               <div className="flex items-center space-x-3">
-                 <Star className="w-6 h-6 text-yellow-400 fill-current" />
-                 <span className="font-bold text-gray-900 text-lg">5.0★</span>
-                 <span className="text-base text-gray-600">Rating</span>
-               </div>
-             </div>
           </div>
 
                      {/* Content */}
            <div className="space-y-10">
              <div>
                <h3 className="text-3xl font-bold text-gray-900 mb-6">
-                 Professional Transportation Excellence
+                 How It ALLLLLL Started
                </h3>
-                               <p className="text-gray-600 leading-relaxed mb-8 text-lg">
-                  With years of experience in premium transportation services, The Tripman 
-                  has become the trusted choice for clients who demand excellence. From 
-                  airport transfers to special events, we ensure every journey is comfortable, 
-                  safe, and memorable.
+                               <p className="text-gray-600 leading-relaxed mb-6 text-lg">
+                  In a galaxy far far away… there was a man who loved connecting with random strangers through karaoke, Latin dances, and the kind of conversations you remember forever. He loved it so much that a spark lit inside him. A spark that said <strong>&quot;These moments are meant to be shared!&quot;</strong>
                 </p>
-               <p className="text-gray-600 leading-relaxed text-lg">
-                 Our modern fleet of vehicles, combined with professional drivers and 
-                 personalized service, makes us the preferred transportation partner 
-                 for discerning clients across the city.
+               <p className="text-gray-600 leading-relaxed mb-6 text-lg">
+                 So he found the easiest way to bring people into his world — <strong>rideshare apps</strong>. He started surprising passengers with party lights, karaoke mics, and unexpected vibes that turned regular rides into little pieces of magic.
                </p>
-             </div>
-
-                         {/* Features Grid */}
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-               <div className="flex items-start space-x-4">
-                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                   <Shield className="w-6 h-6 text-green-600" />
-                 </div>
-                 <div>
-                   <h4 className="font-bold text-gray-900 mb-2 text-lg">Safety First</h4>
-                   <p className="text-base text-gray-600">Fully licensed and insured with background-checked drivers</p>
-                 </div>
-               </div>
-
-               <div className="flex items-start space-x-4">
-                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                   <Clock className="w-6 h-6 text-green-600" />
-                 </div>
-                 <div>
-                   <h4 className="font-bold text-gray-900 mb-2 text-lg">Punctual Service</h4>
-                   <p className="text-base text-gray-600">On-time guarantee with real-time tracking and updates</p>
-                 </div>
-               </div>
-
-               <div className="flex items-start space-x-4">
-                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                   <Star className="w-6 h-6 text-green-600" />
-                 </div>
-                 <div>
-                   <h4 className="font-bold text-gray-900 mb-2 text-lg">Premium Experience</h4>
-                   <p className="text-base text-gray-600">Luxury vehicles with professional amenities and service</p>
-                 </div>
-               </div>
-
-               <div className="flex items-start space-x-4">
-                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                   <MapPin className="w-6 h-6 text-green-600" />
-                 </div>
-                 <div>
-                   <h4 className="font-bold text-gray-900 mb-2 text-lg">Citywide Coverage</h4>
-                   <p className="text-base text-gray-600">Comprehensive service area with local expertise</p>
-                 </div>
-               </div>
-             </div>
-
-                         {/* CTA */}
-             <div className="pt-8">
-               <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-10 py-5 rounded-2xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 text-lg">
-                 Book Your Ride Today
-               </button>
+               <p className="text-gray-600 leading-relaxed text-lg">
+                 Then he posted one video. Just one. <strong>The very first Instagram clip went viral</strong> — and everything changed.
+               </p>
              </div>
           </div>
         </div>

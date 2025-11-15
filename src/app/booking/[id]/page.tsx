@@ -453,14 +453,12 @@ export default function BookingDetailsPage() {
                   <p>If you have any questions or need assistance, please contact us:</p>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4" />
-                    <a href="tel:+1234567890" className="text-green-600 hover:underline">
-                      +1 (555) 123-4567
-                    </a>
+                    <span className="text-gray-600">Available soon</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4" />
-                    <a href="mailto:support@tripman.com" className="text-green-600 hover:underline">
-                      support@tripman.com
+                    <a href="mailto:thetripman01@gmail.com" className="text-green-600 hover:underline">
+                      thetripman01@gmail.com
                     </a>
                   </div>
                 </div>

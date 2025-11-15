@@ -7,10 +7,6 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 
 const faqs = [
   {
-    question: "What services does The Tripman offer?",
-    answer: "We offer premium transportation services including birthday surprise rides, airport pickups, city night tours, and special date experiences. Each service is tailored to make your journey memorable and comfortable."
-  },
-  {
     question: "How far in advance should I book?",
     answer: "We recommend booking at least 24 hours in advance to ensure availability. For special events or peak times, booking 48-72 hours ahead is ideal."
   },
@@ -20,19 +16,11 @@ const faqs = [
   },
   {
     question: "Do you provide vehicles for different group sizes?",
-    answer: "Yes! We have a fleet of vehicles to accommodate different group sizes, from intimate rides for 2 people to larger vehicles for groups up to 8 people."
+    answer: "Yes! We have a fleet of vehicles to accommodate different group sizes, from intimate rides for 2 people to larger vehicles for groups up to 7 people."
   },
   {
-    question: "What areas do you serve?",
-    answer: "We provide service throughout the greater metropolitan area. Contact us for specific coverage areas and any additional charges for extended distances."
-  },
-  {
-    question: "How do I know my driver is reliable?",
-    answer: "All our drivers are thoroughly vetted, licensed, and insured. They undergo background checks and regular training to ensure the highest standards of service and safety."
-  },
-  {
-    question: "Can I customize my experience?",
-    answer: "Absolutely! We love creating personalized experiences. You can add special requests, decorations, music preferences, or other customizations through the booking form or by contacting us directly."
+    question: "What areas in Ontario do you ride?",
+    answer: "We provide service in most cities throughout the Greater Toronto Area (Toronto, Mississauga, Brampton, Markham, Etobicoke, North York, Scarborough, and Richmond Hill). Contact us for specific coverage areas and any additional charges for extended distances."
   },
   {
     question: "What payment methods do you accept?",

@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const adminEmail = process.env.ADMIN_EMAIL || 'thetripman01@gmail.com'
     
     await resend.emails.send({
-      from: 'The Tripman Contact Form <bookings@tripmansite.com>',
+      from: 'The Tripman Contact Form <bookings@thetripman.com>',
       to: adminEmail,
       replyTo: email,
       subject: `New Contact Form Submission: ${service || 'General Inquiry'}`,
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Send confirmation email to customer
     await resend.emails.send({
-      from: 'The Tripman <bookings@tripmansite.com>',
+      from: 'The Tripman <bookings@thetripman.com>',
       to: email,
       subject: 'Thank you for contacting The Tripman',
       html: `
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
           <h2 style="color: #16a34a;">Thank You for Contacting Us!</h2>
           <p>Hi ${name},</p>
           <p>We've received your message and will get back to you within 24 hours.</p>
-          <p>If you have any urgent questions, please call us at +1 (555) 123-4567.</p>
+          <p>If you have any urgent questions, please contact us via email.</p>
           <p>Best regards,<br>The Tripman Team</p>
         </div>
       `,

@@ -171,8 +171,7 @@ export function InstagramVideo() {
               See The Tripman in Action
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Watch our latest Instagram content to see the premium experience we provide. 
-              From luxury rides to special moments, we make every journey memorable.
+              Check out our latest Instagram content to see the experience firsthand — the energy, the moments, and everything that makes a Tripman ride unforgettable.
             </p>
           </div>
 

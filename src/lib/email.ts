@@ -19,7 +19,7 @@ export async function sendBookingConfirmation(booking: BookingWithEventType) {
   
   try {
     await resend.emails.send({
-      from: 'The Tripman <bookings@tripmansite.com>',
+      from: 'The Tripman <bookings@thetripman.com>',
       to: booking.email,
       subject: `Booking Confirmed: ${booking.eventType.name}`,
       html: `
@@ -69,7 +69,7 @@ export async function sendAdminNotification(booking: BookingWithEventType) {
   
   try {
     await resend.emails.send({
-      from: 'The Tripman <notifications@tripmansite.com>',
+      from: 'The Tripman <notifications@thetripman.com>',
       to: process.env.ADMIN_EMAIL!,
       subject: `New Booking: ${booking.eventType.name}`,
       html: `
@@ -112,7 +112,7 @@ export async function sendCancellationNotification(booking: BookingWithEventType
   
   try {
     await resend.emails.send({
-      from: 'The Tripman <notifications@tripmansite.com>',
+      from: 'The Tripman <notifications@thetripman.com>',
       to: booking.email,
       subject: `Booking Cancelled: ${booking.eventType.name}`,
       html: `
@@ -149,7 +149,7 @@ export async function sendPaymentConfirmation(booking: BookingWithEventType, pay
   
   try {
     await resend.emails.send({
-      from: 'The Tripman <payments@tripmansite.com>',
+      from: 'The Tripman <payments@thetripman.com>',
       to: booking.email,
       subject: `Payment Confirmed: ${booking.eventType.name}`,
       html: `
@@ -213,7 +213,7 @@ export async function sendRideStatusUpdate(
   
   try {
     await resend.emails.send({
-      from: 'The Tripman <tracking@tripmansite.com>',
+      from: 'The Tripman <tracking@thetripman.com>',
       to: booking.email,
       subject: `Ride Update: ${status.replace('_', ' ')}`,
       html: `

@@ -7,13 +7,11 @@ import { Hero } from '@/components/Hero'
 import { About } from '@/components/About'
 import { EventCards } from '@/components/EventCards'
 import { SchedulerSwitch } from '@/components/SchedulerSwitch'
-import { Services } from '@/components/Services'
+import { BecomePassenger } from '@/components/BecomePassenger'
 import { Stats } from '@/components/Stats'
 import { InstagramVideo } from '@/components/InstagramVideo'
-import { Testimonials } from '@/components/Testimonials'
 import { FAQ } from '@/components/FAQ'
 import { Contact } from '@/components/Contact'
-import { CTA } from '@/components/CTA'
 import { Footer } from '@/components/Footer'
 import { FloatingActionButton } from '@/components/FloatingActionButton'
 import { Toaster } from '@/components/ui/sonner'
@@ -50,21 +48,15 @@ export default function HomePage() {
         <EventCards onEventSelect={setSelectedEvent} />
         <SchedulerSwitch selectedEvent={selectedEvent} />
       </div>
-      <div id="services">
-        <Services />
-      </div>
+      <BecomePassenger />
       <Stats />
       <InstagramVideo />
-      <div id="testimonials">
-        <Testimonials />
-      </div>
       <div id="faq">
         <FAQ />
       </div>
       <div id="contact">
         <Contact />
       </div>
-      <CTA />
       <Footer />
       <FloatingActionButton />
       <Toaster />

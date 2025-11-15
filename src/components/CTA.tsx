@@ -72,13 +72,12 @@ export function CTA() {
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
           </button>
           
-          <a
-            href="tel:+1234567890"
-            className="border-2 border-white text-white hover:bg-white hover:text-green-700 px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center gap-2 group"
+          <div
+            className="border-2 border-white/50 text-white/70 px-8 py-4 rounded-xl font-semibold flex items-center gap-2 group cursor-not-allowed"
           >
             <Phone className="w-5 h-5" />
-            Call Now
-          </a>
+            Available Soon
+          </div>
         </div>
 
         <div className="mt-12">

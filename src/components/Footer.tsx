@@ -21,21 +21,27 @@ export function Footer() {
             </p>
             <div className="flex space-x-4">
               <a 
-                href="#" 
+                href="https://www.facebook.com/thetripman_" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
                 aria-label="Facebook"
               >
                 <Facebook className="w-5 h-5" />
               </a>
               <a 
-                href="#" 
+                href="https://www.instagram.com/thetripman_/" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram className="w-5 h-5" />
               </a>
               <a 
-                href="#" 
+                href="https://twitter.com/thetripman_" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
                 aria-label="Twitter"
               >
@@ -77,11 +83,11 @@ export function Footer() {
             <div className="space-y-3 text-gray-300">
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-green-400" />
-                <span>+1 (555) 123-4567</span>
+                <span>Available soon</span>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-green-400" />
-                <span>hello@tripmansite.com</span>
+                <span>thetripman01@gmail.com</span>
               </div>
               <div className="flex items-center gap-3">
                 <MapPin className="w-4 h-4 text-green-400" />

@@ -39,18 +39,23 @@ export function Hero() {
              <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full"></div>
            </div>
                                                          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent leading-tight">
-              The Tripman
+              The Tripman Experience
             </h1>
                        <p className="text-lg sm:text-xl md:text-2xl text-green-100 mb-6 md:mb-8 font-light px-4 max-w-3xl mx-auto">
-             Premium Transportation & Experience Services
+             Ever watched a Tripman video and thought, &quot;Damn… I wish that was me&quot;?
            </p>
          </div>
 
                  {/* Value Proposition */}
          <div className="mb-10 md:mb-16 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                                             <p className="text-base sm:text-lg md:text-xl text-green-100 mb-6 md:mb-8 max-w-3xl mx-auto leading-relaxed px-4">
-             From birthday surprises to airport pickups, we make every journey special. 
-             Book your premium ride experience today and let us handle the rest.
+                                             <p className="text-base sm:text-lg md:text-xl text-green-100 mb-4 md:mb-6 max-w-3xl mx-auto leading-relaxed px-4">
+             Now it can be.
+           </p>
+           <p className="text-base sm:text-lg md:text-xl text-green-100 mb-4 md:mb-6 max-w-3xl mx-auto leading-relaxed px-4">
+             Join the ride. Feel the chaos. Live the moment.
+           </p>
+           <p className="text-base sm:text-lg md:text-xl text-green-100 mb-6 md:mb-8 max-w-3xl mx-auto leading-relaxed px-4">
+             Whether it&apos;s a girl&apos;s night out, a hangout with the boyz, or you&apos;re just riding solo — you can now experience what it&apos;s really like to be a Tripman passenger. And trust millions of people that watched The Tripman videos… it&apos;s unforgettable.
            </p>
            
            {/* Features */}
@@ -77,7 +82,7 @@ export function Hero() {
            className="bg-white text-green-600 hover:bg-green-50 text-base md:text-lg px-8 md:px-10 py-4 md:py-5 h-auto font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 rounded-2xl animate-fade-in w-full sm:w-auto"
            style={{ animationDelay: '0.6s' }}
          >
-           Book Your Ride Now
+           Become a Passenger
          </Button>
 
                    {/* Trust Indicators */}

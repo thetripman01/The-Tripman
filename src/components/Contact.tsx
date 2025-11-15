@@ -144,7 +144,7 @@ export function Contact() {
                         type="tel"
                         value={formData.phone}
                         onChange={handleChange}
-                        placeholder="+1 (555) 123-4567"
+                        placeholder="Phone number (optional)"
                         className="w-full"
                       />
                     </div>
@@ -227,8 +227,8 @@ export function Contact() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Phone</h3>
-                    <p className="text-gray-600">+1 (555) 123-4567</p>
-                    <p className="text-sm text-gray-500">Available 24/7</p>
+                    <p className="text-gray-600">Available soon</p>
+                    <p className="text-sm text-gray-500">Coming shortly</p>
                   </div>
                 </div>
 
@@ -238,7 +238,7 @@ export function Contact() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Email</h3>
-                    <p className="text-gray-600">info@thetripman.com</p>
+                    <p className="text-gray-600">thetripman01@gmail.com</p>
                     <p className="text-sm text-gray-500">Response within 24 hours</p>
                   </div>
                 </div>
@@ -248,9 +248,13 @@ export function Contact() {
                     <MapPin className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Office</h3>
-                    <p className="text-gray-600">123 Transportation Ave</p>
-                    <p className="text-gray-600">City, State 12345</p>
+                    <h3 className="font-semibold text-gray-900">Service Areas</h3>
+                    <p className="text-gray-600">Toronto</p>
+                    <p className="text-gray-600">Mississauga</p>
+                    <p className="text-gray-600">North York</p>
+                    <p className="text-gray-600">Scarborough</p>
+                    <p className="text-gray-600">Etobicoke</p>
+                    <p className="text-sm text-gray-500 mt-2">And surrounding GTA areas</p>
                   </div>
                 </div>
 

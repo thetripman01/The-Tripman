@@ -1,112 +1,120 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Menu, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import Image from 'next/image'
+import { useState, useEffect } from "react";
+import { Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
-    }
+      setIsScrolled(window.scrollY > 50);
+    };
 
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId)
+    const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
+      element.scrollIntoView({ behavior: "smooth" });
     }
-    setIsMenuOpen(false)
-  }
+    setIsMenuOpen(false);
+  };
 
   const scrollToEvents = () => {
-    const eventsSection = document.getElementById('events')
+    const eventsSection = document.getElementById("events");
     if (eventsSection) {
-      eventsSection.scrollIntoView({ behavior: 'smooth' })
+      eventsSection.scrollIntoView({ behavior: "smooth" });
     }
-    setIsMenuOpen(false)
-  }
+    setIsMenuOpen(false);
+  };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-      isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
-    }`}>
+    <header
+      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+        isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg" : "bg-transparent"
+      }`}
+    >
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-                         <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden ${
-               isScrolled ? 'bg-green-500 shadow-lg' : 'bg-white/10 backdrop-blur-sm border border-white/20'
-             }`}>
-                             <Image 
-                 src="/tripman-logo.jpg" 
-                 alt="The Tripman" 
-                 width={40}
-                 height={40}
-                 className="w-full h-full object-cover rounded-full"
-               />
+            <div
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden ${
+                isScrolled
+                  ? "bg-green-500 shadow-lg"
+                  : "bg-white/10 backdrop-blur-sm border border-white/20"
+              }`}
+            >
+              <Image
+                src="/tripman-logo.jpg"
+                alt="The Tripman"
+                width={40}
+                height={40}
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
-                         <span className={`text-lg md:text-xl font-bold transition-colors duration-300 ${isScrolled ? 'text-gray-900' : 'text-white'}`}>
-               The Tripman
-             </span>
+            <span
+              className={`text-lg md:text-xl font-bold transition-colors duration-300 ${isScrolled ? "text-gray-900" : "text-white"}`}
+            >
+              The Tripman
+            </span>
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-                         <button
-               onClick={() => scrollToSection('about')}
-               className={`font-medium transition-colors ${
-                 isScrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'
-               }`}
-             >
-               About
-             </button>
-             <button
-               onClick={() => scrollToSection('services')}
-               className={`font-medium transition-colors ${
-                 isScrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'
-               }`}
-             >
-               Services
-             </button>
             <button
-              onClick={() => scrollToSection('testimonials')}
+              onClick={() => scrollToSection("about")}
               className={`font-medium transition-colors ${
-                isScrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'
+                isScrolled
+                  ? "text-gray-700 hover:text-green-600"
+                  : "text-white/90 hover:text-white"
               }`}
             >
-              Testimonials
+              About
             </button>
             <button
-              onClick={() => scrollToSection('faq')}
+              onClick={() => scrollToSection("become-passenger")}
               className={`font-medium transition-colors ${
-                isScrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'
+                isScrolled
+                  ? "text-gray-700 hover:text-green-600"
+                  : "text-white/90 hover:text-white"
+              }`}
+            >
+              Become a Passenger
+            </button>
+            <button
+              onClick={() => scrollToSection("faq")}
+              className={`font-medium transition-colors ${
+                isScrolled
+                  ? "text-gray-700 hover:text-green-600"
+                  : "text-white/90 hover:text-white"
               }`}
             >
               FAQ
             </button>
             <button
-              onClick={() => scrollToSection('contact')}
+              onClick={() => scrollToSection("contact")}
               className={`font-medium transition-colors ${
-                isScrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'
+                isScrolled
+                  ? "text-gray-700 hover:text-green-600"
+                  : "text-white/90 hover:text-white"
               }`}
             >
               Contact
             </button>
             <Button
               onClick={scrollToEvents}
-                             className={`${
-                 isScrolled 
-                   ? 'bg-green-500 text-white hover:bg-green-600 shadow-lg' 
-                   : 'bg-white text-green-600 hover:bg-green-50 shadow-lg'
-               } font-semibold transition-all duration-300 transform hover:scale-105`}
+              className={`${
+                isScrolled
+                  ? "bg-green-500 text-white hover:bg-green-600 shadow-lg"
+                  : "bg-white text-green-600 hover:bg-green-50 shadow-lg"
+              } font-semibold transition-all duration-300 transform hover:scale-105`}
             >
               Book Now
             </Button>
@@ -116,43 +124,41 @@ export function Header() {
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className={`md:hidden p-2 rounded-lg ${
-              isScrolled ? 'text-gray-700' : 'text-white'
+              isScrolled ? "text-gray-700" : "text-white"
             }`}
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
 
-                 {/* Mobile Navigation */}
-         {isMenuOpen && (
-           <div className="md:hidden bg-white/95 backdrop-blur-md rounded-lg shadow-lg mt-2 mb-4">
-             <nav className="flex flex-col space-y-2 p-4">
-                               <button
-                  onClick={() => scrollToSection('about')}
-                  className="text-left px-4 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                >
-                  About
-                </button>
-                <button
-                  onClick={() => scrollToSection('services')}
-                  className="text-left px-4 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                >
-                  Services
-                </button>
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-white/95 backdrop-blur-md rounded-lg shadow-lg mt-2 mb-4">
+            <nav className="flex flex-col space-y-2 p-4">
               <button
-                onClick={() => scrollToSection('testimonials')}
+                onClick={() => scrollToSection("about")}
                 className="text-left px-4 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
               >
-                Testimonials
+                About
               </button>
               <button
-                onClick={() => scrollToSection('faq')}
+                onClick={() => scrollToSection("become-passenger")}
+                className="text-left px-4 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              >
+                Become a Passenger
+              </button>
+              <button
+                onClick={() => scrollToSection("faq")}
                 className="text-left px-4 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
               >
                 FAQ
               </button>
               <button
-                onClick={() => scrollToSection('contact')}
+                onClick={() => scrollToSection("contact")}
                 className="text-left px-4 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
               >
                 Contact
@@ -168,5 +174,5 @@ export function Header() {
         )}
       </div>
     </header>
-  )
+  );
 }

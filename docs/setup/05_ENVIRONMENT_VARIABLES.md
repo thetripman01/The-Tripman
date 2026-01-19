@@ -81,9 +81,29 @@ Environment: Production, Preview, Development
 
 **Options**: `custom` or `embed`
 
+```env
+Variable Name: SCHEDULER_MODE
+Value: custom
+Environment: Production, Preview, Development
+```
+
+**Note**: Server-side scheduler mode. Keep in sync with `NEXT_PUBLIC_SCHEDULER_MODE`.
+
 ---
 
 ### Admin Configuration
+
+TripMan uses a **cookie-based admin session**, so you must set a session signing secret.
+
+```env
+Variable Name: ADMIN_SESSION_SECRET
+Value: generate-a-long-random-string
+Environment: Production, Preview, Development
+```
+
+**Important**: This must remain stable. If you change it, all admin sessions are invalidated.
+
+Admin email/password are **seed-time** credentials used to create/update the `AdminUser` row.
 
 ```env
 Variable Name: ADMIN_EMAIL
@@ -218,18 +238,21 @@ Environment: Production, Preview
 ## Step 4: Environment-Specific Configuration
 
 ### Production Environment
+
 - Use **live** Stripe keys (`sk_live_`, `pk_live_`)
 - Use production domain in `NEXT_PUBLIC_SITE_URL`
 - Use production database URL
 - Use verified domain for emails
 
 ### Preview Environment
+
 - Can use **test** Stripe keys for testing
 - Use preview URL or production domain
 - Can use same database or separate test database
 - Test email configuration
 
 ### Development Environment
+
 - Use **test** Stripe keys
 - Use `http://localhost:3000` for `NEXT_PUBLIC_SITE_URL`
 - Use local or test database
@@ -254,22 +277,26 @@ After adding all variables:
 ## Step 7: Test Configuration
 
 ### Test Database Connection
+
 - Make a test booking
 - Check if data is saved to database
 - Verify in Neon Dashboard
 
 ### Test Stripe
+
 - Make a test payment
 - Check Stripe Dashboard for transaction
 - Verify webhook is received
 
 ### Test Email
+
 - Make a test booking
 - Check email is received
 - Verify email formatting
 - Check Resend Dashboard logs
 
 ### Test Admin Panel
+
 - Visit `/admin`
 - Try logging in
 - Verify authentication works
@@ -277,6 +304,7 @@ After adding all variables:
 ## Security Best Practices
 
 ### ✅ DO:
+
 - Store all secrets in Vercel environment variables
 - Use different keys for test/production
 - Rotate keys periodically
@@ -285,6 +313,7 @@ After adding all variables:
 - Review variable access regularly
 
 ### ❌ DON'T:
+
 - Commit `.env` files to Git
 - Share API keys publicly
 - Use production keys in development
@@ -295,18 +324,21 @@ After adding all variables:
 ## Troubleshooting
 
 ### Variables Not Working
+
 - Check variable names match exactly (case-sensitive)
 - Verify environment is correct (Production/Preview/Development)
 - Redeploy after adding variables
 - Check deployment logs for errors
 
 ### Build Fails
+
 - Verify all required variables are set
 - Check for typos in variable names
 - Ensure values are correct format
 - Review build logs for specific errors
 
 ### Runtime Errors
+
 - Check variables are accessible in runtime
 - Verify `NEXT_PUBLIC_` prefix for client-side variables
 - Check server-side variables are not exposed to client
@@ -317,12 +349,16 @@ After adding all variables:
 Use this checklist to ensure all variables are set:
 
 ### Required Variables
+
 - [ ] `DATABASE_URL`
 - [ ] `STRIPE_SECRET_KEY`
 - [ ] `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 - [ ] `STRIPE_WEBHOOK_SECRET`
 - [ ] `RESEND_API_KEY`
 - [ ] `NEXT_PUBLIC_SITE_URL`
+- [ ] `NEXT_PUBLIC_SCHEDULER_MODE`
+- [ ] `SCHEDULER_MODE`
+- [ ] `ADMIN_SESSION_SECRET`
 - [ ] `ADMIN_EMAIL`
 - [ ] `ADMIN_PASSWORD`
 - [ ] `BUSINESS_TIMEZONE`
@@ -331,6 +367,7 @@ Use this checklist to ensure all variables are set:
 - [ ] `CANCEL_POLICY_HOURS`
 
 ### Optional Variables
+
 - [ ] `GOOGLE_CALENDAR_ID` (if using custom scheduler)
 - [ ] `GOOGLE_CLIENT_EMAIL` (if using custom scheduler)
 - [ ] `GOOGLE_PRIVATE_KEY` (if using custom scheduler)
@@ -341,6 +378,7 @@ Use this checklist to ensure all variables are set:
 ## Next Steps
 
 After environment variables are configured:
+
 1. ✅ All variables added to Vercel
 2. ✅ Values verified
 3. ✅ Environments set correctly
@@ -350,4 +388,3 @@ After environment variables are configured:
 ---
 
 **Vercel Docs**: https://vercel.com/docs/concepts/projects/environment-variables
-

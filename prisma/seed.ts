@@ -1,59 +1,64 @@
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seed...')
+  console.log("🌱 Starting database seed...");
 
   // Create default event types
   const eventTypes = [
     {
-      slug: 'birthday-uber-ride',
-      name: 'Birthday Uber Ride',
-      description: 'Make their birthday special with a luxury ride experience',
+      slug: "tripman-experience",
+      name: "The Tripman Experience",
+      description:
+        "One full hour of chaos, music, and unforgettable energy. 1–4 people: $200 • 5–7 people: $400.",
       durationMin: 60,
-      priceCents: 7500, // $75.00
+      priceCents: 20000, // From $200
+      isActive: true,
     },
     {
-      slug: 'airport-pickup',
-      name: 'Airport Pick-Up',
-      description: 'Reliable and comfortable airport transportation service',
-      durationMin: 45,
-      priceCents: 6000, // $60.00
-    },
-    {
-      slug: 'city-night-tour',
-      name: 'City Night Tour',
-      description: 'Explore the city lights with a guided night tour',
-      durationMin: 90,
-      priceCents: 12000, // $120.00
-    },
-    {
-      slug: 'surprise-date-ride',
-      name: 'Surprise Date Ride',
-      description: 'Perfect for romantic surprises and special occasions',
+      slug: "tripman-experience-plus",
+      name: "The Tripman Experience +",
+      description:
+        "Everything in The Tripman Experience + full recording + guaranteed feature. 1–4 people: $500 • 5–7 people: $700.",
       durationMin: 60,
-      priceCents: 8500, // $85.00
+      priceCents: 50000, // From $500
+      isActive: true,
     },
-  ]
+    {
+      slug: "tripman-promo-ride",
+      name: "The Tripman Promo Ride",
+      description:
+        "Showcase your brand in Tripman Car Karaoke. Prices determined after a discovery process (Afes Digital).",
+      durationMin: 60,
+      priceCents: null,
+      isActive: true,
+    },
+  ] as const;
+
+  // Deactivate any old event types so the UI shows ONLY the 3 packages above.
+  await prisma.eventType.updateMany({
+    where: { slug: { notIn: eventTypes.map((e) => e.slug) } },
+    data: { isActive: false },
+  });
 
   for (const eventType of eventTypes) {
     await prisma.eventType.upsert({
       where: { slug: eventType.slug },
-      update: eventType,
+      update: { ...eventType, isActive: true },
       create: eventType,
-    })
-    console.log(`✅ Created/updated event type: ${eventType.name}`)
+    });
+    console.log(`✅ Created/updated event type: ${eventType.name}`);
   }
 
-  // Create admin user if ADMIN_EMAIL and ADMIN_PASSWORD are set
-  const adminEmail = process.env.ADMIN_EMAIL
-  const adminPassword = process.env.ADMIN_PASSWORD
+  // Create admin user if ADMIN_EMAIL and ADMIN_PASSWORD are set (seed-time only)
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (adminEmail && adminPassword) {
-    const hashedPassword = await bcrypt.hash(adminPassword, 12)
-    
+    const hashedPassword = await bcrypt.hash(adminPassword, 12);
+
     await prisma.adminUser.upsert({
       where: { email: adminEmail },
       update: { password: hashedPassword },
@@ -61,20 +66,22 @@ async function main() {
         email: adminEmail,
         password: hashedPassword,
       },
-    })
-    console.log(`✅ Created/updated admin user: ${adminEmail}`)
+    });
+    console.log(`✅ Created/updated admin user: ${adminEmail}`);
   } else {
-    console.log('⚠️  ADMIN_EMAIL and ADMIN_PASSWORD not set, skipping admin user creation')
+    console.log(
+      "⚠️  ADMIN_EMAIL and ADMIN_PASSWORD not set, skipping admin user creation",
+    );
   }
 
-  console.log('🎉 Database seed completed!')
+  console.log("🎉 Database seed completed!");
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error during seed:', e)
-    process.exit(1)
+    console.error("❌ Error during seed:", e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

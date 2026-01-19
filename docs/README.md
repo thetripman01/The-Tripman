@@ -5,7 +5,9 @@ This folder contains all project documentation organized by category.
 ## 📁 Folder Structure
 
 ### `/setup/` - Setup Guides
+
 Step-by-step guides for setting up all required services:
+
 - `01_NEON_DATABASE_SETUP.md` - Neon database configuration
 - `02_STRIPE_PAYMENT_SETUP.md` - Stripe payment setup
 - `03_RESEND_EMAIL_SETUP.md` - Resend email service setup
@@ -19,7 +21,9 @@ Step-by-step guides for setting up all required services:
 ---
 
 ### `/deployment/` - Deployment Guides
+
 Various deployment guides and plans:
+
 - `DEPLOYMENT.md` - Main deployment guide
 - `PAID_DEPLOYMENT_GUIDE.md` - Paid hosting deployment
 - `COST_EFFECTIVE_DEPLOYMENT.md` - Cost-effective deployment options
@@ -29,7 +33,9 @@ Various deployment guides and plans:
 ---
 
 ### `/guides/` - Feature Guides
+
 Guides for specific features and integrations:
+
 - `BOOKING_MANAGEMENT_GUIDE.md` - Booking management features
 - `GITHUB_SETUP_GUIDE.md` - GitHub repository setup
 - `HOSTING_COMPARISON.md` - Hosting provider comparison
@@ -39,7 +45,9 @@ Guides for specific features and integrations:
 ---
 
 ### `/status/` - Status Documents
+
 Project status and summary documents:
+
 - `PROJECT_STATUS_SUMMARY.md` - Current project status
 - `PROJECT_SUMMARY.md` - Overall project summary
 - `LAUNCH_READINESS_ASSESSMENT.md` - Launch readiness assessment
@@ -50,18 +58,10 @@ Project status and summary documents:
 ## 🚀 Quick Start
 
 **New to the project?** Start with:
-1. `../QUICK_START_GUIDE.md` (in project root)
-2. `../MASTER_SETUP_CHECKLIST.md` (in project root)
+
+1. `GETTING_STARTED.md`
+2. `SETUP_CHECKLIST.md`
 3. Then follow guides in `/setup/` folder in order
-
----
-
-## 📋 Root Level Documents
-
-Important documents kept in project root for easy access:
-- `README.md` - Main project readme
-- `QUICK_START_GUIDE.md` - Quick start guide
-- `MASTER_SETUP_CHECKLIST.md` - Master setup checklist
 
 ---
 
@@ -75,4 +75,3 @@ Important documents kept in project root for easy access:
 ---
 
 **Last Updated**: Project organization cleanup
-

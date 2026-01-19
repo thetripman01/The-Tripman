@@ -1,7 +1,17 @@
-import { Car, Mail, Phone, MapPin, Facebook, Instagram, Twitter } from 'lucide-react'
+import {
+  Car,
+  Mail,
+  Phone,
+  MapPin,
+  Facebook,
+  Instagram,
+  Twitter,
+  Youtube,
+  Music,
+} from "lucide-react";
 
 export function Footer() {
-  const currentYear = new Date().getFullYear()
+  const currentYear = new Date().getFullYear();
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -13,15 +23,14 @@ export function Footer() {
               <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
                 <Car className="w-5 h-5 text-white" />
               </div>
-                             <h3 className="text-xl font-bold">The Tripman</h3>
+              <h3 className="text-xl font-bold">The Tripman</h3>
             </div>
             <p className="text-gray-300 mb-4 max-w-md">
-              Premium transportation and experience services. From birthday surprises to airport pickups, 
-              we make every journey special and memorable.
+              Join the ride. Feel the chaos. Live the moment.
             </p>
             <div className="flex space-x-4">
-              <a 
-                href="https://www.facebook.com/thetripman_" 
+              <a
+                href="https://www.facebook.com/thetripman_"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -29,8 +38,8 @@ export function Footer() {
               >
                 <Facebook className="w-5 h-5" />
               </a>
-              <a 
-                href="https://www.instagram.com/thetripman_/" 
+              <a
+                href="https://www.instagram.com/thetripman_/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -38,8 +47,26 @@ export function Footer() {
               >
                 <Instagram className="w-5 h-5" />
               </a>
-              <a 
-                href="https://twitter.com/thetripman_" 
+              <a
+                href="https://www.tiktok.com/@thetripman_"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+                aria-label="TikTok"
+              >
+                <Music className="w-5 h-5" />
+              </a>
+              <a
+                href="https://www.youtube.com/@thetripman_"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+                aria-label="YouTube"
+              >
+                <Youtube className="w-5 h-5" />
+              </a>
+              <a
+                href="https://twitter.com/thetripman_"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -50,28 +77,32 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Services */}
+          {/* Packages */}
           <div>
-            <h4 className="font-semibold mb-4">Our Services</h4>
+            <h4 className="font-semibold mb-4">Packages</h4>
             <ul className="space-y-2 text-gray-300">
               <li>
-                <a href="#events" className="hover:text-white transition-colors">
-                  Birthday Uber Ride
+                <a
+                  href="#events"
+                  className="hover:text-white transition-colors"
+                >
+                  The Tripman Experience
                 </a>
               </li>
               <li>
-                <a href="#events" className="hover:text-white transition-colors">
-                  Airport Pick-Up
+                <a
+                  href="#events"
+                  className="hover:text-white transition-colors"
+                >
+                  The Tripman Experience +
                 </a>
               </li>
               <li>
-                <a href="#events" className="hover:text-white transition-colors">
-                  City Night Tour
-                </a>
-              </li>
-              <li>
-                <a href="#events" className="hover:text-white transition-colors">
-                  Surprise Date Ride
+                <a
+                  href="#events"
+                  className="hover:text-white transition-colors"
+                >
+                  The Tripman Promo Ride
                 </a>
               </li>
             </ul>
@@ -104,13 +135,22 @@ export function Footer() {
               © {currentYear} The Tripman. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <a
+                href="/privacy"
+                className="text-gray-400 hover:text-white text-sm transition-colors"
+              >
                 Privacy Policy
               </a>
-              <a href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <a
+                href="/terms"
+                className="text-gray-400 hover:text-white text-sm transition-colors"
+              >
                 Terms of Service
               </a>
-              <a href="/admin" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <a
+                href="/admin"
+                className="text-gray-400 hover:text-white text-sm transition-colors"
+              >
                 Admin
               </a>
             </div>
@@ -118,5 +158,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

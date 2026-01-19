@@ -5,7 +5,7 @@ A production-ready scheduling microsite for The TripMan, built with Next.js 15, 
 ## 🚀 Features
 
 - **One-Page Scheduling Experience**: Hero section, event selection, calendar integration, and booking form
-- **Dual Scheduling Modes**: 
+- **Dual Scheduling Modes**:
   - **Embed Mode**: Cal.com/Calendly integration with webhooks
   - **Custom Mode**: FullCalendar with Google Calendar integration
 - **Email Notifications**: Automated booking confirmations with .ics attachments
@@ -22,7 +22,7 @@ A production-ready scheduling microsite for The TripMan, built with Next.js 15, 
 - **Database**: PostgreSQL (Neon) + Prisma ORM
 - **Email**: Resend for transactional emails
 - **Calendar**: FullCalendar + Google Calendar API
-- **Authentication**: Basic auth for admin
+- **Authentication**: Cookie-based admin session (server-signed)
 - **Analytics**: Google Analytics 4
 - **Deployment**: Vercel
 
@@ -49,7 +49,7 @@ npm install
 Copy the example environment file and configure your variables:
 
 ```bash
-cp .env.example .env.local
+cp env.example .env.local
 ```
 
 Fill in your environment variables (see [Environment Variables](#environment-variables) section).
@@ -133,17 +133,18 @@ The application uses the following Prisma schema:
 
 ### Default Event Types
 
-The seed script creates 4 default event types:
-- Birthday Uber Ride (60m, $75)
-- Airport Pick-Up (45m, $60)
-- City Night Tour (90m, $120)
-- Surprise Date Ride (60m, $85)
+The seed scripts create **3 packages**:
+
+- The Tripman Experience (60m, from $200; tiered by group size)
+- The Tripman Experience + (60m, from $500; tiered by group size)
+- The Tripman Promo Ride (60m, custom pricing)
 
 ## 📱 Scheduling Modes
 
 ### Embed Mode (Default)
 
 Uses Cal.com or Calendly for scheduling:
+
 - Configure `CAL_VENDOR` and `CAL_EVENT_TYPE_SLUG`
 - Set up webhooks pointing to `/api/webhooks/cal`
 - Bookings are automatically synced to your database
@@ -151,6 +152,7 @@ Uses Cal.com or Calendly for scheduling:
 ### Custom Mode
 
 Uses FullCalendar with Google Calendar integration:
+
 - Configure Google Calendar API credentials
 - Set `SCHEDULER_MODE=custom`
 - Full control over availability and booking flow
@@ -165,7 +167,7 @@ The application sends automated emails using Resend:
 
 ## 🔐 Admin Access
 
-Coming Soon
+Visit `/admin` and log in using the `AdminUser` credentials created by the seed script.
 
 ## 🚀 Deployment
 
@@ -185,6 +187,7 @@ npm start
 ## 📊 Analytics
 
 Google Analytics 4 integration tracks:
+
 - Page views
 - Event type selections
 - Booking completions
@@ -222,7 +225,7 @@ src/
 │   ├── ics.ts           # Calendar file generation
 │   ├── analytics.ts     # GA4 integration
 │   ├── calendar.ts      # Google Calendar integration
-│   └── auth.ts          # Authentication
+│   └── admin-session.ts # Admin authentication
 └── prisma/              # Database schema and migrations
 ```
 
@@ -252,6 +255,7 @@ This project is licensed under the MIT License.
 ## 🆘 Support
 
 For support and questions:
+
 - Email: thetripman01@gmail.com
 - WhatsApp: Coming Soon
 - Issues: Use GitHub issues
@@ -259,6 +263,7 @@ For support and questions:
 ## 🔄 Updates
 
 Stay updated with the latest features and improvements by:
+
 - Following the repository
 - Checking the changelog
 - Subscribing to release notifications

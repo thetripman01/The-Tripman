@@ -1,40 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/auth'
-import { deleteGoogleCalendarEvent } from '@/lib/calendar'
-import { sendCancellationNotification } from '@/lib/email'
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/admin-session";
+import { deleteGoogleCalendarEvent } from "@/lib/calendar";
+import { sendCancellationNotification } from "@/lib/email";
 
 const updateBookingSchema = z.object({
-  status: z.enum(['PENDING', 'CONFIRMED', 'CANCELED']),
-})
+  status: z.enum(["PENDING", "CONFIRMED", "CANCELED"]),
+});
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Check authentication
-    const authResult = await requireAuth(request)
+    const authResult = await requireAdmin(request);
     if (authResult) {
-      return authResult
+      return authResult;
     }
 
-    const body = await request.json()
-    const { status } = updateBookingSchema.parse(body)
-    const { id } = await params
+    const body = await request.json();
+    const { status } = updateBookingSchema.parse(body);
+    const { id } = await params;
 
     // Get the booking
     const booking = await db.booking.findUnique({
       where: { id },
       include: { eventType: true },
-    })
+    });
 
     if (!booking) {
-      return NextResponse.json(
-        { error: 'Booking not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
     // Update the booking
@@ -42,42 +39,42 @@ export async function PATCH(
       where: { id },
       data: { status },
       include: { eventType: true },
-    })
+    });
 
     // Handle Google Calendar integration
-    if (status === 'CANCELED' && booking.googleEventId) {
+    if (status === "CANCELED" && booking.googleEventId) {
       try {
-        await deleteGoogleCalendarEvent(booking.googleEventId)
+        await deleteGoogleCalendarEvent(booking.googleEventId);
       } catch (error) {
-        console.error('Failed to delete Google Calendar event:', error)
+        console.error("Failed to delete Google Calendar event:", error);
       }
     }
 
     // Send cancellation notification if booking is canceled
-    if (status === 'CANCELED') {
+    if (status === "CANCELED") {
       try {
-        await sendCancellationNotification(updatedBooking)
+        await sendCancellationNotification(updatedBooking);
       } catch (error) {
-        console.error('Failed to send cancellation notification:', error)
+        console.error("Failed to send cancellation notification:", error);
       }
     }
 
     return NextResponse.json({
-      message: 'Booking updated successfully',
+      message: "Booking updated successfully",
       booking: updatedBooking,
-    })
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid data', details: error.issues },
-        { status: 400 }
-      )
+        { error: "Invalid data", details: error.issues },
+        { status: 400 },
+      );
     }
 
-    console.error('Error updating booking:', error)
+    console.error("Error updating booking:", error);
     return NextResponse.json(
-      { error: 'Failed to update booking' },
-      { status: 500 }
-    )
+      { error: "Failed to update booking" },
+      { status: 500 },
+    );
   }
 }

@@ -1,68 +1,72 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Phone, Mail, MapPin, Clock, Send, CheckCircle } from 'lucide-react'
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Phone, Mail, MapPin, Clock, Send, CheckCircle } from "lucide-react";
 
 export function Contact() {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    service: '',
-    message: ''
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+    name: "",
+    email: "",
+    phone: "",
+    service: "",
+    message: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    
+    e.preventDefault();
+    setIsSubmitting(true);
+
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
+      const response = await fetch("/api/contact", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok && data.success) {
-        setIsSubmitted(true)
+        setIsSubmitted(true);
         // Reset form after 3 seconds
         setTimeout(() => {
-          setIsSubmitted(false)
+          setIsSubmitted(false);
           setFormData({
-            name: '',
-            email: '',
-            phone: '',
-            service: '',
-            message: ''
-          })
-        }, 3000)
+            name: "",
+            email: "",
+            phone: "",
+            service: "",
+            message: "",
+          });
+        }, 3000);
       } else {
-        alert(data.error || 'Failed to send message. Please try again.')
+        alert(data.error || "Failed to send message. Please try again.");
       }
     } catch (error) {
-      console.error('Contact form error:', error)
-      alert('An error occurred. Please try again later.')
+      console.error("Contact form error:", error);
+      alert("An error occurred. Please try again later.");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+      [e.target.name]: e.target.value,
+    });
+  };
 
   return (
     <section className="py-20 px-4 bg-white">
@@ -72,7 +76,8 @@ export function Contact() {
             Get In Touch
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Ready to experience premium transportation? Contact us today for a quote or to discuss your specific needs.
+            Ready to experience premium transportation? Contact us today for a
+            quote or to discuss your specific needs.
           </p>
         </div>
 
@@ -84,25 +89,30 @@ export function Contact() {
                 Send Us a Message
               </CardTitle>
               <p className="text-gray-600">
-                Fill out the form below and we&apos;ll get back to you within 24 hours.
+                Fill out the form below and we&apos;ll get back to you within 24
+                hours.
               </p>
             </CardHeader>
             <CardContent>
               {isSubmitted ? (
                 <div className="text-center py-8">
-                                     <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     Message Sent Successfully!
                   </h3>
                   <p className="text-gray-600">
-                    Thank you for contacting us. We&apos;ll get back to you soon.
+                    Thank you for contacting us. We&apos;ll get back to you
+                    soon.
                   </p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="name"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Full Name *
                       </label>
                       <Input
@@ -117,7 +127,10 @@ export function Contact() {
                       />
                     </div>
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="email"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Email Address *
                       </label>
                       <Input
@@ -135,7 +148,10 @@ export function Contact() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="phone"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Phone Number
                       </label>
                       <Input
@@ -149,7 +165,10 @@ export function Contact() {
                       />
                     </div>
                     <div>
-                      <label htmlFor="service" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="service"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Service Type
                       </label>
                       <select
@@ -157,22 +176,28 @@ export function Contact() {
                         name="service"
                         value={formData.service}
                         onChange={handleChange}
-                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
                       >
-                        <option value="">Select a service</option>
-                        <option value="airport">Airport Transfer</option>
-                        <option value="corporate">Corporate Event</option>
-                        <option value="wedding">Wedding Transportation</option>
-                        <option value="tour">City Tour</option>
-                        <option value="hourly">Hourly Service</option>
-                        <option value="vip">VIP Transportation</option>
-                        <option value="custom">Custom Service</option>
+                        <option value="">Select a package</option>
+                        <option value="tripman-experience">
+                          The Tripman Experience
+                        </option>
+                        <option value="tripman-experience-plus">
+                          The Tripman Experience +
+                        </option>
+                        <option value="tripman-promo-ride">
+                          The Tripman Promo Ride
+                        </option>
+                        <option value="other">Other / General question</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="message"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Message *
                     </label>
                     <Textarea
@@ -190,7 +215,7 @@ export function Contact() {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                                         className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+                    className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
                   >
                     {isSubmitting ? (
                       <div className="flex items-center">
@@ -239,7 +264,9 @@ export function Contact() {
                   <div>
                     <h3 className="font-semibold text-gray-900">Email</h3>
                     <p className="text-gray-600">thetripman01@gmail.com</p>
-                    <p className="text-sm text-gray-500">Response within 24 hours</p>
+                    <p className="text-sm text-gray-500">
+                      Response within 24 hours
+                    </p>
                   </div>
                 </div>
 
@@ -248,13 +275,17 @@ export function Contact() {
                     <MapPin className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Service Areas</h3>
+                    <h3 className="font-semibold text-gray-900">
+                      Service Areas
+                    </h3>
                     <p className="text-gray-600">Toronto</p>
                     <p className="text-gray-600">Mississauga</p>
                     <p className="text-gray-600">North York</p>
                     <p className="text-gray-600">Scarborough</p>
                     <p className="text-gray-600">Etobicoke</p>
-                    <p className="text-sm text-gray-500 mt-2">And surrounding GTA areas</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      And surrounding GTA areas
+                    </p>
                   </div>
                 </div>
 
@@ -263,19 +294,23 @@ export function Contact() {
                     <Clock className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Business Hours</h3>
-                    <p className="text-gray-600">Monday - Friday: 8:00 AM - 6:00 PM</p>
+                    <h3 className="font-semibold text-gray-900">
+                      Business Hours
+                    </h3>
+                    <p className="text-gray-600">
+                      Monday - Friday: 8:00 AM - 6:00 PM
+                    </p>
                     <p className="text-gray-600">Saturday: 9:00 AM - 4:00 PM</p>
-                    <p className="text-sm text-green-500 font-semibold">24/7 Emergency Service Available</p>
+                    <p className="text-sm text-green-500 font-semibold">
+                      24/7 Emergency Service Available
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
-            
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

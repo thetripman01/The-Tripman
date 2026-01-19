@@ -7,6 +7,7 @@
 ## 🏗️ Architecture
 
 ### Tech Stack
+
 - **Frontend**: Next.js 15 (App Router) + TypeScript + Tailwind CSS
 - **UI Components**: shadcn/ui + Lucide React icons
 - **Database**: PostgreSQL (Neon) + Prisma ORM
@@ -17,6 +18,7 @@
 - **Testing**: Jest + React Testing Library
 
 ### Key Features
+
 - **Dual Scheduling Modes**: Embed (Cal.com/Calendly) + Custom (FullCalendar)
 - **Mobile-First Design**: Responsive, touch-friendly interface
 - **Real-time Availability**: Dynamic time slot calculation
@@ -67,12 +69,14 @@ src/
 ## 🗄️ Database Schema
 
 ### Models
+
 - **EventType**: Service definitions (name, duration, price, etc.)
 - **Booking**: Customer bookings with all details
 - **AdminUser**: Admin authentication
 - **BookingStatus**: Enum for booking states
 
 ### Relationships
+
 - One-to-many: EventType → Booking
 - Proper indexing for performance
 - Timestamps on all models
@@ -80,6 +84,7 @@ src/
 ## 🔧 Configuration
 
 ### Environment Variables
+
 - Database connection
 - Email service credentials
 - Calendar integration settings
@@ -88,17 +93,20 @@ src/
 - Business rules (timezone, buffer times, etc.)
 
 ### Scheduling Modes
+
 1. **Embed Mode**: Integrates Cal.com or Calendly
 2. **Custom Mode**: FullCalendar with Google Calendar sync
 
 ## 🧪 Testing
 
 ### Test Coverage
+
 - **ICS Generation**: 100% coverage
 - **Calendar Utilities**: 36.73% coverage
 - **Authentication**: Skipped (Next.js dependencies)
 
 ### Test Types
+
 - Unit tests for utility functions
 - Integration tests for API routes
 - End-to-end testing plan documented
@@ -106,6 +114,7 @@ src/
 ## 🚀 Deployment
 
 ### Production Ready
+
 - ✅ Builds successfully
 - ✅ Database migrations
 - ✅ Environment configuration
@@ -114,6 +123,7 @@ src/
 - ✅ Performance optimization
 
 ### Deployment Steps
+
 1. Set up database (Neon/PostgreSQL)
 2. Configure environment variables
 3. Deploy to Vercel
@@ -124,6 +134,7 @@ src/
 ## 📊 Features Implemented
 
 ### Core Functionality
+
 - [x] Event type selection
 - [x] Dynamic scheduling
 - [x] Booking form with validation
@@ -133,6 +144,7 @@ src/
 - [x] Booking management
 
 ### User Experience
+
 - [x] Mobile-first responsive design
 - [x] Smooth scrolling navigation
 - [x] Loading states
@@ -141,6 +153,7 @@ src/
 - [x] WhatsApp integration
 
 ### Technical Features
+
 - [x] TypeScript throughout
 - [x] Form validation (Zod)
 - [x] Database transactions
@@ -149,6 +162,7 @@ src/
 - [x] Performance optimization
 
 ### Business Features
+
 - [x] Multiple service types
 - [x] Flexible pricing
 - [x] Buffer time management
@@ -159,6 +173,7 @@ src/
 ## 🔒 Security
 
 ### Implemented
+
 - Input validation and sanitization
 - SQL injection prevention
 - XSS protection
@@ -167,6 +182,7 @@ src/
 - Environment variable protection
 
 ### Best Practices
+
 - HTTPS enforcement
 - Secure headers
 - Rate limiting
@@ -176,6 +192,7 @@ src/
 ## 📈 Performance
 
 ### Optimizations
+
 - Code splitting
 - Image optimization
 - Caching strategies
@@ -184,6 +201,7 @@ src/
 - Core Web Vitals optimization
 
 ### Metrics
+
 - Lighthouse score target: ≥90
 - First Contentful Paint: <1.5s
 - Largest Contentful Paint: <2.5s
@@ -192,6 +210,7 @@ src/
 ## 🎨 Design System
 
 ### Components
+
 - Consistent spacing (8pt grid)
 - Accessible color contrast
 - Focus states for keyboard navigation
@@ -199,6 +218,7 @@ src/
 - Loading and error states
 
 ### Branding
+
 - Professional color scheme
 - Consistent typography
 - Icon system (Lucide React)
@@ -207,6 +227,7 @@ src/
 ## 📱 Mobile Experience
 
 ### Responsive Design
+
 - Mobile-first approach
 - Touch-friendly interactions
 - Optimized form inputs
@@ -216,6 +237,7 @@ src/
 ## 🔄 Workflow
 
 ### User Journey
+
 1. **Landing**: Hero section with value proposition
 2. **Selection**: Choose from available services
 3. **Scheduling**: Pick date and time
@@ -224,6 +246,7 @@ src/
 6. **Follow-up**: WhatsApp contact for questions
 
 ### Admin Workflow
+
 1. **Authentication**: Basic auth login
 2. **Dashboard**: View all bookings
 3. **Management**: Filter, search, update status
@@ -232,6 +255,7 @@ src/
 ## 📋 Maintenance
 
 ### Regular Tasks
+
 - Dependency updates
 - Database backups
 - Performance monitoring
@@ -239,6 +263,7 @@ src/
 - Analytics review
 
 ### Monitoring
+
 - Error tracking
 - Performance metrics
 - User analytics
@@ -248,6 +273,7 @@ src/
 ## 🎯 Success Metrics
 
 ### Technical KPIs
+
 - Page load times
 - Error rates
 - API response times
@@ -255,6 +281,7 @@ src/
 - Email delivery rates
 
 ### Business KPIs
+
 - Booking conversion rate
 - User engagement
 - Admin efficiency
@@ -264,18 +291,21 @@ src/
 ## 🚀 Next Steps
 
 ### Immediate
+
 1. Deploy to production
 2. Configure external services
 3. Test all user journeys
 4. Monitor performance
 
 ### Short-term
+
 1. Fix remaining ESLint warnings
 2. Add more comprehensive tests
 3. Implement error tracking
 4. Add analytics dashboard
 
 ### Long-term
+
 1. Feature enhancements
 2. Performance optimization
 3. Scale infrastructure
@@ -284,12 +314,14 @@ src/
 ## 📚 Documentation
 
 ### Created
+
 - [README.md](./README.md) - Project overview and setup
 - [DEPLOYMENT.md](./DEPLOYMENT.md) - Production deployment guide
 - [TEST_PLAN.md](./TEST_PLAN.md) - Testing strategy
-- [.env.example](./.env.example) - Environment variables template
+- [`env.example`](../env.example) - Environment variables template
 
 ### Available
+
 - API documentation
 - Component documentation
 - Database schema

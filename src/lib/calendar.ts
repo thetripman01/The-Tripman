@@ -6,14 +6,6 @@ const SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
 ];
 
-function isGoogleCalendarConfigured() {
-  return Boolean(
-    process.env.GOOGLE_CLIENT_EMAIL &&
-      process.env.GOOGLE_PRIVATE_KEY &&
-      process.env.GOOGLE_CALENDAR_ID,
-  );
-}
-
 function getGoogleAuth() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
   const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
@@ -49,7 +41,7 @@ export async function getFreeBusyTimes(startTime: Date, endTime: Date) {
     });
 
     return response.data.calendars?.[calendarId]?.busy || [];
-  } catch (error) {
+  } catch {
     console.warn(
       "Google Calendar: failed to fetch free/busy times (continuing without Google busy data).",
     );
@@ -107,7 +99,7 @@ ${booking.eventType.priceCents ? `Price: $${(booking.eventType.priceCents / 100)
     });
 
     return response.data.id ?? null;
-  } catch (error) {
+  } catch {
     console.warn(
       "Google Calendar: failed to create event (continuing without Google Calendar integration).",
     );
@@ -131,7 +123,7 @@ export async function deleteGoogleCalendarEvent(eventId: string) {
       eventId,
       sendUpdates: "all",
     });
-  } catch (error) {
+  } catch {
     console.warn("Google Calendar: failed to delete event (continuing).");
   }
 }

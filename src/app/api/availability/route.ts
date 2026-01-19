@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         start: new Date(period.start || ""),
         end: new Date(period.end || ""),
       }));
-    } catch (error) {
+    } catch {
       // Continue without Google Calendar data if not configured
     }
 

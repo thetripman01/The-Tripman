@@ -23,7 +23,7 @@ export const TRIPMAN_PACKAGES = [
     slug: "tripman-promo-ride",
     name: "The Tripman Promo Ride",
     durationMin: 60,
-    price: null as const,
+    price: null,
   },
 ] as const;
 

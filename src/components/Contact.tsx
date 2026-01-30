@@ -17,6 +17,7 @@ export function Contact() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const phoneNumber = process.env.NEXT_PUBLIC_PHONE_NUMBER;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,8 +77,8 @@ export function Contact() {
             Get In Touch
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Ready to experience premium transportation? Contact us today for a
-            quote or to discuss your specific needs.
+            Want to book a ride, ask a question, or talk partnerships? Send a
+            message and we’ll get back to you.
           </p>
         </div>
 
@@ -252,8 +253,19 @@ export function Contact() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Phone</h3>
-                    <p className="text-gray-600">Available soon</p>
-                    <p className="text-sm text-gray-500">Coming shortly</p>
+                    {phoneNumber ? (
+                      <a
+                        href={`tel:${phoneNumber}`}
+                        className="text-gray-600 hover:underline"
+                      >
+                        {phoneNumber}
+                      </a>
+                    ) : (
+                      <>
+                        <p className="text-gray-600">Available soon</p>
+                        <p className="text-sm text-gray-500">Coming shortly</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -297,12 +309,8 @@ export function Contact() {
                     <h3 className="font-semibold text-gray-900">
                       Business Hours
                     </h3>
-                    <p className="text-gray-600">
-                      Monday - Friday: 8:00 AM - 6:00 PM
-                    </p>
-                    <p className="text-gray-600">Saturday: 9:00 AM - 4:00 PM</p>
                     <p className="text-sm text-green-500 font-semibold">
-                      24/7 Emergency Service Available
+                      Online booking is available 24/7
                     </p>
                   </div>
                 </div>

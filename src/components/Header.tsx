@@ -52,7 +52,7 @@ export function Header() {
               }`}
             >
               <Image
-                src="/tripman-logo.jpg"
+                src="/tripman-main.jpg"
                 alt="The Tripman"
                 width={40}
                 height={40}

@@ -12,6 +12,7 @@ import {
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const phoneNumber = process.env.NEXT_PUBLIC_PHONE_NUMBER;
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -114,7 +115,16 @@ export function Footer() {
             <div className="space-y-3 text-gray-300">
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-green-400" />
-                <span>Available soon</span>
+                {phoneNumber ? (
+                  <a
+                    href={`tel:${phoneNumber}`}
+                    className="hover:text-white transition-colors"
+                  >
+                    {phoneNumber}
+                  </a>
+                ) : (
+                  <span>Available soon</span>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-green-400" />
@@ -146,12 +156,6 @@ export function Footer() {
                 className="text-gray-400 hover:text-white text-sm transition-colors"
               >
                 Terms of Service
-              </a>
-              <a
-                href="/admin"
-                className="text-gray-400 hover:text-white text-sm transition-colors"
-              >
-                Admin
               </a>
             </div>
           </div>

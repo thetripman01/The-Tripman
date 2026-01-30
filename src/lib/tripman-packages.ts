@@ -44,6 +44,13 @@ export function getTripmanFromPriceLabel(slug: string) {
   return `From ${formatUsd(pkg.price.baseCents)}`;
 }
 
+export function getTripmanTierBreakdownLabel(slug: string) {
+  const pkg = getTripmanPackage(slug);
+  if (!pkg) return null;
+  if (!pkg.price) return "Custom pricing";
+  return `1–4: ${formatUsd(pkg.price.baseCents)} · 5–7: ${formatUsd(pkg.price.largeCents)}`;
+}
+
 export function getTripmanPriceForPeople(
   slug: string,
   peopleCount: number | null | undefined,

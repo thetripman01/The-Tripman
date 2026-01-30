@@ -42,6 +42,9 @@ interface Booking {
   endsAt: string;
   timezone: string;
   status: "PENDING" | "CONFIRMED" | "CANCELED";
+  paymentStatus?: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
+  amountPaid?: number | null;
+  paymentIntentId?: string | null;
   createdAt: string;
   eventType: {
     name: string;
@@ -62,6 +65,8 @@ export default function AdminPage() {
   });
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [activeTab, setActiveTab] = useState<"bookings" | "fraud">("bookings");
+  const [cancelReason, setCancelReason] = useState("");
+  const [refundRequested, setRefundRequested] = useState(false);
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -139,6 +144,44 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Failed to update booking status:", error);
+    }
+  };
+
+  const cancelBookingWithOptionalRefund = async (bookingId: string) => {
+    try {
+      const response = await fetch(`/api/booking/${bookingId}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          reason: cancelReason || "Cancelled by admin",
+          refundRequested,
+        }),
+      });
+
+      if (response.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      const data = (await response.json().catch(() => null)) as {
+        message?: string;
+        error?: string;
+      } | null;
+
+      if (!response.ok) {
+        alert(data?.message || data?.error || "Failed to cancel booking");
+        return;
+      }
+
+      alert(data?.message || "Booking cancelled");
+      setSelectedBooking(null);
+      setCancelReason("");
+      setRefundRequested(false);
+      fetchBookings();
+    } catch (error) {
+      console.error("Failed to cancel booking:", error);
+      alert("Failed to cancel booking");
     }
   };
 
@@ -332,16 +375,6 @@ export default function AdminPage() {
                               <CheckCircle className="w-4 h-4 mr-2" />
                               Confirm
                             </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() =>
-                                updateBookingStatus(booking.id, "CANCELED")
-                              }
-                            >
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Cancel
-                            </Button>
                           </>
                         )}
                       </div>
@@ -471,6 +504,52 @@ export default function AdminPage() {
                       )}
                     </div>
 
+                    {/* Admin actions: cancel + optional refund */}
+                    {selectedBooking.status !== "CANCELED" && (
+                      <div className="rounded-lg border bg-white p-4 space-y-3">
+                        <div className="font-semibold text-gray-900">
+                          Admin Actions
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Cancellation reason (optional)
+                          </label>
+                          <textarea
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                            rows={3}
+                            className="w-full border rounded-md px-3 py-2 text-sm"
+                            placeholder="Reason shown in internal notes / emails"
+                          />
+                        </div>
+
+                        {selectedBooking.paymentStatus === "COMPLETED" && (
+                          <label className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={refundRequested}
+                              onChange={(e) =>
+                                setRefundRequested(e.target.checked)
+                              }
+                            />
+                            Request refund (if applicable)
+                          </label>
+                        )}
+
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={() =>
+                            cancelBookingWithOptionalRefund(selectedBooking.id)
+                          }
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Cancel Booking{" "}
+                          {refundRequested ? "& Request Refund" : ""}
+                        </Button>
+                      </div>
+                    )}
+
                     <div className="flex gap-2 pt-4">
                       {selectedBooking.status === "PENDING" && (
                         <>
@@ -485,19 +564,6 @@ export default function AdminPage() {
                           >
                             <CheckCircle className="w-4 h-4 mr-2" />
                             Confirm Booking
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            onClick={() =>
-                              updateBookingStatus(
-                                selectedBooking.id,
-                                "CANCELED",
-                              )
-                            }
-                            className="flex-1"
-                          >
-                            <XCircle className="w-4 h-4 mr-2" />
-                            Cancel Booking
                           </Button>
                         </>
                       )}

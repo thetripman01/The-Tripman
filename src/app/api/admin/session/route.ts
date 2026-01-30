@@ -46,6 +46,25 @@ export async function POST(request: NextRequest) {
       );
     }
     console.error("Admin login error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+
+    // Prisma throws a detailed init error when DATABASE_URL is missing/invalid.
+    const looksLikeDbConfig =
+      typeof message === "string" &&
+      (message.includes("Error parsing connection string") ||
+        message.includes("Invalid `prisma.") ||
+        message.includes("DATABASE_URL"));
+
+    if (looksLikeDbConfig) {
+      return NextResponse.json(
+        {
+          error:
+            "Database is not configured. Set DATABASE_URL, run `npm run db:push`, then `npm run db:seed` (or seed production).",
+        },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json({ error: "Login failed" }, { status: 500 });
   }
 }

@@ -5,21 +5,131 @@ export default function PrivacyPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
           Privacy Policy
         </h1>
-        <p className="text-gray-600 mb-4">
-          This is a placeholder Privacy Policy page. Replace this content with
-          your final policy before launch.
+        <p className="text-gray-600 mb-8">
+          Effective date: {new Date().getFullYear()}-01-01
         </p>
-        <ul className="list-disc pl-6 text-gray-600 space-y-2">
-          <li>
-            We collect contact details you submit for booking and support
-            purposes.
-          </li>
-          <li>
-            Payment is processed securely via Stripe; we do not store card
-            details.
-          </li>
-          <li>We use analytics (optional) to understand site usage.</li>
-        </ul>
+
+        <section className="space-y-4 text-gray-700">
+          <p>
+            This Privacy Policy explains how <strong>The Tripman</strong> (“we”,
+            “us”) collects, uses, and shares information when you use our
+            website and booking services.
+          </p>
+        </section>
+
+        <div className="mt-10 space-y-10 text-gray-700">
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Information we collect
+            </h2>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>
+                <strong>Booking details</strong>: name, email, phone (optional),
+                pickup details (optional), notes (optional), selected package,
+                date/time, and related communications.
+              </li>
+              <li>
+                <strong>Payment information</strong>: payments are processed by{" "}
+                <strong>Stripe</strong>. We do not store your full card number.
+                Stripe may collect payment method details and device/transaction
+                information.
+              </li>
+              <li>
+                <strong>Usage data</strong>: basic analytics events (if enabled)
+                such as page views and interactions to improve the experience.
+              </li>
+              <li>
+                <strong>Support messages</strong>: information you provide when
+                contacting us (email/forms).
+              </li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">
+              How we use your information
+            </h2>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Provide and manage bookings.</li>
+              <li>Send confirmations, updates, and support replies.</li>
+              <li>Process payments and prevent fraud/abuse.</li>
+              <li>Improve our website and services.</li>
+              <li>Comply with legal obligations.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">
+              How we share information
+            </h2>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>
+                <strong>Service providers</strong> (for example, Stripe for
+                payments; email providers for confirmations).
+              </li>
+              <li>
+                <strong>Legal</strong>: if required to comply with law or
+                protect rights, safety, and security.
+              </li>
+            </ul>
+            <p className="text-sm text-gray-600">
+              We do not sell your personal information.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Data retention
+            </h2>
+            <p>
+              We retain booking and communication data for as long as needed to
+              provide services, meet legal/accounting requirements, and resolve
+              disputes. We may anonymize or delete data when it is no longer
+              needed.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Cookies & analytics
+            </h2>
+            <p>
+              We may use cookies or similar technologies for basic site
+              functionality and analytics (if enabled). You can control cookies
+              through your browser settings.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Your choices
+            </h2>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>
+                Request access, correction, or deletion of your personal data,
+                subject to applicable law.
+              </li>
+              <li>
+                Opt out of marketing emails (if any are sent) using the
+                unsubscribe link.
+              </li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">Contact</h2>
+            <p>
+              If you have questions about this Privacy Policy, contact us at{" "}
+              <a
+                className="text-green-700 hover:underline"
+                href="mailto:thetripman01@gmail.com"
+              >
+                thetripman01@gmail.com
+              </a>
+              .
+            </p>
+          </section>
+        </div>
       </div>
     </main>
   );

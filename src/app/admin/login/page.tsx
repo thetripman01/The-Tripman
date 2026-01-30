@@ -29,10 +29,15 @@ export default function AdminLoginPage() {
       if (response.ok) {
         router.push("/admin");
         router.refresh();
-      } else if (response.status === 401) {
-        setError("Invalid email or password");
       } else {
-        setError("Authentication failed. Please try again.");
+        const data = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        if (response.status === 401) {
+          setError(data?.error || "Invalid email or password");
+        } else {
+          setError(data?.error || "Authentication failed. Please try again.");
+        }
       }
     } catch (err) {
       setError("An error occurred. Please try again.");

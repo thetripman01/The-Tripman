@@ -25,6 +25,8 @@ Environment: Production, Preview, Development
 
 **How to get**: From Neon Dashboard → Connection string
 
+**Tip**: We also provide a copy/paste template at `env.local.example` and a full walkthrough in `docs/setup/08_ENV_AND_API_SETUP.md`.
+
 ---
 
 ### Stripe Configuration
@@ -118,6 +120,12 @@ Environment: Production, Preview, Development
 ```
 
 **Security**: Use a strong password! Consider using a password manager.
+
+**Important**: Changing `ADMIN_EMAIL` / `ADMIN_PASSWORD` requires re-running the seed so the DB row is updated:
+
+```bash
+npm run db:seed
+```
 
 ---
 
@@ -234,6 +242,28 @@ Environment: Production, Preview
 ```
 
 ---
+
+### WhatsApp/Phone (Optional, used in UI)
+
+```env
+Variable Name: NEXT_PUBLIC_WHATSAPP_NUMBER
+Value: 14161234567
+Environment: Production, Preview, Development
+```
+
+```env
+Variable Name: NEXT_PUBLIC_PHONE_NUMBER
+Value: +14161234567
+Environment: Production, Preview, Development
+```
+
+### Tracking update secret (Recommended)
+
+```env
+Variable Name: TRACKING_API_SECRET
+Value: generate-a-long-random-string
+Environment: Production, Preview, Development
+```
 
 ## Step 4: Environment-Specific Configuration
 

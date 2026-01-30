@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Green background (website tone) -->
+  <rect width="512" height="512" fill="#16C784"/>
+
+  <!-- Clean futuristic T -->
+  <path
+    d="
+      M140 150
+      H372
+      L340 190
+      H290
+      V360
+      L256 400
+      L222 360
+      V190
+      H172
+      Z
+    "
+    fill="#ffffff"
+  />
+
+  <!-- Speed cut details (inspired, subtle) -->
+  <rect x="300" y="165" width="42" height="6" fill="#ffffff"/>
+  <rect x="290" y="182" width="28" height="6" fill="#ffffff"/>
+</svg>

@@ -12,11 +12,10 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "The Tripman - Premium Transportation & Experience Services",
+  title: "The Tripman Experience",
   description:
-    "From birthday surprises to airport pickups, we make every journey special. Book your premium ride experience with The Tripman today.",
-  keywords:
-    "transportation, ride service, birthday surprise, airport pickup, city tour, luxury ride, Toronto",
+    "Ever watched a Tripman video and thought “Damn… I wish that was me”? Now it can be. Book your Tripman Experience.",
+  keywords: "The Tripman, Tripman Experience, car karaoke, Toronto, booking",
   authors: [{ name: "The Tripman" }],
   creator: "The Tripman",
   publisher: "The Tripman",
@@ -32,9 +31,8 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "The Tripman - Premium Transportation & Experience Services",
-    description:
-      "From birthday surprises to airport pickups, we make every journey special. Book your premium ride experience with The Tripman today.",
+    title: "The Tripman Experience",
+    description: "Join the ride. Feel the chaos. Live the moment.",
     url: "/",
     siteName: "The Tripman",
     images: [
@@ -50,9 +48,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "The Tripman - Premium Transportation & Experience Services",
-    description:
-      "From birthday surprises to airport pickups, we make every journey special. Book your premium ride experience with The Tripman today.",
+    title: "The Tripman Experience",
+    description: "Join the ride. Feel the chaos. Live the moment.",
     images: [
       "/api/og?title=The%20Tripman&description=Premium%20Transportation%20%26%20Experience%20Services",
     ],

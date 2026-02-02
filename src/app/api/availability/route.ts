@@ -61,6 +61,15 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Get availability blocks (vacation/unavailable times)
+    const blocks = await db.availabilityBlock.findMany({
+      where: {
+        startsAt: { lt: endOfDay },
+        endsAt: { gt: startOfDay },
+      },
+      orderBy: { startsAt: "asc" },
+    });
+
     // Generate all possible time slots
     const bufferMinutes = parseInt(process.env.BUFFER_MINUTES || "15");
     const allSlots = generateTimeSlots(
@@ -109,6 +118,17 @@ export async function GET(request: NextRequest) {
       );
 
       if (hasBookingConflict) {
+        return false;
+      }
+
+      // Check admin availability blocks
+      const hasBlockConflict = blocks.some((b) => {
+        const bStart = new Date(b.startsAt);
+        const bEnd = new Date(b.endsAt);
+        return slot < bEnd && slotEnd > bStart;
+      });
+
+      if (hasBlockConflict) {
         return false;
       }
 

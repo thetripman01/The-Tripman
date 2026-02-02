@@ -22,6 +22,9 @@ import {
   Shield,
 } from "lucide-react";
 import { FraudAlert } from "@/components/FraudAlert";
+import FullCalendar from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
 
 interface EventType {
   id: string;
@@ -53,6 +56,13 @@ interface Booking {
   };
 }
 
+interface AvailabilityBlock {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  reason: string | null;
+}
+
 export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
@@ -64,9 +74,12 @@ export default function AdminPage() {
     dateTo: "",
   });
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [activeTab, setActiveTab] = useState<"bookings" | "fraud">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "calendar" | "fraud">(
+    "bookings",
+  );
   const [cancelReason, setCancelReason] = useState("");
   const [refundRequested, setRefundRequested] = useState(false);
+  const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -103,6 +116,27 @@ export default function AdminPage() {
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
+
+  const fetchBlocks = useCallback(async (fromISO: string, toISO: string) => {
+    try {
+      const params = new URLSearchParams();
+      params.set("from", fromISO);
+      params.set("to", toISO);
+      const res = await fetch(`/api/admin/availability-blocks?${params}`, {
+        credentials: "include",
+      });
+      if (res.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+      if (res.ok) {
+        const data = (await res.json()) as AvailabilityBlock[];
+        setBlocks(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch availability blocks:", e);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchEventTypes = async () => {
@@ -243,6 +277,17 @@ export default function AdminPage() {
                 Bookings
               </button>
               <button
+                onClick={() => setActiveTab("calendar")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "calendar"
+                    ? "border-green-500 text-green-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Clock className="w-4 h-4 inline mr-2" />
+                Calendar
+              </button>
+              <button
                 onClick={() => setActiveTab("fraud")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "fraud"
@@ -262,6 +307,143 @@ export default function AdminPage() {
           <div className="mb-6">
             <FraudAlert />
           </div>
+        )}
+
+        {/* Calendar Tab */}
+        {activeTab === "calendar" && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Availability Calendar</CardTitle>
+              <p className="text-sm text-gray-600">
+                Click & drag to create an unavailable block. Click a block to
+                delete it.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg overflow-hidden">
+                <FullCalendar
+                  plugins={[timeGridPlugin, interactionPlugin]}
+                  initialView="timeGridWeek"
+                  height="auto"
+                  nowIndicator
+                  selectable
+                  selectMirror
+                  select={async (info) => {
+                    const reason =
+                      window.prompt(
+                        "Reason (optional) for unavailable time:",
+                      ) ?? "";
+                    try {
+                      const res = await fetch(
+                        "/api/admin/availability-blocks",
+                        {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                          body: JSON.stringify({
+                            startsAt: info.start.toISOString(),
+                            endsAt: info.end.toISOString(),
+                            reason: reason || undefined,
+                          }),
+                        },
+                      );
+                      if (res.status === 401) {
+                        window.location.href = "/admin/login";
+                        return;
+                      }
+                      if (!res.ok) {
+                        alert("Failed to create block");
+                        return;
+                      }
+                      const view = info.view;
+                      fetchBlocks(
+                        view.activeStart.toISOString(),
+                        view.activeEnd.toISOString(),
+                      );
+                    } catch (e) {
+                      console.error(e);
+                      alert("Failed to create block");
+                    }
+                  }}
+                  datesSet={(arg) => {
+                    // Also refetch bookings for the visible range to keep calendar accurate.
+                    const from = arg.startStr.slice(0, 10);
+                    const to = arg.endStr.slice(0, 10);
+                    setFilters((prev) => ({
+                      ...prev,
+                      dateFrom: from,
+                      dateTo: to,
+                    }));
+                    fetchBlocks(arg.start.toISOString(), arg.end.toISOString());
+                  }}
+                  events={[
+                    // Bookings
+                    ...bookings.map((b) => ({
+                      id: b.id,
+                      title: `${b.eventType.name} • ${b.fullName}`,
+                      start: b.startsAt,
+                      end: b.endsAt,
+                      backgroundColor:
+                        b.status === "CANCELED"
+                          ? "#ef4444"
+                          : b.status === "CONFIRMED"
+                            ? "#16a34a"
+                            : "#f59e0b",
+                      borderColor:
+                        b.status === "CANCELED"
+                          ? "#ef4444"
+                          : b.status === "CONFIRMED"
+                            ? "#16a34a"
+                            : "#f59e0b",
+                    })),
+                    // Blocks (as background)
+                    ...blocks.map((blk) => ({
+                      id: `blk-${blk.id}`,
+                      title: blk.reason
+                        ? `Unavailable: ${blk.reason}`
+                        : "Unavailable",
+                      start: blk.startsAt,
+                      end: blk.endsAt,
+                      display: "background" as const,
+                      backgroundColor: "rgba(239, 68, 68, 0.25)",
+                    })),
+                  ]}
+                  eventClick={async (clickInfo) => {
+                    const id = clickInfo.event.id;
+                    if (!id.startsWith("blk-")) return;
+                    const blockId = id.replace("blk-", "");
+                    const ok = window.confirm("Delete this unavailable block?");
+                    if (!ok) return;
+                    try {
+                      const res = await fetch(
+                        `/api/admin/availability-blocks/${blockId}`,
+                        {
+                          method: "DELETE",
+                          credentials: "include",
+                        },
+                      );
+                      if (res.status === 401) {
+                        window.location.href = "/admin/login";
+                        return;
+                      }
+                      if (!res.ok) {
+                        alert("Failed to delete block");
+                        return;
+                      }
+                      const cal = clickInfo.view.calendar;
+                      fetchBlocks(
+                        cal.view.activeStart.toISOString(),
+                        cal.view.activeEnd.toISOString(),
+                      );
+                    } catch (e) {
+                      console.error(e);
+                      alert("Failed to delete block");
+                    }
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Bookings Tab */}

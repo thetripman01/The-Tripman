@@ -43,7 +43,22 @@ export async function GET(request: NextRequest) {
 
     const bookings = await db.booking.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        pickup: true,
+        peopleCount: true,
+        notes: true,
+        startsAt: true,
+        endsAt: true,
+        timezone: true,
+        status: true,
+        paymentStatus: true,
+        amountPaid: true,
+        paymentIntentId: true,
+        createdAt: true,
         eventType: {
           select: {
             name: true,

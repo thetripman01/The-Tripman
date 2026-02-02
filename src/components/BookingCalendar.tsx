@@ -27,17 +27,7 @@ export function BookingCalendar({
   eventType,
   onSlotSelect,
 }: BookingCalendarProps) {
-  const tzValues = useMemo(
-    () =>
-      new Set([
-        "America/Toronto",
-        "America/Vancouver",
-        "America/New_York",
-        "America/Chicago",
-        "America/Los_Angeles",
-      ]),
-    [],
-  );
+  const torontoTz = "America/Toronto";
   const [availableSlots, setAvailableSlots] = useState<
     Array<{ time: string; datetime: string }>
   >([]);
@@ -45,31 +35,13 @@ export function BookingCalendar({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDatetime, setSelectedDatetime] = useState<string | null>(null);
   const [timeFormat, setTimeFormat] = useState<"12h" | "24h">("12h");
-  const [timeZone, setTimeZone] = useState<string>(
-    Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Toronto",
-  );
+  const [timeZone] = useState<string>(torontoTz);
 
   useEffect(() => {
     trackCalendarView();
   }, []);
 
-  // If user's detected timezone isn't in our short list, fall back to Toronto.
-  useEffect(() => {
-    if (!tzValues.has(timeZone)) setTimeZone("America/Toronto");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const timeZones = useMemo(
-    () =>
-      [
-        { value: "America/Toronto", label: "Toronto (ET) — Canada" },
-        { value: "America/Vancouver", label: "Vancouver (PT) — Canada" },
-        { value: "America/New_York", label: "New York (ET) — USA" },
-        { value: "America/Chicago", label: "Chicago (CT) — USA" },
-        { value: "America/Los_Angeles", label: "Los Angeles (PT) — USA" },
-      ] as const,
-    [],
-  );
+  const tzLabel = useMemo(() => "Toronto (ET) — Canada", []);
 
   const fetchAvailableSlots = async (date: Date) => {
     setLoading(true);
@@ -113,6 +85,19 @@ export function BookingCalendar({
     }).format(date);
   };
 
+  const formatRange = (datetime: string) => {
+    const start = new Date(datetime);
+    const end = new Date(start);
+    end.setMinutes(end.getMinutes() + eventType.durationMin);
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: timeFormat === "12h",
+    });
+    return `${fmt.format(start)} – ${fmt.format(end)}`;
+  };
+
   const selectedDateLabel = selectedDate
     ? new Intl.DateTimeFormat("en-US", {
         timeZone,
@@ -148,19 +133,11 @@ export function BookingCalendar({
                 <Globe className="w-4 h-4 text-green-700" />
                 Time zone
               </div>
-              <select
-                value={timeZone}
-                onChange={(e) => setTimeZone(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-              >
-                {timeZones.map((tz) => (
-                  <option key={tz.value} value={tz.value}>
-                    {tz.label}
-                  </option>
-                ))}
-              </select>
+              <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                {tzLabel}
+              </div>
               <p className="text-xs text-gray-500 mt-2">
-                Times below are shown in your selected time zone.
+                Times below are shown in Toronto time.
               </p>
             </div>
           </div>
@@ -257,7 +234,7 @@ export function BookingCalendar({
                         }`}
                       >
                         <div className="font-semibold text-gray-900">
-                          {formatSlot(slot.datetime)}
+                          {formatRange(slot.datetime)}
                         </div>
                         <div className="text-xs text-gray-500">{timeZone}</div>
                       </button>

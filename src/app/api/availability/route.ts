@@ -89,22 +89,17 @@ function intervalsFromRulesForDate(
     endDate: Date | null;
   }>,
 ) {
+  // Service window is "this date's schedule", and can span into next day for overnight rules.
   const d0 = startOfDayUtc(dateYmd, timeZone);
-  const d1 = endOfDayUtc(dateYmd, timeZone);
   const dow = dowInTz(d0, timeZone);
-  const prevYmd = addDaysYmd(dateYmd, -1);
-  const prevDow = dowInTz(startOfDayUtc(prevYmd, timeZone), timeZone);
+  const nextYmd = addDaysYmd(dateYmd, 1);
 
   const base: Interval[] = [];
   const subtract: Interval[] = [];
 
   const add = (isAvailable: boolean, iv: Interval) => {
-    const clipped: Interval = {
-      start: new Date(Math.max(iv.start.getTime(), d0.getTime())),
-      end: new Date(Math.min(iv.end.getTime(), d1.getTime())),
-    };
-    if (clipped.end <= clipped.start) return;
-    (isAvailable ? base : subtract).push(clipped);
+    if (iv.end <= iv.start) return;
+    (isAvailable ? base : subtract).push(iv);
   };
 
   for (const r of rules) {
@@ -116,15 +111,8 @@ function intervalsFromRulesForDate(
     if (r.daysOfWeek.includes(dow)) {
       const ivStart = fromZonedTime(`${dateYmd}T${r.startTime}:00`, timeZone);
       const ivEnd = overnight
-        ? endOfDayUtc(dateYmd, timeZone)
+        ? fromZonedTime(`${nextYmd}T${r.endTime}:00`, timeZone)
         : fromZonedTime(`${dateYmd}T${r.endTime}:00`, timeZone);
-      add(r.isAvailable, { start: ivStart, end: ivEnd });
-    }
-
-    // Overflow portion: if previous day had overnight rule, add early-morning window on this day
-    if (overnight && r.daysOfWeek.includes(prevDow)) {
-      const ivStart = startOfDayUtc(dateYmd, timeZone);
-      const ivEnd = fromZonedTime(`${dateYmd}T${r.endTime}:00`, timeZone);
       add(r.isAvailable, { start: ivStart, end: ivEnd });
     }
   }
@@ -138,7 +126,7 @@ function intervalsFromRulesForDate(
 function generateSlotsFromIntervals(
   intervals: Interval[],
   durationMinutes: number,
-  bufferMinutes: number,
+  stepMinutes: number,
 ) {
   const slots: Date[] = [];
   for (const iv of intervals) {
@@ -146,7 +134,7 @@ function generateSlotsFromIntervals(
     while (cur < iv.end) {
       const slotEnd = new Date(cur.getTime() + durationMinutes * 60000);
       if (slotEnd <= iv.end) slots.push(new Date(cur));
-      cur = new Date(cur.getTime() + (durationMinutes + bufferMinutes) * 60000);
+      cur = new Date(cur.getTime() + stepMinutes * 60000);
     }
   }
   return slots;
@@ -181,13 +169,14 @@ export async function GET(request: NextRequest) {
     const timeZone = process.env.BUSINESS_TIMEZONE || "America/Toronto";
     const dateYmd = date; // request is YYYY-MM-DD
     const startOfDay = startOfDayUtc(dateYmd, timeZone);
-    const endOfDay = endOfDayUtc(dateYmd, timeZone);
+    // window end: we may need into next day for overnight schedules
+    const endOfWindow = endOfDayUtc(addDaysYmd(dateYmd, 1), timeZone);
     const prevStart = startOfDayUtc(addDaysYmd(dateYmd, -1), timeZone);
 
     // Get Google Calendar busy times
     let busyTimes: Array<{ start: Date; end: Date }> = [];
     try {
-      const googleBusyTimes = await getFreeBusyTimes(startOfDay, endOfDay);
+      const googleBusyTimes = await getFreeBusyTimes(startOfDay, endOfWindow);
       busyTimes = googleBusyTimes.map((period) => ({
         start: new Date(period.start || ""),
         end: new Date(period.end || ""),
@@ -202,7 +191,7 @@ export async function GET(request: NextRequest) {
         eventTypeId: eventType.id,
         startsAt: {
           gte: startOfDay,
-          lte: endOfDay,
+          lte: endOfWindow,
         },
         status: {
           not: "CANCELED",
@@ -213,20 +202,26 @@ export async function GET(request: NextRequest) {
     // Get availability blocks (vacation/unavailable times)
     const blocks = await db.availabilityBlock.findMany({
       where: {
-        startsAt: { lt: endOfDay },
+        startsAt: { lt: endOfWindow },
         endsAt: { gt: startOfDay },
       },
       orderBy: { startsAt: "asc" },
     });
 
     // Generate all possible time slots
-    const bufferMinutes = parseInt(process.env.BUFFER_MINUTES || "15");
+    // Slot interval (start-time spacing). For Tripman: hourly starts.
+    const slotIntervalMinutes = parseInt(
+      process.env.SLOT_INTERVAL_MINUTES || "60",
+    );
+    const travelBufferMinutes = parseInt(
+      process.env.TRAVEL_BUFFER_MINUTES || "60",
+    );
     // Recurring availability rules (optional). If any "available" rules exist for the day,
     // we use them. Otherwise we fall back to default working hours.
     const rules = await db.availabilityRule.findMany({
       where: {
         AND: [
-          { OR: [{ startDate: null }, { startDate: { lte: endOfDay } }] },
+          { OR: [{ startDate: null }, { startDate: { lte: endOfWindow } }] },
           { OR: [{ endDate: null }, { endDate: { gte: prevStart } }] },
         ],
       },
@@ -276,7 +271,7 @@ export async function GET(request: NextRequest) {
     const allSlots = generateSlotsFromIntervals(
       usableIntervals,
       eventType.durationMin,
-      bufferMinutes,
+      slotIntervalMinutes,
     );
 
     // Filter out unavailable slots
@@ -300,8 +295,12 @@ export async function GET(request: NextRequest) {
 
       // Check Google Calendar conflicts
       const hasGoogleConflict = busyTimes.some((busy) => {
-        const busyStart = new Date(busy.start);
-        const busyEnd = new Date(busy.end);
+        const busyStart = new Date(
+          busy.start.getTime() - travelBufferMinutes * 60000,
+        );
+        const busyEnd = new Date(
+          busy.end.getTime() + travelBufferMinutes * 60000,
+        );
         return slot < busyEnd && slotEnd > busyStart;
       });
 
@@ -312,8 +311,12 @@ export async function GET(request: NextRequest) {
       // Check existing booking conflicts
       const hasBookingConflict = existingBookings.some(
         (booking: { startsAt: Date | string; endsAt: Date | string }) => {
-          const bookingStart = new Date(booking.startsAt);
-          const bookingEnd = new Date(booking.endsAt);
+          const bookingStart = new Date(
+            new Date(booking.startsAt).getTime() - travelBufferMinutes * 60000,
+          );
+          const bookingEnd = new Date(
+            new Date(booking.endsAt).getTime() + travelBufferMinutes * 60000,
+          );
           return slot < bookingEnd && slotEnd > bookingStart;
         },
       );

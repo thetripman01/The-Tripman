@@ -65,6 +65,35 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Prevent blocking over already-booked (non-canceled) rides.
+  const conflicts = await db.booking.findMany({
+    where: {
+      status: { not: "CANCELED" },
+      startsAt: { lt: end },
+      endsAt: { gt: start },
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      startsAt: true,
+      endsAt: true,
+      eventType: { select: { name: true } },
+    },
+    take: 5,
+  });
+
+  if (conflicts.length > 0) {
+    return NextResponse.json(
+      {
+        error:
+          "This time overlaps existing bookings. Cancel the booking(s) first, then block the time.",
+        conflicts,
+      },
+      { status: 409 },
+    );
+  }
+
   const block = await availabilityBlock.create({
     data: {
       startsAt: start,

@@ -48,6 +48,19 @@ export async function POST(request: NextRequest) {
     console.error("Admin login error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
 
+    if (
+      typeof message === "string" &&
+      message.includes("Missing ADMIN_SESSION_SECRET")
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Server is missing ADMIN_SESSION_SECRET. Add it in Vercel Environment Variables (Production) and redeploy.",
+        },
+        { status: 500 },
+      );
+    }
+
     // Prisma throws a detailed init error when DATABASE_URL is missing/invalid.
     const looksLikeDbConfig =
       typeof message === "string" &&

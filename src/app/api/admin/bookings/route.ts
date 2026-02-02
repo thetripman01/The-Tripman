@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const eventType = searchParams.get("eventType");
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");
+    const includePast = searchParams.get("includePast") === "1";
 
     // Build where clause
     const where: Record<string, unknown> = {};
@@ -33,6 +34,11 @@ export async function GET(request: NextRequest) {
           dateTo + "T23:59:59.999Z",
         );
       }
+    } else if (!includePast) {
+      // Default: hide past bookings in the admin dashboard to keep it clean.
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      where.startsAt = { gte: startOfToday };
     }
 
     if (eventType) {

@@ -12,7 +12,8 @@ import {
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
-  const phoneNumber = process.env.NEXT_PUBLIC_PHONE_NUMBER;
+  const phoneNumber =
+    process.env.NEXT_PUBLIC_PHONE_NUMBER || "+1 (647) 459-4188";
 
   return (
     <footer className="bg-gray-900 text-white">

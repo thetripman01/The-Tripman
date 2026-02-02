@@ -36,6 +36,7 @@ const faqs = [
 export function FAQ() {
   const [openItems, setOpenItems] = useState<number[]>([]);
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+  const waDigits = (whatsappNumber || "16474594188").replace(/\D/g, "");
 
   const toggleItem = (index: number) => {
     setOpenItems((prev) =>
@@ -90,12 +91,12 @@ export function FAQ() {
             Still have questions? We&apos;re here to help!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {whatsappNumber && (
+            {(whatsappNumber || waDigits) && (
               <Button
                 onClick={() => {
                   const message =
                     "Hi! I have a question about The Tripman. Can you help me?";
-                  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+                  const whatsappUrl = `https://wa.me/${waDigits}?text=${encodeURIComponent(
                     message,
                   )}`;
                   window.open(whatsappUrl, "_blank");

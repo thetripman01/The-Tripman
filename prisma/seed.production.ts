@@ -74,6 +74,22 @@ async function main() {
     console.log(`✅ Event type created: ${created.name}`);
   }
 
+  // Default availability (only if none exists): every day 7pm → 3am
+  const existingRules = await prisma.availabilityRule.count();
+  if (existingRules === 0) {
+    await prisma.availabilityRule.create({
+      data: {
+        timezone: process.env.BUSINESS_TIMEZONE || "America/Toronto",
+        daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+        startTime: "19:00",
+        endTime: "03:00",
+        isAvailable: true,
+        note: "Default Tripman schedule (seeded)",
+      },
+    });
+    console.log("✅ Created default availability rule: daily 7pm → 3am");
+  }
+
   // Create sample bookings for testing (optional)
   if (process.env.NODE_ENV === "development") {
     const sampleBookings = [

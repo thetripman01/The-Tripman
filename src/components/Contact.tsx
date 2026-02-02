@@ -17,7 +17,8 @@ export function Contact() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const phoneNumber = process.env.NEXT_PUBLIC_PHONE_NUMBER;
+  const phoneNumber =
+    process.env.NEXT_PUBLIC_PHONE_NUMBER || "+1 (647) 459-4188";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -94,16 +94,17 @@ export default function AdminPage() {
   const [cancelReason, setCancelReason] = useState("");
   const [refundRequested, setRefundRequested] = useState(false);
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
+  const [showPastBookings, setShowPastBookings] = useState(false);
   const [rules, setRules] = useState<AvailabilityRule[]>([]);
   const [ruleForm, setRuleForm] = useState({
     mode: "available" as "available" | "unavailable",
     startDate: "",
     endDate: "",
-    startTime: "17:00",
+    startTime: "19:00",
     endTime: "03:00",
     timezone: "America/Toronto",
     note: "",
-    daysOfWeek: [1, 2, 3, 4, 5] as number[],
+    daysOfWeek: [0, 1, 2, 3, 4, 5, 6] as number[],
   });
 
   const days = useMemo(
@@ -128,6 +129,7 @@ export default function AdminPage() {
         params.append("eventType", filters.eventType);
       if (filters.dateFrom) params.append("dateFrom", filters.dateFrom);
       if (filters.dateTo) params.append("dateTo", filters.dateTo);
+      if (showPastBookings) params.append("includePast", "1");
 
       const response = await fetch(`/api/admin/bookings?${params}`, {
         credentials: "include",
@@ -149,7 +151,13 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters.status, filters.eventType, filters.dateFrom, filters.dateTo]);
+  }, [
+    filters.status,
+    filters.eventType,
+    filters.dateFrom,
+    filters.dateTo,
+    showPastBookings,
+  ]);
 
   useEffect(() => {
     fetchBookings();
@@ -709,6 +717,15 @@ export default function AdminPage() {
                           window.location.href = "/admin/login";
                           return;
                         }
+                        if (res.status === 409) {
+                          const data = (await res.json().catch(() => null)) as {
+                            error?: string;
+                          } | null;
+                          toast.error(
+                            data?.error || "Overlaps existing bookings.",
+                          );
+                          return;
+                        }
                         if (!res.ok) {
                           toast.error("Failed to create block.");
                           return;
@@ -803,6 +820,16 @@ export default function AdminPage() {
                             }),
                           },
                         );
+                        if (res.status === 409) {
+                          const data = (await res.json().catch(() => null)) as {
+                            error?: string;
+                          } | null;
+                          toast.error(
+                            data?.error || "Overlaps existing bookings.",
+                          );
+                          arg.revert();
+                          return;
+                        }
                         if (!res.ok) throw new Error("patch failed");
                         toast.success("Block updated.");
                       } catch {
@@ -827,6 +854,16 @@ export default function AdminPage() {
                             }),
                           },
                         );
+                        if (res.status === 409) {
+                          const data = (await res.json().catch(() => null)) as {
+                            error?: string;
+                          } | null;
+                          toast.error(
+                            data?.error || "Overlaps existing bookings.",
+                          );
+                          arg.revert();
+                          return;
+                        }
                         if (!res.ok) throw new Error("patch failed");
                         toast.success("Block updated.");
                       } catch {
@@ -939,7 +976,18 @@ export default function AdminPage() {
             {/* Filters */}
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Filters</CardTitle>
+                <CardTitle className="flex items-center justify-between gap-4">
+                  <span>Filters</span>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={showPastBookings}
+                      onChange={(e) => setShowPastBookings(e.target.checked)}
+                      className="accent-green-600"
+                    />
+                    Show past bookings
+                  </label>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

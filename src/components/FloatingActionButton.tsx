@@ -7,22 +7,19 @@ export function FloatingActionButton() {
   const [isExpanded, setIsExpanded] = useState(false);
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
   const phoneNumber = process.env.NEXT_PUBLIC_PHONE_NUMBER;
+  const fallbackDisplayPhone = "+1 (647) 459-4188";
+  const fallbackWhatsapp = "16474594188";
+
+  const waDigits = (whatsappNumber || fallbackWhatsapp).replace(/\D/g, "");
+  const telDisplay = phoneNumber || fallbackDisplayPhone;
 
   const handleCall = () => {
-    if (!phoneNumber) {
-      alert("Phone number will be available soon!");
-      return;
-    }
-    window.open(`tel:${phoneNumber}`, "_self");
+    window.open(`tel:${telDisplay}`, "_self");
   };
 
   const handleWhatsApp = () => {
-    if (!whatsappNumber) {
-      alert("WhatsApp will be available soon!");
-      return;
-    }
     const message = encodeURIComponent("Hi! I'd like to book a Tripman ride.");
-    window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank");
+    window.open(`https://wa.me/${waDigits}?text=${message}`, "_blank");
   };
 
   const handleBooking = () => {

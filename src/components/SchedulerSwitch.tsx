@@ -30,7 +30,9 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
     string | number | boolean
   > | null>(null);
 
-  const schedulerMode = process.env.NEXT_PUBLIC_SCHEDULER_MODE || "embed";
+  // Default to custom (DB-driven) scheduler so production doesn't silently fall back
+  // to embed mode when env vars are missing.
+  const schedulerMode = process.env.NEXT_PUBLIC_SCHEDULER_MODE || "custom";
 
   if (!selectedEvent) {
     // Keep an anchor in the DOM for smooth scrolling, without showing an empty/duplicated section.

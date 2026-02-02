@@ -20,6 +20,7 @@ import {
   XCircle,
   Mail,
   Shield,
+  Settings,
 } from "lucide-react";
 import { FraudAlert } from "@/components/FraudAlert";
 import FullCalendar from "@fullcalendar/react";
@@ -88,9 +89,9 @@ export default function AdminPage() {
     dateTo: "",
   });
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [activeTab, setActiveTab] = useState<"bookings" | "calendar" | "fraud">(
-    "bookings",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "bookings" | "calendar" | "fraud" | "settings"
+  >("bookings");
   const [cancelReason, setCancelReason] = useState("");
   const [refundRequested, setRefundRequested] = useState(false);
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
@@ -106,6 +107,12 @@ export default function AdminPage() {
     note: "",
     daysOfWeek: [0, 1, 2, 3, 4, 5, 6] as number[],
   });
+
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [savingAccount, setSavingAccount] = useState(false);
 
   const days = useMemo(
     () => [
@@ -205,6 +212,24 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === "calendar") fetchRules();
   }, [activeTab, fetchRules]);
+
+  const fetchAccount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/account", { credentials: "include" });
+      if (res.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+      const data = (await res.json()) as { admin?: { email?: string } | null };
+      setAccountEmail(data.admin?.email || null);
+    } catch (e) {
+      console.error("Failed to fetch admin account:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "settings") fetchAccount();
+  }, [activeTab, fetchAccount]);
 
   useEffect(() => {
     const fetchEventTypes = async () => {
@@ -366,6 +391,17 @@ export default function AdminPage() {
                 <Shield className="w-4 h-4 inline mr-2" />
                 Fraud Detection
               </button>
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "settings"
+                    ? "border-green-500 text-green-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Settings className="w-4 h-4 inline mr-2" />
+                Settings
+              </button>
             </nav>
           </div>
         </div>
@@ -375,6 +411,141 @@ export default function AdminPage() {
           <div className="mb-6">
             <FraudAlert />
           </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === "settings" && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Admin Settings</CardTitle>
+              <p className="text-sm text-gray-600">
+                Change admin email/password securely (requires current
+                password).
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="rounded-lg border p-4">
+                <div className="text-sm text-gray-600">Current admin email</div>
+                <div className="font-semibold text-gray-900">
+                  {accountEmail || "—"}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Current password *
+                  </label>
+                  <Input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Required to save changes"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    New email (optional)
+                  </label>
+                  <Input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="admin@thetripman.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    New password (optional)
+                  </label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Min 8 characters"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  disabled={savingAccount}
+                  onClick={async () => {
+                    if (!currentPassword) {
+                      toast.error("Current password is required.");
+                      return;
+                    }
+                    if (!newEmail && !newPassword) {
+                      toast.error("Enter a new email and/or new password.");
+                      return;
+                    }
+                    setSavingAccount(true);
+                    try {
+                      const res = await fetch("/api/admin/account", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({
+                          currentPassword,
+                          newEmail: newEmail || undefined,
+                          newPassword: newPassword || undefined,
+                        }),
+                      });
+                      const data = (await res.json().catch(() => null)) as {
+                        ok?: boolean;
+                        error?: string;
+                        admin?: { email?: string };
+                      } | null;
+                      if (res.status === 401) {
+                        toast.error(
+                          data?.error || "Current password is incorrect.",
+                        );
+                        return;
+                      }
+                      if (!res.ok) {
+                        toast.error(
+                          data?.error || "Failed to update admin credentials.",
+                        );
+                        return;
+                      }
+                      toast.success("Admin credentials updated.");
+                      setCurrentPassword("");
+                      setNewEmail("");
+                      setNewPassword("");
+                      setAccountEmail(data?.admin?.email || accountEmail);
+                    } catch (e) {
+                      console.error(e);
+                      toast.error("Failed to update admin credentials.");
+                    } finally {
+                      setSavingAccount(false);
+                    }
+                  }}
+                >
+                  {savingAccount ? "Saving..." : "Save Changes"}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  disabled={savingAccount}
+                  onClick={() => {
+                    setCurrentPassword("");
+                    setNewEmail("");
+                    setNewPassword("");
+                  }}
+                >
+                  Clear
+                </Button>
+              </div>
+
+              <p className="text-xs text-gray-500">
+                Note: Vercel env vars <code>ADMIN_EMAIL</code>/
+                <code>ADMIN_PASSWORD</code> are used for seeding. After you
+                change credentials here, you don’t need to change those unless
+                you plan to re-seed.
+              </p>
+            </CardContent>
+          </Card>
         )}
 
         {/* Calendar Tab */}

@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import {
-  getFreeBusyTimes,
-  generateTimeSlots,
-  getWorkingHours,
-} from "@/lib/calendar";
+import { getFreeBusyTimes, getWorkingHours } from "@/lib/calendar";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 type Interval = { start: Date; end: Date };
 
@@ -13,16 +10,28 @@ function parseHHMM(value: string) {
   return { h, m };
 }
 
-function startOfDayLocal(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+function ymd(date: Date) {
+  return date.toISOString().slice(0, 10);
 }
 
-function endOfDayLocal(d: Date) {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
+function addDaysYmd(ymdStr: string, days: number) {
+  const d = new Date(ymdStr + "T12:00:00.000Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return ymd(d);
+}
+
+function startOfDayUtc(dateYmd: string, timeZone: string) {
+  return fromZonedTime(`${dateYmd}T00:00:00.000`, timeZone);
+}
+
+function endOfDayUtc(dateYmd: string, timeZone: string) {
+  return fromZonedTime(`${dateYmd}T23:59:59.999`, timeZone);
+}
+
+function dowInTz(dateUtc: Date, timeZone: string) {
+  // ISO day-of-week: 1 (Mon) .. 7 (Sun)
+  const iso = parseInt(formatInTimeZone(dateUtc, timeZone, "i"), 10);
+  return iso === 7 ? 0 : iso; // 0 (Sun) .. 6 (Sat)
 }
 
 function mergeIntervals(intervals: Interval[]): Interval[] {
@@ -69,7 +78,8 @@ function subtractIntervals(base: Interval[], blocks: Interval[]): Interval[] {
 }
 
 function intervalsFromRulesForDate(
-  date: Date,
+  dateYmd: string,
+  timeZone: string,
   rules: Array<{
     daysOfWeek: number[];
     startTime: string;
@@ -79,12 +89,11 @@ function intervalsFromRulesForDate(
     endDate: Date | null;
   }>,
 ) {
-  const d0 = startOfDayLocal(date);
-  const d1 = endOfDayLocal(date);
-  const dow = d0.getDay(); // 0-6, Sun-Sat
-  const prev = new Date(d0);
-  prev.setDate(prev.getDate() - 1);
-  const prevDow = prev.getDay();
+  const d0 = startOfDayUtc(dateYmd, timeZone);
+  const d1 = endOfDayUtc(dateYmd, timeZone);
+  const dow = dowInTz(d0, timeZone);
+  const prevYmd = addDaysYmd(dateYmd, -1);
+  const prevDow = dowInTz(startOfDayUtc(prevYmd, timeZone), timeZone);
 
   const base: Interval[] = [];
   const subtract: Interval[] = [];
@@ -105,25 +114,17 @@ function intervalsFromRulesForDate(
 
     // Same-day portion
     if (r.daysOfWeek.includes(dow)) {
-      const ivStart = new Date(d0);
-      ivStart.setHours(start.h, start.m, 0, 0);
-
-      const ivEnd = new Date(d0);
-      if (overnight) {
-        // until end of day (overflow handled by previous-day rule on next date)
-        ivEnd.setHours(23, 59, 59, 999);
-      } else {
-        ivEnd.setHours(end.h, end.m, 0, 0);
-      }
+      const ivStart = fromZonedTime(`${dateYmd}T${r.startTime}:00`, timeZone);
+      const ivEnd = overnight
+        ? endOfDayUtc(dateYmd, timeZone)
+        : fromZonedTime(`${dateYmd}T${r.endTime}:00`, timeZone);
       add(r.isAvailable, { start: ivStart, end: ivEnd });
     }
 
     // Overflow portion: if previous day had overnight rule, add early-morning window on this day
     if (overnight && r.daysOfWeek.includes(prevDow)) {
-      const ivStart = new Date(d0);
-      ivStart.setHours(0, 0, 0, 0);
-      const ivEnd = new Date(d0);
-      ivEnd.setHours(end.h, end.m, 0, 0);
+      const ivStart = startOfDayUtc(dateYmd, timeZone);
+      const ivEnd = fromZonedTime(`${dateYmd}T${r.endTime}:00`, timeZone);
       add(r.isAvailable, { start: ivStart, end: ivEnd });
     }
   }
@@ -177,11 +178,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse date and create time range
-    const selectedDate = new Date(date);
-    const startOfDay = startOfDayLocal(selectedDate);
-    const endOfDay = endOfDayLocal(selectedDate);
-    const prevStart = new Date(startOfDay);
-    prevStart.setDate(prevStart.getDate() - 1);
+    const timeZone = process.env.BUSINESS_TIMEZONE || "America/Toronto";
+    const dateYmd = date; // request is YYYY-MM-DD
+    const startOfDay = startOfDayUtc(dateYmd, timeZone);
+    const endOfDay = endOfDayUtc(dateYmd, timeZone);
+    const prevStart = startOfDayUtc(addDaysYmd(dateYmd, -1), timeZone);
 
     // Get Google Calendar busy times
     let busyTimes: Array<{ start: Date; end: Date }> = [];
@@ -236,7 +237,8 @@ export async function GET(request: NextRequest) {
     let subtractIntervalsList: Interval[] = [];
 
     const applicable = intervalsFromRulesForDate(
-      selectedDate,
+      dateYmd,
+      timeZone,
       rules.map((r) => ({
         daysOfWeek: r.daysOfWeek,
         startTime: r.startTime,
@@ -252,13 +254,17 @@ export async function GET(request: NextRequest) {
     const hasAnyAvailableRule = baseIntervals.length > 0;
     if (!hasAnyAvailableRule) {
       const wh = getWorkingHours();
-      if (!wh.daysOfWeek.includes(startOfDay.getDay())) {
+      if (!wh.daysOfWeek.includes(dowInTz(startOfDay, timeZone))) {
         return NextResponse.json([]);
       }
-      const ivStart = new Date(startOfDay);
-      ivStart.setHours(wh.start, 0, 0, 0);
-      const ivEnd = new Date(startOfDay);
-      ivEnd.setHours(wh.end, 0, 0, 0);
+      const ivStart = fromZonedTime(
+        `${dateYmd}T${String(wh.start).padStart(2, "0")}:00:00`,
+        timeZone,
+      );
+      const ivEnd = fromZonedTime(
+        `${dateYmd}T${String(wh.end).padStart(2, "0")}:00:00`,
+        timeZone,
+      );
       baseIntervals = [{ start: ivStart, end: ivEnd }];
     }
 
@@ -332,7 +338,8 @@ export async function GET(request: NextRequest) {
 
     // Format slots for response
     const formattedSlots = availableSlots.map((slot) => ({
-      time: slot.toTimeString().slice(0, 5), // HH:MM format
+      // For debugging/UI convenience only; datetime is the true source of truth.
+      time: formatInTimeZone(slot, timeZone, "HH:mm"),
       datetime: slot.toISOString(),
     }));
 

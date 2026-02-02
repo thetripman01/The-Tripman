@@ -1,207 +1,270 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Calendar, Clock, Loader2 } from 'lucide-react'
-import FullCalendar from '@fullcalendar/react'
-import interactionPlugin from '@fullcalendar/interaction'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import { trackCalendarView } from '@/lib/analytics'
+import { useEffect, useMemo, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Calendar, Clock, Globe, Loader2 } from "lucide-react";
+import FullCalendar from "@fullcalendar/react";
+import interactionPlugin from "@fullcalendar/interaction";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import { trackCalendarView } from "@/lib/analytics";
 
 interface EventType {
-  id: string
-  slug: string
-  name: string
-  description: string | null
-  durationMin: number
-  priceCents: number | null
-  isActive: boolean
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  durationMin: number;
+  priceCents: number | null;
+  isActive: boolean;
 }
 
 interface BookingCalendarProps {
-  eventType: EventType
-  onSlotSelect: (slot: { startsAt: Date; endsAt: Date }) => void
+  eventType: EventType;
+  onSlotSelect: (slot: { startsAt: Date; endsAt: Date }) => void;
 }
 
-export function BookingCalendar({ eventType, onSlotSelect }: BookingCalendarProps) {
-  const [availableSlots, setAvailableSlots] = useState<Array<{ time: string; datetime: string }>>([])
-  const [loading, setLoading] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [selectedTime, setSelectedTime] = useState<string | null>(null)
+export function BookingCalendar({
+  eventType,
+  onSlotSelect,
+}: BookingCalendarProps) {
+  const [availableSlots, setAvailableSlots] = useState<
+    Array<{ time: string; datetime: string }>
+  >([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDatetime, setSelectedDatetime] = useState<string | null>(null);
+  const [timeFormat, setTimeFormat] = useState<"12h" | "24h">("12h");
+  const [timeZone, setTimeZone] = useState<string>(
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Toronto",
+  );
 
   useEffect(() => {
-    trackCalendarView()
-  }, [])
+    trackCalendarView();
+  }, []);
+
+  const timeZones = useMemo(() => {
+    // Modern browsers: Intl.supportedValuesOf('timeZone')
+    // Fallback list if not available.
+    const supportedValuesOf = (
+      Intl as unknown as { supportedValuesOf?: (key: string) => string[] }
+    ).supportedValuesOf;
+    const supported = supportedValuesOf?.("timeZone");
+    if (supported?.length) return supported;
+    return [
+      "America/Toronto",
+      "America/New_York",
+      "America/Chicago",
+      "America/Denver",
+      "America/Los_Angeles",
+      "Europe/London",
+      "Europe/Istanbul",
+    ];
+  }, []);
 
   const fetchAvailableSlots = async (date: Date) => {
-    setLoading(true)
+    setLoading(true);
     try {
       const response = await fetch(
-        `/api/availability?date=${date.toISOString().split('T')[0]}&eventType=${eventType.slug}`
-      )
+        `/api/availability?date=${date.toISOString().split("T")[0]}&eventType=${eventType.slug}`,
+      );
       if (response.ok) {
-        const slots = await response.json()
-        setAvailableSlots(slots)
+        const slots = await response.json();
+        setAvailableSlots(slots);
       }
     } catch (error) {
-      console.error('Failed to fetch available slots:', error)
+      console.error("Failed to fetch available slots:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleDateSelect = (selectInfo: { start: Date }) => {
-    const date = new Date(selectInfo.start)
-    setSelectedDate(date)
-    setSelectedTime(null)
-    fetchAvailableSlots(date)
-  }
+    const date = new Date(selectInfo.start);
+    setSelectedDate(date);
+    setSelectedDatetime(null);
+    fetchAvailableSlots(date);
+  };
 
-  const handleTimeSelect = (time: string) => {
-    setSelectedTime(time)
-    const [hours, minutes] = time.split(':').map(Number)
-    const startsAt = new Date(selectedDate!)
-    startsAt.setHours(hours, minutes, 0, 0)
-    
-    const endsAt = new Date(startsAt)
-    endsAt.setMinutes(endsAt.getMinutes() + eventType.durationMin)
-    
-    onSlotSelect({ startsAt, endsAt })
-  }
+  const handleDatetimeSelect = (datetime: string) => {
+    setSelectedDatetime(datetime);
+    const startsAt = new Date(datetime);
+    const endsAt = new Date(startsAt);
+    endsAt.setMinutes(endsAt.getMinutes() + eventType.durationMin);
+    onSlotSelect({ startsAt, endsAt });
+  };
 
-  const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(':').map(Number)
-    const date = new Date()
-    date.setHours(hours, minutes, 0, 0)
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    })
-  }
+  const formatSlot = (datetime: string) => {
+    const date = new Date(datetime);
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: timeFormat === "12h",
+    }).format(date);
+  };
 
-  const isSlotAvailable = (time: string) => {
-    return availableSlots.some(slot => slot.time === time)
-  }
-
-  const isSlotInPast = (time: string) => {
-    if (!selectedDate) return false
-    const [hours, minutes] = time.split(':').map(Number)
-    const slotTime = new Date(selectedDate)
-    slotTime.setHours(hours, minutes, 0, 0)
-    return slotTime < new Date()
-  }
+  const selectedDateLabel = selectedDate
+    ? new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        weekday: "short",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }).format(selectedDate)
+    : "";
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            Select Date & Time
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Calendar */}
-            <div>
-              <h3 className="font-semibold mb-4">Choose a Date</h3>
-              <div className="border rounded-lg overflow-hidden">
-                <FullCalendar
-                  plugins={[dayGridPlugin, interactionPlugin]}
-                  initialView="dayGridMonth"
-                  selectable={true}
-                  select={handleDateSelect}
-                  headerToolbar={{
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: '',
-                  }}
-                  height="auto"
-                  selectConstraint={{
-                    start: new Date().toISOString().split('T')[0],
-                  }}
-                  dayMaxEvents={true}
-                />
+    <Card className="border-green-200 shadow-lg">
+      <CardContent className="p-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px]">
+          {/* Left: details + timezone */}
+          <div className="p-5 border-b lg:border-b-0 lg:border-r bg-white">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-600 text-white flex items-center justify-center">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-gray-900">
+                  {eventType.name}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {eventType.durationMin} min
+                </div>
               </div>
             </div>
 
-            {/* Time Slots */}
-            <div>
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Available Times
-              </h3>
-              
-              {!selectedDate ? (
-                <div className="text-center py-8 text-gray-500">
-                  Select a date to see available times
-                </div>
-              ) : loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                  <span className="ml-2">Loading available times...</span>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600 mb-4">
-                    Available times for {selectedDate.toLocaleDateString()}
-                  </p>
-                  
-                  <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                    {Array.from({ length: 18 }, (_, i) => {
-                      const hour = Math.floor(i / 2) + 9 // Start at 9 AM
-                      const minute = (i % 2) * 30
-                      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-                      
-                      const isAvailable = isSlotAvailable(time)
-                      const isPast = isSlotInPast(time)
-                      const isSelected = selectedTime === time
-                      
-                      return (
-                        <Button
-                          key={time}
-                          variant={isSelected ? "default" : "outline"}
-                          disabled={!isAvailable || isPast}
-                          onClick={() => handleTimeSelect(time)}
-                          className="h-10 text-sm"
-                        >
-                          {formatTime(time)}
-                        </Button>
-                      )
-                    })}
-                  </div>
-                  
-                  {availableSlots.length === 0 && (
-                    <p className="text-center py-4 text-gray-500">
-                      No available times for this date
-                    </p>
-                  )}
-                </div>
-              )}
+            <div className="mt-5">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-800 mb-2">
+                <Globe className="w-4 h-4 text-green-700" />
+                Time zone
+              </div>
+              <select
+                value={timeZone}
+                onChange={(e) => setTimeZone(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+              >
+                {timeZones.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-2">
+                Times below are shown in your selected time zone.
+              </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {selectedTime && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <h3 className="font-semibold text-blue-900 mb-2">
-                Selected Time
-              </h3>
-              <p className="text-blue-700">
-                {selectedDate?.toLocaleDateString()} at {formatTime(selectedTime)}
-              </p>
-              <p className="text-sm text-blue-600 mt-1">
-                Duration: {eventType.durationMin} minutes
-              </p>
+          {/* Middle: month grid */}
+          <div className="p-5 border-b lg:border-b-0 lg:border-r bg-white">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="w-4 h-4 text-green-700" />
+              <span className="font-semibold text-gray-900">Select a date</span>
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  )
+            <div className="border rounded-xl overflow-hidden">
+              <FullCalendar
+                plugins={[dayGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                selectable
+                select={handleDateSelect}
+                headerToolbar={{
+                  left: "prev",
+                  center: "title",
+                  right: "next",
+                }}
+                height="auto"
+                fixedWeekCount={false}
+                showNonCurrentDates={false}
+                dayMaxEvents={true}
+                selectConstraint={{
+                  start: new Date().toISOString().split("T")[0],
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Right: time list */}
+          <div className="p-5 bg-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-green-700" />
+                <span className="font-semibold text-gray-900">Times</span>
+              </div>
+              <div className="inline-flex rounded-lg border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setTimeFormat("12h")}
+                  className={`px-3 py-1.5 text-sm ${
+                    timeFormat === "12h"
+                      ? "bg-green-600 text-white"
+                      : "bg-white text-gray-700"
+                  }`}
+                >
+                  12h
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimeFormat("24h")}
+                  className={`px-3 py-1.5 text-sm ${
+                    timeFormat === "24h"
+                      ? "bg-green-600 text-white"
+                      : "bg-white text-gray-700"
+                  }`}
+                >
+                  24h
+                </button>
+              </div>
+            </div>
+
+            {!selectedDate ? (
+              <div className="text-sm text-gray-500 rounded-xl border border-dashed p-6 text-center">
+                Pick a date to see available times.
+              </div>
+            ) : loading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-5 h-5 animate-spin text-green-600" />
+                <span className="ml-2 text-sm text-gray-600">
+                  Loading times…
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="text-sm text-gray-600 mb-3">
+                  {selectedDateLabel}
+                </div>
+                <div className="max-h-[420px] overflow-y-auto pr-1 space-y-2">
+                  {availableSlots.map((slot) => {
+                    const isSelected = selectedDatetime === slot.datetime;
+                    return (
+                      <button
+                        key={slot.datetime}
+                        type="button"
+                        onClick={() => handleDatetimeSelect(slot.datetime)}
+                        className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
+                          isSelected
+                            ? "border-green-600 bg-green-50 shadow-sm"
+                            : "border-gray-200 hover:border-green-300 hover:bg-green-50/50"
+                        }`}
+                      >
+                        <div className="font-semibold text-gray-900">
+                          {formatSlot(slot.datetime)}
+                        </div>
+                        <div className="text-xs text-gray-500">{timeZone}</div>
+                      </button>
+                    );
+                  })}
+
+                  {availableSlots.length === 0 && (
+                    <div className="text-sm text-gray-500 rounded-xl border border-dashed p-6 text-center">
+                      No available times for this date.
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }

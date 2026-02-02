@@ -653,7 +653,7 @@ export default function AdminPage() {
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-xl overflow-hidden">
                   <FullCalendar
                     plugins={[timeGridPlugin, interactionPlugin]}
                     initialView="timeGridWeek"
@@ -663,6 +663,14 @@ export default function AdminPage() {
                     selectMirror
                     slotMinTime="00:00:00"
                     slotMaxTime="24:00:00"
+                    headerToolbar={{
+                      left: "prev,next today",
+                      center: "title",
+                      right: "timeGridDay,timeGridWeek",
+                    }}
+                    editable
+                    eventStartEditable
+                    eventDurationEditable
                     select={async (info) => {
                       const ok = window.confirm(
                         `Create UNAVAILABLE block?\n\n${info.start.toLocaleString()} → ${info.end.toLocaleString()}`,
@@ -738,6 +746,7 @@ export default function AdminPage() {
                         title: `${b.eventType.name} • ${b.fullName}`,
                         start: b.startsAt,
                         end: b.endsAt,
+                        editable: false,
                         backgroundColor:
                           b.status === "CANCELED"
                             ? "#ef4444"
@@ -758,11 +767,60 @@ export default function AdminPage() {
                           : "Unavailable",
                         start: blk.startsAt,
                         end: blk.endsAt,
+                        editable: true,
                         backgroundColor: "rgba(239, 68, 68, 0.18)",
                         borderColor: "rgba(239, 68, 68, 0.35)",
                         textColor: "#991b1b",
                       })),
                     ]}
+                    eventDrop={async (arg) => {
+                      const id = arg.event.id;
+                      if (!id.startsWith("blk-")) return;
+                      const blockId = id.replace("blk-", "");
+                      try {
+                        const res = await fetch(
+                          `/api/admin/availability-blocks/${blockId}`,
+                          {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({
+                              startsAt: arg.event.start?.toISOString(),
+                              endsAt: arg.event.end?.toISOString(),
+                            }),
+                          },
+                        );
+                        if (!res.ok) throw new Error("patch failed");
+                        toast.success("Block updated.");
+                      } catch {
+                        toast.error("Failed to update block.");
+                        arg.revert();
+                      }
+                    }}
+                    eventResize={async (arg) => {
+                      const id = arg.event.id;
+                      if (!id.startsWith("blk-")) return;
+                      const blockId = id.replace("blk-", "");
+                      try {
+                        const res = await fetch(
+                          `/api/admin/availability-blocks/${blockId}`,
+                          {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({
+                              startsAt: arg.event.start?.toISOString(),
+                              endsAt: arg.event.end?.toISOString(),
+                            }),
+                          },
+                        );
+                        if (!res.ok) throw new Error("patch failed");
+                        toast.success("Block updated.");
+                      } catch {
+                        toast.error("Failed to update block.");
+                        arg.revert();
+                      }
+                    }}
                     eventClick={async (clickInfo) => {
                       const id = clickInfo.event.id;
                       if (!id.startsWith("blk-")) return;
@@ -797,6 +855,66 @@ export default function AdminPage() {
                     }}
                   />
                 </div>
+
+                {blocks.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                      Unavailable blocks (quick delete)
+                    </h3>
+                    <div className="space-y-2">
+                      {blocks
+                        .slice()
+                        .reverse()
+                        .slice(0, 12)
+                        .map((b) => (
+                          <div
+                            key={b.id}
+                            className="flex items-center justify-between gap-3 border rounded-lg px-3 py-2"
+                          >
+                            <div className="text-sm">
+                              <div className="font-medium text-gray-900">
+                                {b.reason || "Unavailable"}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {new Date(b.startsAt).toLocaleString()} →{" "}
+                                {new Date(b.endsAt).toLocaleString()}
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              onClick={async () => {
+                                const ok = window.confirm(
+                                  "Delete this unavailable block?",
+                                );
+                                if (!ok) return;
+                                const res = await fetch(
+                                  `/api/admin/availability-blocks/${b.id}`,
+                                  { method: "DELETE", credentials: "include" },
+                                );
+                                if (!res.ok) {
+                                  toast.error("Failed to delete block.");
+                                  return;
+                                }
+                                toast.success("Block deleted.");
+                                // Refresh using the currently visible range inferred from filters
+                                const from = filters.dateFrom
+                                  ? new Date(filters.dateFrom).toISOString()
+                                  : new Date().toISOString();
+                                const to = filters.dateTo
+                                  ? new Date(
+                                      filters.dateTo + "T23:59:59.999Z",
+                                    ).toISOString()
+                                  : new Date().toISOString();
+                                fetchBlocks(from, to);
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

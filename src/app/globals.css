@@ -126,18 +126,51 @@
     animation: fadeIn 1s ease-out forwards;
     opacity: 0;
   }
-  
+
   .animate-slide-up {
     animation: slideUp 0.8s ease-out forwards;
     opacity: 0;
     transform: translateY(30px);
   }
-  
+
   .animate-scale-in {
     animation: scaleIn 0.6s ease-out forwards;
     opacity: 0;
     transform: scale(0.9);
   }
+}
+
+/* FullCalendar polish (Tripman theme) */
+.fc .fc-toolbar-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.fc .fc-button {
+  border-radius: 0.75rem;
+}
+
+.fc .fc-button-primary {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.fc .fc-button-primary:hover {
+  background: #15803d;
+  border-color: #15803d;
+}
+
+.fc .fc-button-primary:disabled {
+  background: rgba(22, 163, 74, 0.5);
+  border-color: rgba(22, 163, 74, 0.5);
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.fc .fc-highlight {
+  background: rgba(22, 163, 74, 0.18);
 }
 
 @keyframes fadeIn {
@@ -163,45 +196,50 @@
 /* Mobile-specific optimizations */
 @media (max-width: 768px) {
   /* Improve touch targets */
-  button, 
+  button,
   [role="button"],
   input[type="submit"],
   input[type="button"] {
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   /* Better scrolling on mobile */
   html {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   /* Optimize text for mobile reading */
-  p, li {
+  p,
+  li {
     line-height: 1.6;
   }
-  
+
   /* Improve form elements on mobile */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     font-size: 16px; /* Prevents zoom on iOS */
   }
-  
+
   /* Better spacing for mobile */
   .space-y-6 > * + * {
     margin-top: 1.25rem;
   }
-  
+
   /* Optimize card shadows for mobile */
   .shadow-lg {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    box-shadow:
+      0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
-  
+
   /* Better button spacing */
   .gap-4 {
     gap: 1rem;
   }
-  
+
   /* Optimize grid for mobile */
   .grid {
     gap: 1rem;
@@ -215,13 +253,13 @@
     min-height: 100vh;
     min-height: 100dvh; /* Dynamic viewport height for mobile */
   }
-  
+
   /* Optimize for vertical scrolling */
   section {
     padding-top: 2rem;
     padding-bottom: 2rem;
   }
-  
+
   /* Better mobile navigation */
   nav button {
     padding: 0.75rem;

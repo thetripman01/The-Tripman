@@ -27,6 +27,17 @@ export function BookingCalendar({
   eventType,
   onSlotSelect,
 }: BookingCalendarProps) {
+  const tzValues = useMemo(
+    () =>
+      new Set([
+        "America/Toronto",
+        "America/Vancouver",
+        "America/New_York",
+        "America/Chicago",
+        "America/Los_Angeles",
+      ]),
+    [],
+  );
   const [availableSlots, setAvailableSlots] = useState<
     Array<{ time: string; datetime: string }>
   >([]);
@@ -42,24 +53,23 @@ export function BookingCalendar({
     trackCalendarView();
   }, []);
 
-  const timeZones = useMemo(() => {
-    // Modern browsers: Intl.supportedValuesOf('timeZone')
-    // Fallback list if not available.
-    const supportedValuesOf = (
-      Intl as unknown as { supportedValuesOf?: (key: string) => string[] }
-    ).supportedValuesOf;
-    const supported = supportedValuesOf?.("timeZone");
-    if (supported?.length) return supported;
-    return [
-      "America/Toronto",
-      "America/New_York",
-      "America/Chicago",
-      "America/Denver",
-      "America/Los_Angeles",
-      "Europe/London",
-      "Europe/Istanbul",
-    ];
+  // If user's detected timezone isn't in our short list, fall back to Toronto.
+  useEffect(() => {
+    if (!tzValues.has(timeZone)) setTimeZone("America/Toronto");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const timeZones = useMemo(
+    () =>
+      [
+        { value: "America/Toronto", label: "Toronto (ET) — Canada" },
+        { value: "America/Vancouver", label: "Vancouver (PT) — Canada" },
+        { value: "America/New_York", label: "New York (ET) — USA" },
+        { value: "America/Chicago", label: "Chicago (CT) — USA" },
+        { value: "America/Los_Angeles", label: "Los Angeles (PT) — USA" },
+      ] as const,
+    [],
+  );
 
   const fetchAvailableSlots = async (date: Date) => {
     setLoading(true);
@@ -144,8 +154,8 @@ export function BookingCalendar({
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
               >
                 {timeZones.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz}
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
                   </option>
                 ))}
               </select>
@@ -168,9 +178,9 @@ export function BookingCalendar({
                 selectable
                 select={handleDateSelect}
                 headerToolbar={{
-                  left: "prev",
+                  left: "",
                   center: "title",
-                  right: "next",
+                  right: "prev,next",
                 }}
                 height="auto"
                 fixedWeekCount={false}

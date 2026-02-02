@@ -668,6 +668,19 @@ export default function AdminPage() {
                       center: "title",
                       right: "timeGridDay,timeGridWeek",
                     }}
+                    eventDidMount={(info) => {
+                      // Show full details on hover (useful when the event is small).
+                      const start = info.event.start
+                        ? info.event.start.toLocaleString()
+                        : "";
+                      const end = info.event.end
+                        ? info.event.end.toLocaleString()
+                        : "";
+                      info.el.setAttribute(
+                        "title",
+                        `${info.event.title}\n${start}${end ? " → " + end : ""}`,
+                      );
+                    }}
                     editable
                     eventStartEditable
                     eventDurationEditable

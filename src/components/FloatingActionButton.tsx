@@ -26,10 +26,8 @@ export function FloatingActionButton() {
   };
 
   const handleBooking = () => {
-    const eventsSection = document.getElementById("events");
-    if (eventsSection) {
-      eventsSection.scrollIntoView({ behavior: "smooth" });
-    }
+    const el = document.getElementById("become-passenger");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
     setIsExpanded(false);
   };
 

@@ -117,12 +117,7 @@ export function FAQ() {
               Send us an Email
             </Button>
           </div>
-          {!whatsappNumber && (
-            <p className="text-xs text-gray-500 mt-4">
-              Tip: set <code>NEXT_PUBLIC_WHATSAPP_NUMBER</code> to enable the
-              WhatsApp button.
-            </p>
-          )}
+          {/* Never show env/debug tips on the public site */}
         </div>
       </div>
     </section>

@@ -5,11 +5,9 @@ import { Clock, Users, Music } from "lucide-react";
 import Image from "next/image";
 
 export function Hero() {
-  const scrollToEvents = () => {
-    const eventsSection = document.getElementById("events");
-    if (eventsSection) {
-      eventsSection.scrollIntoView({ behavior: "smooth" });
-    }
+  const scrollToPackages = () => {
+    const el = document.getElementById("become-passenger");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -99,7 +97,7 @@ export function Hero() {
 
         {/* CTA Button */}
         <Button
-          onClick={scrollToEvents}
+          onClick={scrollToPackages}
           size="lg"
           className="bg-white text-green-600 hover:bg-green-50 text-base md:text-lg px-8 md:px-10 py-4 md:py-5 h-auto font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 rounded-2xl animate-fade-in w-full sm:w-auto"
           style={{ animationDelay: "0.6s" }}

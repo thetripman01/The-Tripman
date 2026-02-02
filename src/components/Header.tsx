@@ -26,11 +26,9 @@ export function Header() {
     setIsMenuOpen(false);
   };
 
-  const scrollToEvents = () => {
-    const eventsSection = document.getElementById("events");
-    if (eventsSection) {
-      eventsSection.scrollIntoView({ behavior: "smooth" });
-    }
+  const scrollToPackages = () => {
+    const el = document.getElementById("become-passenger");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
     setIsMenuOpen(false);
   };
 
@@ -109,7 +107,7 @@ export function Header() {
               Contact
             </button>
             <Button
-              onClick={scrollToEvents}
+              onClick={scrollToPackages}
               className={`${
                 isScrolled
                   ? "bg-green-500 text-white hover:bg-green-600 shadow-lg"
@@ -164,7 +162,7 @@ export function Header() {
                 Contact
               </button>
               <Button
-                onClick={scrollToEvents}
+                onClick={scrollToPackages}
                 className="bg-green-600 text-white hover:bg-green-700 font-semibold mt-2"
               >
                 Book Now

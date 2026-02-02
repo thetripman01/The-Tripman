@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import { FraudAlert } from "@/components/FraudAlert";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import { toast } from "sonner";
 
 interface EventType {
   id: string;
@@ -63,6 +64,19 @@ interface AvailabilityBlock {
   reason: string | null;
 }
 
+interface AvailabilityRule {
+  id: string;
+  timezone: string;
+  daysOfWeek: number[];
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  startDate: string | null;
+  endDate: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
 export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
@@ -80,6 +94,30 @@ export default function AdminPage() {
   const [cancelReason, setCancelReason] = useState("");
   const [refundRequested, setRefundRequested] = useState(false);
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
+  const [rules, setRules] = useState<AvailabilityRule[]>([]);
+  const [ruleForm, setRuleForm] = useState({
+    mode: "available" as "available" | "unavailable",
+    startDate: "",
+    endDate: "",
+    startTime: "17:00",
+    endTime: "03:00",
+    timezone: "America/Toronto",
+    note: "",
+    daysOfWeek: [1, 2, 3, 4, 5] as number[],
+  });
+
+  const days = useMemo(
+    () => [
+      { v: 0, label: "Sun" },
+      { v: 1, label: "Mon" },
+      { v: 2, label: "Tue" },
+      { v: 3, label: "Wed" },
+      { v: 4, label: "Thu" },
+      { v: 5, label: "Fri" },
+      { v: 6, label: "Sat" },
+    ],
+    [],
+  );
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -137,6 +175,28 @@ export default function AdminPage() {
       console.error("Failed to fetch availability blocks:", e);
     }
   }, []);
+
+  const fetchRules = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/availability-rules", {
+        credentials: "include",
+      });
+      if (res.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+      if (res.ok) {
+        const data = (await res.json()) as AvailabilityRule[];
+        setRules(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch availability rules:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "calendar") fetchRules();
+  }, [activeTab, fetchRules]);
 
   useEffect(() => {
     const fetchEventTypes = async () => {
@@ -311,139 +371,435 @@ export default function AdminPage() {
 
         {/* Calendar Tab */}
         {activeTab === "calendar" && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Availability Calendar</CardTitle>
-              <p className="text-sm text-gray-600">
-                Click & drag to create an unavailable block. Click a block to
-                delete it.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-lg overflow-hidden">
-                <FullCalendar
-                  plugins={[timeGridPlugin, interactionPlugin]}
-                  initialView="timeGridWeek"
-                  height="auto"
-                  nowIndicator
-                  selectable
-                  selectMirror
-                  select={async (info) => {
-                    const reason =
-                      window.prompt(
-                        "Reason (optional) for unavailable time:",
-                      ) ?? "";
-                    try {
-                      const res = await fetch(
-                        "/api/admin/availability-blocks",
-                        {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          credentials: "include",
-                          body: JSON.stringify({
-                            startsAt: info.start.toISOString(),
-                            endsAt: info.end.toISOString(),
-                            reason: reason || undefined,
-                          }),
-                        },
+          <div className="space-y-6 mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Availability Rules (Recurring Schedule)</CardTitle>
+                <p className="text-sm text-gray-600">
+                  Set patterns like “Weekdays in February, 5pm → 3am”. Then use
+                  blocks below for one-off exceptions.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-end">
+                  <div className="lg:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mode
+                    </label>
+                    <Select
+                      value={ruleForm.mode}
+                      onValueChange={(v) =>
+                        setRuleForm((p) => ({
+                          ...p,
+                          mode: v as "available" | "unavailable",
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="unavailable">Unavailable</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="lg:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start date (optional)
+                    </label>
+                    <Input
+                      type="date"
+                      value={ruleForm.startDate}
+                      onChange={(e) =>
+                        setRuleForm((p) => ({
+                          ...p,
+                          startDate: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="lg:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End date (optional)
+                    </label>
+                    <Input
+                      type="date"
+                      value={ruleForm.endDate}
+                      onChange={(e) =>
+                        setRuleForm((p) => ({ ...p, endDate: e.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <div className="lg:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start time
+                    </label>
+                    <Input
+                      type="time"
+                      value={ruleForm.startTime}
+                      onChange={(e) =>
+                        setRuleForm((p) => ({
+                          ...p,
+                          startTime: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="lg:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End time
+                    </label>
+                    <Input
+                      type="time"
+                      value={ruleForm.endTime}
+                      onChange={(e) =>
+                        setRuleForm((p) => ({ ...p, endTime: e.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <div className="lg:col-span-1">
+                    <Button
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={async () => {
+                        if (ruleForm.daysOfWeek.length === 0) {
+                          toast.error("Select at least one weekday.");
+                          return;
+                        }
+                        try {
+                          const res = await fetch(
+                            "/api/admin/availability-rules",
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              credentials: "include",
+                              body: JSON.stringify({
+                                timezone: ruleForm.timezone,
+                                daysOfWeek: ruleForm.daysOfWeek,
+                                startTime: ruleForm.startTime,
+                                endTime: ruleForm.endTime,
+                                isAvailable: ruleForm.mode === "available",
+                                startDate: ruleForm.startDate || undefined,
+                                endDate: ruleForm.endDate || undefined,
+                                note: ruleForm.note || undefined,
+                              }),
+                            },
+                          );
+                          if (res.status === 401) {
+                            window.location.href = "/admin/login";
+                            return;
+                          }
+                          if (!res.ok) {
+                            toast.error("Failed to create rule.");
+                            return;
+                          }
+                          toast.success("Rule saved.");
+                          fetchRules();
+                        } catch (e) {
+                          console.error(e);
+                          toast.error("Failed to create rule.");
+                        }
+                      }}
+                    >
+                      Save Rule
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 lg:grid-cols-6 gap-4">
+                  <div className="lg:col-span-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Weekdays
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {days.map((d) => {
+                        const active = ruleForm.daysOfWeek.includes(d.v);
+                        return (
+                          <button
+                            key={d.v}
+                            type="button"
+                            onClick={() => {
+                              setRuleForm((p) => ({
+                                ...p,
+                                daysOfWeek: active
+                                  ? p.daysOfWeek.filter((x) => x !== d.v)
+                                  : [...p.daysOfWeek, d.v].sort(),
+                              }));
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                              active
+                                ? "bg-green-600 text-white border-green-600"
+                                : "bg-white text-gray-700 border-gray-300 hover:border-green-400"
+                            }`}
+                          >
+                            {d.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Timezone
+                    </label>
+                    <Input
+                      value={ruleForm.timezone}
+                      onChange={(e) =>
+                        setRuleForm((p) => ({ ...p, timezone: e.target.value }))
+                      }
+                      placeholder="America/Toronto"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      (We can fully enforce timezone in availability in the next
+                      iteration.)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Existing Rules
+                  </h3>
+                  {rules.length === 0 ? (
+                    <p className="text-sm text-gray-600">
+                      No rules yet. If you add “Available” rules, they become
+                      the source of truth.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {rules.map((r) => (
+                        <div
+                          key={r.id}
+                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border rounded-lg p-3"
+                        >
+                          <div className="text-sm">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mr-2 ${
+                                r.isAvailable
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {r.isAvailable ? "Available" : "Unavailable"}
+                            </span>
+                            <span className="font-medium">
+                              {r.startTime} → {r.endTime}
+                            </span>{" "}
+                            <span className="text-gray-500">
+                              (
+                              {r.daysOfWeek
+                                .slice()
+                                .sort()
+                                .map((d) => days.find((x) => x.v === d)?.label)
+                                .filter(Boolean)
+                                .join(", ")}
+                              )
+                            </span>
+                            {(r.startDate || r.endDate) && (
+                              <span className="text-gray-500">
+                                {" "}
+                                • {r.startDate
+                                  ? r.startDate.slice(0, 10)
+                                  : "…"}{" "}
+                                → {r.endDate ? r.endDate.slice(0, 10) : "…"}
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={async () => {
+                              const ok = window.confirm("Delete this rule?");
+                              if (!ok) return;
+                              try {
+                                const res = await fetch(
+                                  `/api/admin/availability-rules/${r.id}`,
+                                  { method: "DELETE", credentials: "include" },
+                                );
+                                if (res.status === 401) {
+                                  window.location.href = "/admin/login";
+                                  return;
+                                }
+                                if (!res.ok) {
+                                  toast.error("Failed to delete rule.");
+                                  return;
+                                }
+                                toast.success("Rule deleted.");
+                                fetchRules();
+                              } catch (e) {
+                                console.error(e);
+                                toast.error("Failed to delete rule.");
+                              }
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Calendar (Bookings + One-off Blocks)</CardTitle>
+                <p className="text-sm text-gray-600">
+                  Drag to create an unavailable block. You’ll be asked to
+                  confirm, and you can Undo right after.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg overflow-hidden">
+                  <FullCalendar
+                    plugins={[timeGridPlugin, interactionPlugin]}
+                    initialView="timeGridWeek"
+                    height="auto"
+                    nowIndicator
+                    selectable
+                    selectMirror
+                    slotMinTime="00:00:00"
+                    slotMaxTime="24:00:00"
+                    select={async (info) => {
+                      const ok = window.confirm(
+                        `Create UNAVAILABLE block?\n\n${info.start.toLocaleString()} → ${info.end.toLocaleString()}`,
                       );
-                      if (res.status === 401) {
-                        window.location.href = "/admin/login";
-                        return;
+                      info.view.calendar.unselect();
+                      if (!ok) return;
+                      const reason = window.prompt("Reason (optional):") ?? "";
+                      try {
+                        const res = await fetch(
+                          "/api/admin/availability-blocks",
+                          {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({
+                              startsAt: info.start.toISOString(),
+                              endsAt: info.end.toISOString(),
+                              reason: reason || undefined,
+                            }),
+                          },
+                        );
+                        if (res.status === 401) {
+                          window.location.href = "/admin/login";
+                          return;
+                        }
+                        if (!res.ok) {
+                          toast.error("Failed to create block.");
+                          return;
+                        }
+                        const created = (await res.json()) as AvailabilityBlock;
+                        toast.success("Unavailable block created.", {
+                          action: {
+                            label: "Undo",
+                            onClick: async () => {
+                              await fetch(
+                                `/api/admin/availability-blocks/${created.id}`,
+                                { method: "DELETE", credentials: "include" },
+                              );
+                              const view = info.view;
+                              fetchBlocks(
+                                view.activeStart.toISOString(),
+                                view.activeEnd.toISOString(),
+                              );
+                            },
+                          },
+                        });
+                        const view = info.view;
+                        fetchBlocks(
+                          view.activeStart.toISOString(),
+                          view.activeEnd.toISOString(),
+                        );
+                      } catch (e) {
+                        console.error(e);
+                        toast.error("Failed to create block.");
                       }
-                      if (!res.ok) {
-                        alert("Failed to create block");
-                        return;
-                      }
-                      const view = info.view;
+                    }}
+                    datesSet={(arg) => {
+                      const from = arg.startStr.slice(0, 10);
+                      const to = arg.endStr.slice(0, 10);
+                      setFilters((prev) => ({
+                        ...prev,
+                        dateFrom: from,
+                        dateTo: to,
+                      }));
                       fetchBlocks(
-                        view.activeStart.toISOString(),
-                        view.activeEnd.toISOString(),
+                        arg.start.toISOString(),
+                        arg.end.toISOString(),
                       );
-                    } catch (e) {
-                      console.error(e);
-                      alert("Failed to create block");
-                    }
-                  }}
-                  datesSet={(arg) => {
-                    // Also refetch bookings for the visible range to keep calendar accurate.
-                    const from = arg.startStr.slice(0, 10);
-                    const to = arg.endStr.slice(0, 10);
-                    setFilters((prev) => ({
-                      ...prev,
-                      dateFrom: from,
-                      dateTo: to,
-                    }));
-                    fetchBlocks(arg.start.toISOString(), arg.end.toISOString());
-                  }}
-                  events={[
-                    // Bookings
-                    ...bookings.map((b) => ({
-                      id: b.id,
-                      title: `${b.eventType.name} • ${b.fullName}`,
-                      start: b.startsAt,
-                      end: b.endsAt,
-                      backgroundColor:
-                        b.status === "CANCELED"
-                          ? "#ef4444"
-                          : b.status === "CONFIRMED"
-                            ? "#16a34a"
-                            : "#f59e0b",
-                      borderColor:
-                        b.status === "CANCELED"
-                          ? "#ef4444"
-                          : b.status === "CONFIRMED"
-                            ? "#16a34a"
-                            : "#f59e0b",
-                    })),
-                    // Blocks (as background)
-                    ...blocks.map((blk) => ({
-                      id: `blk-${blk.id}`,
-                      title: blk.reason
-                        ? `Unavailable: ${blk.reason}`
-                        : "Unavailable",
-                      start: blk.startsAt,
-                      end: blk.endsAt,
-                      display: "background" as const,
-                      backgroundColor: "rgba(239, 68, 68, 0.25)",
-                    })),
-                  ]}
-                  eventClick={async (clickInfo) => {
-                    const id = clickInfo.event.id;
-                    if (!id.startsWith("blk-")) return;
-                    const blockId = id.replace("blk-", "");
-                    const ok = window.confirm("Delete this unavailable block?");
-                    if (!ok) return;
-                    try {
-                      const res = await fetch(
-                        `/api/admin/availability-blocks/${blockId}`,
-                        {
-                          method: "DELETE",
-                          credentials: "include",
-                        },
+                    }}
+                    events={[
+                      ...bookings.map((b) => ({
+                        id: b.id,
+                        title: `${b.eventType.name} • ${b.fullName}`,
+                        start: b.startsAt,
+                        end: b.endsAt,
+                        backgroundColor:
+                          b.status === "CANCELED"
+                            ? "#ef4444"
+                            : b.status === "CONFIRMED"
+                              ? "#16a34a"
+                              : "#f59e0b",
+                        borderColor:
+                          b.status === "CANCELED"
+                            ? "#ef4444"
+                            : b.status === "CONFIRMED"
+                              ? "#16a34a"
+                              : "#f59e0b",
+                      })),
+                      ...blocks.map((blk) => ({
+                        id: `blk-${blk.id}`,
+                        title: blk.reason
+                          ? `Unavailable: ${blk.reason}`
+                          : "Unavailable",
+                        start: blk.startsAt,
+                        end: blk.endsAt,
+                        backgroundColor: "rgba(239, 68, 68, 0.18)",
+                        borderColor: "rgba(239, 68, 68, 0.35)",
+                        textColor: "#991b1b",
+                      })),
+                    ]}
+                    eventClick={async (clickInfo) => {
+                      const id = clickInfo.event.id;
+                      if (!id.startsWith("blk-")) return;
+                      const blockId = id.replace("blk-", "");
+                      const ok = window.confirm(
+                        "Delete this unavailable block?",
                       );
-                      if (res.status === 401) {
-                        window.location.href = "/admin/login";
-                        return;
+                      if (!ok) return;
+                      try {
+                        const res = await fetch(
+                          `/api/admin/availability-blocks/${blockId}`,
+                          { method: "DELETE", credentials: "include" },
+                        );
+                        if (res.status === 401) {
+                          window.location.href = "/admin/login";
+                          return;
+                        }
+                        if (!res.ok) {
+                          toast.error("Failed to delete block.");
+                          return;
+                        }
+                        toast.success("Block deleted.");
+                        const cal = clickInfo.view.calendar;
+                        fetchBlocks(
+                          cal.view.activeStart.toISOString(),
+                          cal.view.activeEnd.toISOString(),
+                        );
+                      } catch (e) {
+                        console.error(e);
+                        toast.error("Failed to delete block.");
                       }
-                      if (!res.ok) {
-                        alert("Failed to delete block");
-                        return;
-                      }
-                      const cal = clickInfo.view.calendar;
-                      fetchBlocks(
-                        cal.view.activeStart.toISOString(),
-                        cal.view.activeEnd.toISOString(),
-                      );
-                    } catch (e) {
-                      console.error(e);
-                      alert("Failed to delete block");
-                    }
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Bookings Tab */}

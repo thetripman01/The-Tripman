@@ -2,45 +2,26 @@
 
 This folder contains all project documentation organized by category.
 
+## 📌 Canonical docs (keep it simple)
+
+- **Current status**: `docs/status/PROJECT_STATUS_SUMMARY.md`
+- **Environment + APIs**: `docs/setup/08_ENV_AND_API_SETUP.md`
+- **Testing + launch**: `docs/setup/07_TESTING_AND_LAUNCH.md`
+- **Setup checklist**: `docs/SETUP_CHECKLIST.md`
+- **Security**: `docs/SECURITY.md`
+
+Everything else is optional; if you’re in a hurry, start with `docs/GETTING_STARTED.md`.
+
 ## 📁 Folder Structure
 
 ### `/setup/` - Setup Guides
 
 Step-by-step guides for setting up all required services:
 
-- `01_NEON_DATABASE_SETUP.md` - Neon database configuration
-- `02_STRIPE_PAYMENT_SETUP.md` - Stripe payment setup
-- `03_RESEND_EMAIL_SETUP.md` - Resend email service setup
-- `04_DOMAIN_CONFIGURATION.md` - Domain and DNS configuration
-- `05_ENVIRONMENT_VARIABLES.md` - Environment variables setup
-- `06_DATABASE_MIGRATION.md` - Database migration and seeding
 - `07_TESTING_AND_LAUNCH.md` - Testing checklist and launch steps
+- `08_ENV_AND_API_SETUP.md` - Single page: env vars + APIs (Neon/Stripe/Resend/Google/GA4/etc.)
 
 **Start here if you're setting up the project for the first time.**
-
----
-
-### `/deployment/` - Deployment Guides
-
-Various deployment guides and plans:
-
-- `DEPLOYMENT.md` - Main deployment guide
-- `PAID_DEPLOYMENT_GUIDE.md` - Paid hosting deployment
-- `COST_EFFECTIVE_DEPLOYMENT.md` - Cost-effective deployment options
-- `PRODUCTION_DEPLOYMENT_PLAN.md` - Production deployment plan
-- `DEPLOYMENT_STATUS.md` - Current deployment status
-
----
-
-### `/guides/` - Feature Guides
-
-Guides for specific features and integrations:
-
-- `BOOKING_MANAGEMENT_GUIDE.md` - Booking management features
-- `GITHUB_SETUP_GUIDE.md` - GitHub repository setup
-- `HOSTING_COMPARISON.md` - Hosting provider comparison
-- `INSTAGRAM_SETUP.md` - Instagram integration setup
-- `TEST_PLAN.md` - Testing strategy and plan
 
 ---
 
@@ -49,9 +30,6 @@ Guides for specific features and integrations:
 Project status and summary documents:
 
 - `PROJECT_STATUS_SUMMARY.md` - Current project status
-- `PROJECT_SUMMARY.md` - Overall project summary
-- `LAUNCH_READINESS_ASSESSMENT.md` - Launch readiness assessment
-- `LAUNCH_CHECKLIST.md` - Launch checklist
 
 ---
 
@@ -61,17 +39,15 @@ Project status and summary documents:
 
 1. `GETTING_STARTED.md`
 2. `SETUP_CHECKLIST.md`
-3. Then follow guides in `/setup/` folder in order
+3. Then use `/setup/08_ENV_AND_API_SETUP.md` as the single source of truth
 
 ---
 
 ## 🔍 Finding Documentation
 
 - **Setting up services?** → `/setup/`
-- **Deploying the app?** → `/deployment/`
-- **Learning about features?** → `/guides/`
 - **Checking project status?** → `/status/`
 
 ---
 
-**Last Updated**: Project organization cleanup
+**Last Updated**: 2026-02-03

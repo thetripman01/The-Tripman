@@ -49,7 +49,7 @@ npm install
 Copy the example environment file and configure your variables:
 
 ```bash
-cp env.example .env.local
+cp env.local.example .env.local
 ```
 
 Fill in your environment variables (see [Environment Variables](#environment-variables) section).
@@ -107,7 +107,7 @@ CANCEL_POLICY_HOURS=12
 
 ```env
 # Analytics
-GA4_ID="G-XXXXXXXXXX"
+NEXT_PUBLIC_GA4_ID="G-XXXXXXXXXX"
 
 # Embed Mode Configuration
 CAL_VENDOR="calcom" # calcom | calendly

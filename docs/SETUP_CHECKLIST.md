@@ -27,6 +27,8 @@ Use this checklist to track progress while you connect real services and deploy.
 - [ ] `BUFFER_MINUTES`
 - [ ] `BOOKING_MIN_NOTICE_HOURS`
 - [ ] `CANCEL_POLICY_HOURS`
+- [ ] `SLOT_INTERVAL_MINUTES` (recommended: `60`)
+- [ ] `TRAVEL_BUFFER_MINUTES` (recommended: `60`)
 
 ### Optional
 
@@ -34,6 +36,7 @@ Use this checklist to track progress while you connect real services and deploy.
 - [ ] `GOOGLE_CLIENT_EMAIL`
 - [ ] `GOOGLE_PRIVATE_KEY`
 - [ ] `NEXT_PUBLIC_GA4_ID`
+- [ ] `TRACKING_API_SECRET` (recommended if using tracking update endpoints)
 
 ## Phase 3: Database
 

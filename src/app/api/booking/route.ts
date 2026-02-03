@@ -10,7 +10,7 @@ const bookingSchema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
   phone: z.string().optional(),
-  pickup: z.string().optional(),
+  pickup: z.string().min(3),
   peopleCount: z.string().optional(),
   notes: z.string().optional(),
   startsAt: z.string(),

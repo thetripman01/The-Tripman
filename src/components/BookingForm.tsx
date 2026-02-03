@@ -73,10 +73,6 @@ export function BookingForm({
 }: BookingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timezone, setTimezone] = useState("");
-  const [pickupSuggestions, setPickupSuggestions] = useState<
-    Array<{ id: string; label: string }>
-  >([]);
-  const [pickupLoading, setPickupLoading] = useState(false);
 
   // Get user's timezone
   useEffect(() => {
@@ -139,8 +135,12 @@ export function BookingForm({
           id: result.id,
         });
       } else {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create booking");
+        const error = await response.json().catch(() => ({}));
+        throw new Error(
+          (error as { message?: string; error?: string }).message ||
+            (error as { message?: string; error?: string }).error ||
+            "Failed to create booking",
+        );
       }
     } catch (error) {
       console.error("Booking error:", error);
@@ -151,30 +151,6 @@ export function BookingForm({
       );
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const fetchPickupSuggestions = async (q: string) => {
-    const query = q.trim();
-    if (query.length < 3) {
-      setPickupSuggestions([]);
-      return;
-    }
-    setPickupLoading(true);
-    try {
-      const res = await fetch(
-        `/api/places/autocomplete?q=${encodeURIComponent(query)}`,
-      );
-      if (!res.ok) {
-        setPickupSuggestions([]);
-        return;
-      }
-      const data = (await res.json()) as Array<{ id: string; label: string }>;
-      setPickupSuggestions(data);
-    } catch {
-      setPickupSuggestions([]);
-    } finally {
-      setPickupLoading(false);
     }
   };
 
@@ -334,44 +310,10 @@ export function BookingForm({
                     Pickup Location *
                   </FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <Input
-                        placeholder="Start typing a pickup address (Toronto/GTA only)"
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          field.onChange(e.target.value);
-                          // fire-and-forget; suggestions are optional
-                          fetchPickupSuggestions(e.target.value);
-                        }}
-                        onBlur={() => {
-                          // give click a moment to register
-                          setTimeout(() => setPickupSuggestions([]), 150);
-                        }}
-                      />
-                      {pickupLoading && (
-                        <div className="absolute right-3 top-2.5 text-xs text-gray-400">
-                          Searching…
-                        </div>
-                      )}
-                      {pickupSuggestions.length > 0 && (
-                        <div className="absolute z-20 mt-1 w-full rounded-md border bg-white shadow-lg max-h-56 overflow-auto">
-                          {pickupSuggestions.map((s) => (
-                            <button
-                              key={s.id}
-                              type="button"
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-green-50"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                field.onChange(s.label);
-                                setPickupSuggestions([]);
-                              }}
-                            >
-                              {s.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <Input
+                      placeholder="Enter your pickup address (Toronto/GTA only)"
+                      {...field}
+                    />
                   </FormControl>
                   <p className="text-xs text-gray-500">
                     Service areas: <strong>Toronto</strong>,{" "}

@@ -60,8 +60,7 @@ export function BookingCalendar({
     }
   };
 
-  const handleDateSelect = (selectInfo: { start: Date }) => {
-    const date = new Date(selectInfo.start);
+  const handleDatePick = (date: Date) => {
     setSelectedDate(date);
     setSelectedDatetime(null);
     fetchAvailableSlots(date);
@@ -152,8 +151,8 @@ export function BookingCalendar({
               <FullCalendar
                 plugins={[dayGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
-                selectable
-                select={handleDateSelect}
+                selectable={false}
+                dateClick={(arg) => handleDatePick(new Date(arg.date))}
                 headerToolbar={{
                   left: "",
                   center: "title",

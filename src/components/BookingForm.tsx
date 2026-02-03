@@ -56,7 +56,7 @@ const bookingSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().optional(),
-  pickup: z.string().optional(),
+  pickup: z.string().min(3, "Pickup location is required"),
   peopleCount: z.string().optional(),
   notes: z.string().optional(),
   terms: z
@@ -331,12 +331,12 @@ export function BookingForm({
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
-                    Pickup Location (optional)
+                    Pickup Location *
                   </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
-                        placeholder="Start typing an address (we’ll suggest matches)"
+                        placeholder="Start typing a pickup address (Toronto/GTA only)"
                         value={field.value || ""}
                         onChange={(e) => {
                           field.onChange(e.target.value);
@@ -373,6 +373,13 @@ export function BookingForm({
                       )}
                     </div>
                   </FormControl>
+                  <p className="text-xs text-gray-500">
+                    Service areas: <strong>Toronto</strong>,{" "}
+                    <strong>Mississauga</strong>, <strong>North York</strong>,{" "}
+                    <strong>Scarborough</strong>, <strong>Etobicoke</strong>. If
+                    you’re outside GTA (e.g. Hamilton), contact us before
+                    booking.
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

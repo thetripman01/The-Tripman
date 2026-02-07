@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { sendBookingConfirmation, sendAdminNotification } from "@/lib/email";
-import { createGoogleCalendarEvent } from "@/lib/calendar";
+import { sendAdminNotification, sendBookingConfirmation } from "@/lib/email";
 import { checkForFraud, logFraudAttempt } from "@/lib/fraud-detection";
+import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
 
 const bookingSchema = z.object({
   eventTypeId: z.string(),
@@ -94,7 +94,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create booking
+    const peopleCountNum = validatedData.peopleCount
+      ? parseInt(validatedData.peopleCount, 10)
+      : null;
+
+    // Determine whether this booking requires payment.
+    // For Tripman packages, price depends on peopleCount tiers.
+    const tierPriceCents = getTripmanPriceForPeople(
+      eventType.slug,
+      peopleCountNum,
+    );
+    const fixedPriceCents = tierPriceCents ?? eventType.priceCents ?? null;
+    const requiresPayment = Boolean(fixedPriceCents && fixedPriceCents > 0);
+
+    // Create booking (IMPORTANT: do NOT confirm until payment succeeds for paid packages)
     const booking = await db.booking.create({
       data: {
         eventTypeId: validatedData.eventTypeId,
@@ -102,52 +115,39 @@ export async function POST(request: NextRequest) {
         email: validatedData.email,
         phone: validatedData.phone,
         pickup: validatedData.pickup,
-        peopleCount: validatedData.peopleCount
-          ? parseInt(validatedData.peopleCount)
-          : null,
+        peopleCount: peopleCountNum,
         notes: validatedData.notes,
         startsAt: new Date(validatedData.startsAt),
         endsAt: new Date(validatedData.endsAt),
         timezone: validatedData.timezone,
-        status: "CONFIRMED",
+        status: requiresPayment ? "PENDING" : "CONFIRMED",
+        paymentStatus: requiresPayment ? "PENDING" : "PENDING",
       },
       include: {
         eventType: true,
       },
     });
 
-    // Create Google Calendar event if in custom mode
-    let googleEventId: string | null = null;
-    const schedulerMode =
-      process.env.SCHEDULER_MODE ?? process.env.NEXT_PUBLIC_SCHEDULER_MODE;
-    if (schedulerMode === "custom") {
+    // Emails:
+    // - Paid bookings: send confirmation only AFTER Stripe webhook succeeds (prevents "free confirmed bookings").
+    // - Non-priced bookings (promo ride/custom): confirm immediately and notify admin.
+    if (!requiresPayment) {
       try {
-        const eventId = await createGoogleCalendarEvent(booking);
-        googleEventId = eventId || null;
-
-        // Update booking with Google event ID
-        await db.booking.update({
-          where: { id: booking.id },
-          data: { googleEventId },
-        });
+        await sendBookingConfirmation(booking);
+        await sendAdminNotification(booking);
       } catch (error) {
-        console.error("Failed to create Google Calendar event:", error);
-        // Continue without Google Calendar integration
+        console.error("Failed to send confirmation emails:", error);
       }
-    }
-
-    // Send confirmation emails
-    try {
-      await sendBookingConfirmation(booking);
-      await sendAdminNotification(booking);
-    } catch (error) {
-      console.error("Failed to send confirmation emails:", error);
-      // Don't fail the booking if emails fail
     }
 
     return NextResponse.json({
       id: booking.id,
-      message: "Booking created successfully",
+      requiresPayment,
+      amountCents: fixedPriceCents,
+      currency: "cad",
+      message: requiresPayment
+        ? "Booking created. Payment required to confirm."
+        : "Booking created successfully",
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

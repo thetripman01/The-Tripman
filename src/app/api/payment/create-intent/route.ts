@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
+import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
 
 const createPaymentIntentSchema = z.object({
   bookingId: z.string(),
@@ -24,8 +25,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // Always compute amount server-side from DB to prevent tampering.
-    const amountCents = booking.eventType.priceCents;
+    // Always compute amount server-side to prevent tampering.
+    // For Tripman packages, price depends on peopleCount tiers.
+    const tierPriceCents = getTripmanPriceForPeople(
+      booking.eventType.slug,
+      booking.peopleCount,
+    );
+    const amountCents = tierPriceCents ?? booking.eventType.priceCents;
     if (!amountCents || amountCents <= 0) {
       return NextResponse.json(
         {
@@ -45,9 +51,7 @@ export async function POST(request: NextRequest) {
       automatic_payment_methods: { enabled: true },
       metadata: {
         bookingId: booking.id,
-        eventType: booking.eventType.name,
-        customerName: booking.fullName,
-        customerEmail: booking.email,
+        eventTypeSlug: booking.eventType.slug,
       },
       description: `Payment for ${booking.eventType.name} - ${booking.fullName}`,
     });

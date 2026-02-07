@@ -4,6 +4,8 @@ import { useState } from "react";
 import { BookingEmbed } from "./BookingEmbed";
 import { BookingCalendar } from "./BookingCalendar";
 import { BookingForm } from "./BookingForm";
+import { PaymentForm } from "./PaymentForm";
+import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
 
 interface EventType {
   id: string;
@@ -25,10 +27,13 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
     endsAt: Date;
   } | null>(null);
   const [bookingComplete, setBookingComplete] = useState(false);
+  const [awaitingPayment, setAwaitingPayment] = useState(false);
   const [bookingData, setBookingData] = useState<Record<
     string,
     string | number | boolean
   > | null>(null);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
 
   // Default to custom (DB-driven) scheduler so production doesn't silently fall back
   // to embed mode when env vars are missing.
@@ -63,11 +68,12 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Booking Confirmed!
+              {awaitingPayment ? "Payment Required" : "Booking Confirmed!"}
             </h2>
             <p className="text-lg text-gray-600 mb-6">
-              Your {selectedEvent.name} has been successfully booked.
-              You&apos;ll receive a confirmation email shortly.
+              {awaitingPayment
+                ? "Your booking is reserved, but it will only be confirmed after payment."
+                : `Your ${selectedEvent.name} has been successfully booked. You’ll receive a confirmation email shortly.`}
             </p>
 
             <div className="space-y-4">
@@ -102,6 +108,40 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
                   )}
                 </div>
               </div>
+
+              {awaitingPayment && bookingId && (
+                <div className="text-left">
+                  <PaymentForm
+                    bookingId={bookingId}
+                    amount={(() => {
+                      const people =
+                        bookingData.peopleCount != null
+                          ? parseInt(String(bookingData.peopleCount), 10)
+                          : null;
+                      return (
+                        getTripmanPriceForPeople(selectedEvent.slug, people) ??
+                        selectedEvent.priceCents ??
+                        0
+                      );
+                    })()}
+                    currency="cad"
+                    onPaymentSuccess={(pi) => {
+                      setPaymentIntentId(pi);
+                      setAwaitingPayment(false);
+                      // We rely on the Stripe webhook to mark the booking CONFIRMED and send emails.
+                      // This UI is optimistic; customers will receive the confirmation email shortly.
+                    }}
+                    onPaymentError={(msg) => {
+                      alert(msg);
+                    }}
+                  />
+                  {paymentIntentId && (
+                    <p className="text-xs text-gray-500 mt-3">
+                      Payment processed. Transaction: {paymentIntentId}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
@@ -189,6 +229,12 @@ END:VCALENDAR`;
                 selectedSlot={selectedSlot}
                 onBookingComplete={(data) => {
                   setBookingData(data);
+                  const id = String(data.id ?? "");
+                  setBookingId(id || null);
+
+                  // For fixed-price packages, require payment before confirming.
+                  const isPromo = selectedEvent.slug === "tripman-promo-ride";
+                  setAwaitingPayment(!isPromo);
                   setBookingComplete(true);
                 }}
               />

@@ -27,7 +27,7 @@ interface PaymentFormProps {
 function PaymentFormContent({
   bookingId,
   amount,
-  currency = "usd",
+  currency = "cad",
   onPaymentSuccess,
   onPaymentError,
 }: PaymentFormProps) {

@@ -57,12 +57,20 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold text-gray-900">
               Cancellation & refunds
             </h2>
-            <p>
-              Cancellation windows and refund eligibility depend on the stated
-              cancellation policy shown during booking. In general,
-              cancellations closer to the scheduled time may be non-refundable
-              or partially refundable.
-            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>
+                <strong>No self-service cancellations</strong>: for launch,
+                bookings cannot be cancelled or changed online. If you need to
+                request a change or cancellation, you must contact The Tripman
+                directly.
+              </li>
+              <li>
+                <strong>Refunds</strong>: refunds are not guaranteed. If a
+                refund is approved, it will be issued back to the original
+                payment method via Stripe. Timing depends on your bank/card
+                provider.
+              </li>
+            </ul>
           </section>
 
           <section className="space-y-3">

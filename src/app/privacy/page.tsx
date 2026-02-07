@@ -60,6 +60,17 @@ export default function PrivacyPage() {
 
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-gray-900">
+              Cancellations & support requests
+            </h2>
+            <p>
+              If you contact us to request a change or cancellation, we will use
+              the information you provide to verify your booking and respond to
+              your request. Online cancellations are currently disabled.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">
               How we share information
             </h2>
             <ul className="list-disc pl-6 space-y-2">

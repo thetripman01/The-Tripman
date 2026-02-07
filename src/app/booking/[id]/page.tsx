@@ -5,14 +5,6 @@ import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { RideTracking } from "@/components/RideTracking";
 import { PaymentForm } from "@/components/PaymentForm";
 import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
@@ -25,7 +17,6 @@ import {
   Mail,
   CreditCard,
   AlertTriangle,
-  X,
   Navigation,
 } from "lucide-react";
 
@@ -65,9 +56,6 @@ export default function BookingDetailsPage() {
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cancelling, setCancelling] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
-  const [refundRequested, setRefundRequested] = useState(false);
   const [accessEmail, setAccessEmail] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
   const holdMinutes = Number(
@@ -111,39 +99,6 @@ export default function BookingDetailsPage() {
 
     fetchBooking();
   }, [bookingId, emailVerified, accessEmail]);
-
-  const handleCancel = async () => {
-    if (!booking) return;
-
-    setCancelling(true);
-    try {
-      const response = await fetch(`/api/booking/${bookingId}/cancel`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: accessEmail,
-          reason: cancelReason,
-          refundRequested: refundRequested,
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setBooking({ ...booking, status: "CANCELED" });
-        alert(result.message);
-      } else {
-        const error = await response.json();
-        alert(error.message || "Failed to cancel booking");
-      }
-    } catch (error) {
-      console.error("Error cancelling booking:", error);
-      alert("Failed to cancel booking");
-    } finally {
-      setCancelling(false);
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -193,17 +148,7 @@ export default function BookingDetailsPage() {
     );
   };
 
-  const canCancel = () => {
-    if (!booking) return false;
-    if (booking.status === "CANCELED") return false;
-
-    const now = new Date();
-    const bookingStart = new Date(booking.startsAt);
-    const hoursUntilBooking =
-      (bookingStart.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    return hoursUntilBooking >= 12; // Can cancel if more than 12 hours in advance
-  };
+  // Customer self-service cancellations are disabled for launch.
 
   const isPaymentHoldExpired = () => {
     if (!booking) return false;
@@ -485,81 +430,10 @@ export default function BookingDetailsPage() {
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                {canCancel() && (
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="destructive" className="w-full">
-                        <X className="w-4 h-4 mr-2" />
-                        Cancel Booking
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Cancel Booking</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Reason for cancellation (optional):
-                          </label>
-                          <Textarea
-                            value={cancelReason}
-                            onChange={(e) => setCancelReason(e.target.value)}
-                            placeholder="Please let us know why you're cancelling..."
-                            rows={3}
-                          />
-                        </div>
-
-                        {booking.paymentStatus === "COMPLETED" && (
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id="refund"
-                              checked={refundRequested}
-                              onChange={(e) =>
-                                setRefundRequested(e.target.checked)
-                              }
-                            />
-                            <label htmlFor="refund" className="text-sm">
-                              Request refund ($
-                              {(booking.amountPaid! / 100).toFixed(2)})
-                            </label>
-                          </div>
-                        )}
-
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={handleCancel}
-                            disabled={cancelling}
-                            variant="destructive"
-                            className="flex-1"
-                          >
-                            {cancelling
-                              ? "Cancelling..."
-                              : "Confirm Cancellation"}
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                )}
-
-                {!canCancel() && booking.status !== "CANCELED" && (
-                  <div className="text-sm text-gray-500 text-center">
-                    <AlertTriangle className="w-4 h-4 mx-auto mb-2" />
-                    <p>
-                      Bookings cannot be cancelled less than 12 hours before the
-                      scheduled time.
-                    </p>
-                  </div>
-                )}
-
-                {booking.status === "CANCELED" && (
-                  <div className="text-sm text-gray-500 text-center">
-                    <X className="w-4 h-4 mx-auto mb-2" />
-                    <p>This booking has been cancelled.</p>
-                  </div>
-                )}
+                <div className="text-sm text-gray-600">
+                  Changes/cancellations are not available online right now.
+                  Please contact The Tripman directly for help.
+                </div>
               </CardContent>
             </Card>
 

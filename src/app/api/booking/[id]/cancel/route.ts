@@ -22,6 +22,16 @@ export async function POST(
 
     // Admins can cancel without extra verification.
     const adminUser = await getAdminUserFromRequest(request);
+    if (!adminUser) {
+      return NextResponse.json(
+        {
+          error: "Customer cancellations are currently disabled",
+          message:
+            "To cancel or change a booking, please contact The Tripman directly.",
+        },
+        { status: 403 },
+      );
+    }
 
     // Get booking details
     const booking = await db.booking.findUnique({
@@ -33,40 +43,11 @@ export async function POST(
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    if (!adminUser) {
-      const normalized = email?.trim().toLowerCase();
-      if (!normalized) {
-        return NextResponse.json(
-          { error: "Email verification required" },
-          { status: 401 },
-        );
-      }
-      if (normalized !== booking.email.trim().toLowerCase()) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
-      }
-    }
-
     // Check if booking can be cancelled (admins can override cancellation window)
     const now = new Date();
     const bookingStart = new Date(booking.startsAt);
     const hoursUntilBooking =
       (bookingStart.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    if (!adminUser) {
-      const cancelPolicyHours = parseInt(
-        process.env.CANCEL_POLICY_HOURS || "12",
-      );
-
-      if (hoursUntilBooking < cancelPolicyHours) {
-        return NextResponse.json(
-          {
-            error: "Booking cannot be cancelled",
-            message: `Bookings must be cancelled at least ${cancelPolicyHours} hours in advance`,
-          },
-          { status: 400 },
-        );
-      }
-    }
 
     // Check if already cancelled
     if (booking.status === "CANCELED") {

@@ -42,7 +42,9 @@ export async function sendBookingConfirmation(booking: BookingWithEventType) {
           </div>
           
           <p>Please add this event to your calendar using the attached .ics file.</p>
-          <p>If you need to make any changes, please contact us at least ${process.env.CANCEL_POLICY_HOURS || 12} hours in advance.</p>
+          <p>
+            Need to make a change? Please contact The Tripman directly. Online cancellations are currently disabled.
+          </p>
           
             <p>Thank you for choosing The Tripman!</p>
   <p>Best regards,<br>The Tripman Team</p>
@@ -182,7 +184,7 @@ export async function sendPaymentConfirmation(
           </div>
           
           <p>Your booking is now confirmed and paid for. We'll see you soon!</p>
-          <p>If you have any questions, please don't hesitate to contact us.</p>
+          <p>If you have any questions or need to make a change, please contact The Tripman directly. Online cancellations are currently disabled.</p>
           
           <p>Thank you for choosing The Tripman!</p>
           <p>Best regards,<br>The Tripman Team</p>

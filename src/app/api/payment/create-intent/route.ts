@@ -1,36 +1,48 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { stripe, formatAmountForStripe } from '@/lib/stripe'
-import { db } from '@/lib/db'
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { stripe } from "@/lib/stripe";
+import { db } from "@/lib/db";
 
 const createPaymentIntentSchema = z.object({
   bookingId: z.string(),
-  amount: z.number().min(1),
-  currency: z.string().default('usd'),
-})
+  // Currency can be changed later, but Tripman operates in Canada today.
+  currency: z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { bookingId, amount, currency } = createPaymentIntentSchema.parse(body)
+    const body = await request.json();
+    const { bookingId, currency } = createPaymentIntentSchema.parse(body);
 
     // Get booking details
     const booking = await db.booking.findUnique({
       where: { id: bookingId },
       include: { eventType: true },
-    })
+    });
 
     if (!booking) {
-      return NextResponse.json(
-        { error: 'Booking not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
+
+    // Always compute amount server-side from DB to prevent tampering.
+    const amountCents = booking.eventType.priceCents;
+    if (!amountCents || amountCents <= 0) {
+      return NextResponse.json(
+        {
+          error:
+            "This package does not have a fixed price. Payment cannot be created.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const normalizedCurrency = (currency ?? "cad").toLowerCase();
 
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: formatAmountForStripe(amount, currency),
-      currency: currency,
+      amount: amountCents,
+      currency: normalizedCurrency,
+      automatic_payment_methods: { enabled: true },
       metadata: {
         bookingId: booking.id,
         eventType: booking.eventType.name,
@@ -38,24 +50,32 @@ export async function POST(request: NextRequest) {
         customerEmail: booking.email,
       },
       description: `Payment for ${booking.eventType.name} - ${booking.fullName}`,
-    })
+    });
+
+    // Store payment intent id early for traceability.
+    await db.booking.update({
+      where: { id: booking.id },
+      data: { paymentIntentId: paymentIntent.id },
+    });
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-    })
+      currency: normalizedCurrency,
+      amountCents,
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid payment data', details: error.issues },
-        { status: 400 }
-      )
+        { error: "Invalid payment data", details: error.issues },
+        { status: 400 },
+      );
     }
 
-    console.error('Error creating payment intent:', error)
+    console.error("Error creating payment intent:", error);
     return NextResponse.json(
-      { error: 'Failed to create payment intent' },
-      { status: 500 }
-    )
+      { error: "Failed to create payment intent" },
+      { status: 500 },
+    );
   }
 }

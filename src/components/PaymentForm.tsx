@@ -1,78 +1,79 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { loadStripe } from '@stripe/stripe-js'
+import { useState, useEffect } from "react";
+import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
   useStripe,
   useElements,
-} from '@stripe/react-stripe-js'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, CreditCard } from 'lucide-react'
+} from "@stripe/react-stripe-js";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, CreditCard } from "lucide-react";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+);
 
 interface PaymentFormProps {
-  bookingId: string
-  amount: number
-  currency?: string
-  onPaymentSuccess: (paymentIntentId: string) => void
-  onPaymentError: (error: string) => void
+  bookingId: string;
+  amount: number;
+  currency?: string;
+  onPaymentSuccess: (paymentIntentId: string) => void;
+  onPaymentError: (error: string) => void;
 }
 
-function PaymentFormContent({ 
-  bookingId, 
-  amount, 
-  currency = 'usd',
-  onPaymentSuccess, 
-  onPaymentError 
+function PaymentFormContent({
+  bookingId,
+  amount,
+  currency = "usd",
+  onPaymentSuccess,
+  onPaymentError,
 }: PaymentFormProps) {
-  const stripe = useStripe()
-  const elements = useElements()
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [clientSecret, setClientSecret] = useState<string>('')
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string>("");
 
   useEffect(() => {
     // Create payment intent
     const createPaymentIntent = async () => {
       try {
-        const response = await fetch('/api/payment/create-intent', {
-          method: 'POST',
+        const response = await fetch("/api/payment/create-intent", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             bookingId,
-            amount,
             currency,
           }),
-        })
+        });
 
         if (!response.ok) {
-          throw new Error('Failed to create payment intent')
+          throw new Error("Failed to create payment intent");
         }
 
-        const { clientSecret } = await response.json()
-        setClientSecret(clientSecret)
+        const { clientSecret } = await response.json();
+        setClientSecret(clientSecret);
       } catch (error) {
-        console.error('Error creating payment intent:', error)
-        onPaymentError('Failed to initialize payment')
+        console.error("Error creating payment intent:", error);
+        onPaymentError("Failed to initialize payment");
       }
-    }
+    };
 
-    createPaymentIntent()
-  }, [bookingId, amount, currency, onPaymentError])
+    createPaymentIntent();
+  }, [bookingId, amount, currency, onPaymentError]);
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
+    event.preventDefault();
 
     if (!stripe || !elements) {
-      return
+      return;
     }
 
-    setIsProcessing(true)
+    setIsProcessing(true);
 
     try {
       const { error, paymentIntent } = await stripe.confirmPayment({
@@ -80,21 +81,21 @@ function PaymentFormContent({
         confirmParams: {
           return_url: `${window.location.origin}/booking/success`,
         },
-        redirect: 'if_required',
-      })
+        redirect: "if_required",
+      });
 
       if (error) {
-        onPaymentError(error.message || 'Payment failed')
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        onPaymentSuccess(paymentIntent.id)
+        onPaymentError(error.message || "Payment failed");
+      } else if (paymentIntent && paymentIntent.status === "succeeded") {
+        onPaymentSuccess(paymentIntent.id);
       }
     } catch (error) {
-      console.error('Payment error:', error)
-      onPaymentError('Payment processing failed')
+      console.error("Payment error:", error);
+      onPaymentError("Payment processing failed");
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   if (!clientSecret) {
     return (
@@ -102,7 +103,7 @@ function PaymentFormContent({
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
         <span>Initializing payment...</span>
       </div>
-    )
+    );
   }
 
   return (
@@ -113,19 +114,20 @@ function PaymentFormContent({
           <span className="font-semibold">Secure Payment</span>
         </div>
         <p className="text-blue-700 text-sm">
-          Your payment information is encrypted and secure. We use Stripe for payment processing.
+          Your payment information is encrypted and secure. We use Stripe for
+          payment processing.
         </p>
       </div>
 
-      <PaymentElement 
+      <PaymentElement
         options={{
-          layout: 'tabs',
+          layout: "tabs",
         }}
       />
 
-      <Button 
-        type="submit" 
-        className="w-full" 
+      <Button
+        type="submit"
+        className="w-full"
         disabled={!stripe || isProcessing}
       >
         {isProcessing ? (
@@ -141,42 +143,47 @@ function PaymentFormContent({
         )}
       </Button>
     </form>
-  )
+  );
 }
 
 export function PaymentForm(props: PaymentFormProps) {
-  const [clientSecret, setClientSecret] = useState<string>('')
+  const [clientSecret, setClientSecret] = useState<string>("");
 
   useEffect(() => {
     // Create payment intent for Elements
     const createPaymentIntent = async () => {
       try {
-        const response = await fetch('/api/payment/create-intent', {
-          method: 'POST',
+        const response = await fetch("/api/payment/create-intent", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             bookingId: props.bookingId,
-            amount: props.amount,
             currency: props.currency,
           }),
-        })
+        });
 
         if (!response.ok) {
-          throw new Error('Failed to create payment intent')
+          throw new Error("Failed to create payment intent");
         }
 
-        const { clientSecret } = await response.json()
-        setClientSecret(clientSecret)
+        const { clientSecret } = await response.json();
+        setClientSecret(clientSecret);
       } catch (error) {
-        console.error('Error creating payment intent:', error)
-        props.onPaymentError('Failed to initialize payment')
+        console.error("Error creating payment intent:", error);
+        props.onPaymentError("Failed to initialize payment");
       }
-    }
+    };
 
-    createPaymentIntent()
-  }, [props.bookingId, props.amount, props.currency, props.onPaymentError, props])
+    createPaymentIntent();
+  }, [
+    props.bookingId,
+    props.amount,
+    props.currency,
+    props.onPaymentError,
+    props,
+  ]);
 
   if (!clientSecret) {
     return (
@@ -184,7 +191,7 @@ export function PaymentForm(props: PaymentFormProps) {
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
         <span>Initializing payment...</span>
       </div>
-    )
+    );
   }
 
   return (
@@ -196,14 +203,14 @@ export function PaymentForm(props: PaymentFormProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Elements 
-          stripe={stripePromise} 
-          options={{ 
+        <Elements
+          stripe={stripePromise}
+          options={{
             clientSecret,
             appearance: {
-              theme: 'stripe',
+              theme: "stripe",
               variables: {
-                colorPrimary: '#059669',
+                colorPrimary: "#059669",
               },
             },
           }}
@@ -212,5 +219,5 @@ export function PaymentForm(props: PaymentFormProps) {
         </Elements>
       </CardContent>
     </Card>
-  )
+  );
 }

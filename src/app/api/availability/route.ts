@@ -186,6 +186,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get existing bookings for this date
+    const holdMinutes = parseInt(process.env.PAYMENT_HOLD_MINUTES || "15", 10);
+    const pendingCutoff = new Date(Date.now() - holdMinutes * 60_000);
     const existingBookings = await db.booking.findMany({
       where: {
         eventTypeId: eventType.id,
@@ -193,9 +195,10 @@ export async function GET(request: NextRequest) {
           gte: startOfDay,
           lte: endOfWindow,
         },
-        status: {
-          not: "CANCELED",
-        },
+        OR: [
+          { status: "CONFIRMED" },
+          { status: "PENDING", createdAt: { gte: pendingCutoff } },
+        ],
       },
     });
 

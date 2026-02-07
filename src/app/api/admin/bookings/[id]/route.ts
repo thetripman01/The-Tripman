@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-session";
 import { deleteGoogleCalendarEvent } from "@/lib/calendar";
 import { sendCancellationNotification } from "@/lib/email";
+import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
 
 const updateBookingSchema = z.object({
   status: z.enum(["PENDING", "CONFIRMED", "CANCELED"]),
@@ -32,6 +33,23 @@ export async function PATCH(
 
     if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
+    // Prevent accidentally confirming an unpaid paid-booking from the admin panel.
+    if (status === "CONFIRMED") {
+      const tierPriceCents = getTripmanPriceForPeople(
+        booking.eventType.slug,
+        booking.peopleCount,
+      );
+      const fixedPriceCents =
+        tierPriceCents ?? booking.eventType.priceCents ?? null;
+      const requiresPayment = Boolean(fixedPriceCents && fixedPriceCents > 0);
+      if (requiresPayment && booking.paymentStatus !== "COMPLETED") {
+        return NextResponse.json(
+          { error: "Cannot confirm: payment has not been completed." },
+          { status: 400 },
+        );
+      }
     }
 
     // Update the booking

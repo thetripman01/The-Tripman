@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for booking conflicts
+    const holdMinutes = parseInt(process.env.PAYMENT_HOLD_MINUTES || "15", 10);
+    const pendingCutoff = new Date(Date.now() - holdMinutes * 60_000);
     const conflictingBooking = await db.booking.findFirst({
       where: {
         eventTypeId: validatedData.eventTypeId,
@@ -81,9 +83,13 @@ export async function POST(request: NextRequest) {
         endsAt: {
           gt: new Date(validatedData.startsAt),
         },
-        status: {
-          not: "CANCELED",
-        },
+        OR: [
+          { status: "CONFIRMED" },
+          {
+            status: "PENDING",
+            createdAt: { gte: pendingCutoff },
+          },
+        ],
       },
     });
 

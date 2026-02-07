@@ -25,6 +25,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
+    if (booking.status !== "PENDING") {
+      return NextResponse.json(
+        { error: "Payment can only be created for pending bookings." },
+        { status: 400 },
+      );
+    }
+
+    const holdMinutes = parseInt(process.env.PAYMENT_HOLD_MINUTES || "15", 10);
+    const expiresAt = new Date(
+      booking.createdAt.getTime() + holdMinutes * 60_000,
+    );
+    if (Date.now() > expiresAt.getTime()) {
+      return NextResponse.json(
+        { error: "This booking hold has expired. Please book again." },
+        { status: 410 },
+      );
+    }
+
     // Always compute amount server-side to prevent tampering.
     // For Tripman packages, price depends on peopleCount tiers.
     const tierPriceCents = getTripmanPriceForPeople(

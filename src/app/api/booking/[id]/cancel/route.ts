@@ -5,9 +5,7 @@ import { sendCancellationNotification } from "@/lib/email";
 import { getAdminUserFromRequest } from "@/lib/admin-session";
 
 const cancelBookingSchema = z.object({
-  email: z.string().email().optional(),
   reason: z.string().optional(),
-  refundRequested: z.boolean().default(false),
 });
 
 export async function POST(
@@ -17,7 +15,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { email, reason, refundRequested } = cancelBookingSchema.parse(body);
+    const { reason } = cancelBookingSchema.parse(body);
 
     // Admins can cancel without extra verification.
     const adminUser = await getAdminUserFromRequest(request);
@@ -57,9 +55,7 @@ export async function POST(
     }
 
     // IMPORTANT (launch policy): no refunds are processed automatically.
-    // We intentionally ignore `refundRequested` for now.
     // (Stripe disputes/chargebacks may still occur via Stripe, but we do not initiate refunds here.)
-    void refundRequested;
     void hoursUntilBooking;
 
     // Update booking status

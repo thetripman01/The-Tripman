@@ -74,16 +74,6 @@ export function BookingCalendar({
     onSlotSelect({ startsAt, endsAt });
   };
 
-  const formatSlot = (datetime: string) => {
-    const date = new Date(datetime);
-    return new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: timeFormat === "12h",
-    }).format(date);
-  };
-
   const formatRange = (datetime: string) => {
     const start = new Date(datetime);
     const end = new Date(start);

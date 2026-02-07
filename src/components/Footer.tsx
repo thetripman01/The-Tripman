@@ -5,9 +5,9 @@ import {
   MapPin,
   Facebook,
   Instagram,
-  Twitter,
   Youtube,
   Music,
+  Link as LinkIcon,
 } from "lucide-react";
 
 export function Footer() {
@@ -32,7 +32,7 @@ export function Footer() {
             </p>
             <div className="flex space-x-4">
               <a
-                href="https://www.facebook.com/thetripman_"
+                href="https://www.facebook.com/profile.php?id=61580181414978"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -50,7 +50,7 @@ export function Footer() {
                 <Instagram className="w-5 h-5" />
               </a>
               <a
-                href="https://www.tiktok.com/@thetripman_"
+                href="https://www.tiktok.com/@the.tripman"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -59,7 +59,7 @@ export function Footer() {
                 <Music className="w-5 h-5" />
               </a>
               <a
-                href="https://www.youtube.com/@thetripman_"
+                href="https://www.youtube.com/@TheTripman01"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -68,13 +68,13 @@ export function Footer() {
                 <Youtube className="w-5 h-5" />
               </a>
               <a
-                href="https://twitter.com/thetripman_"
+                href="https://collabstr.com/thetripman"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
-                aria-label="Twitter"
+                aria-label="Collabstr"
               >
-                <Twitter className="w-5 h-5" />
+                <LinkIcon className="w-5 h-5" />
               </a>
             </div>
           </div>

@@ -24,13 +24,14 @@ interface PaymentFormProps {
   onPaymentError: (error: string) => void;
 }
 
+type PaymentFormContentProps = Omit<PaymentFormProps, "currency">;
+
 function PaymentFormContent({
   bookingId,
   amount,
-  currency = "cad",
   onPaymentSuccess,
   onPaymentError,
-}: PaymentFormProps) {
+}: PaymentFormContentProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -108,6 +109,7 @@ function PaymentFormContent({
 }
 
 export function PaymentForm(props: PaymentFormProps) {
+  const { bookingId, currency, onPaymentError } = props;
   const [clientSecret, setClientSecret] = useState<string>("");
   const [initError, setInitError] = useState<string>("");
 
@@ -122,8 +124,8 @@ export function PaymentForm(props: PaymentFormProps) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            bookingId: props.bookingId,
-            currency: props.currency,
+            bookingId,
+            currency,
           }),
         });
 
@@ -137,7 +139,7 @@ export function PaymentForm(props: PaymentFormProps) {
               ? "This booking hold has expired. Please book again."
               : "Failed to initialize payment");
           setInitError(message);
-          props.onPaymentError(message);
+          onPaymentError(message);
           return;
         }
 
@@ -147,12 +149,12 @@ export function PaymentForm(props: PaymentFormProps) {
         console.error("Error creating payment intent:", error);
         const message = "Failed to initialize payment";
         setInitError(message);
-        props.onPaymentError(message);
+        onPaymentError(message);
       }
     };
 
     createPaymentIntent();
-  }, [props.bookingId, props.currency, props.onPaymentError]);
+  }, [bookingId, currency, onPaymentError]);
 
   if (initError) {
     return (
@@ -202,7 +204,12 @@ export function PaymentForm(props: PaymentFormProps) {
             },
           }}
         >
-          <PaymentFormContent {...props} />
+          <PaymentFormContent
+            bookingId={props.bookingId}
+            amount={props.amount}
+            onPaymentSuccess={props.onPaymentSuccess}
+            onPaymentError={props.onPaymentError}
+          />
         </Elements>
       </CardContent>
     </Card>

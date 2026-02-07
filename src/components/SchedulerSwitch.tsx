@@ -37,8 +37,8 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
   const paymentRef = useRef<HTMLDivElement | null>(null);
 
   const isPromo = useMemo(
-    () => selectedEvent.slug === "tripman-promo-ride",
-    [selectedEvent.slug],
+    () => selectedEvent?.slug === "tripman-promo-ride",
+    [selectedEvent?.slug],
   );
 
   useEffect(() => {

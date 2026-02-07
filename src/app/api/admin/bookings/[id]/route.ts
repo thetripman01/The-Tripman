@@ -96,3 +96,53 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const authResult = await requireAdmin(request);
+    if (authResult) return authResult;
+
+    const { id } = await params;
+
+    const holdMinutes = parseInt(process.env.PAYMENT_HOLD_MINUTES || "15", 10);
+    const pendingCutoff = new Date(Date.now() - holdMinutes * 60_000);
+
+    const booking = await db.booking.findUnique({
+      where: { id },
+      include: { ride: true },
+    });
+    if (!booking) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
+    const isExpiredPending =
+      booking.status === "PENDING" && booking.createdAt < pendingCutoff;
+
+    // Safety: only allow deletion for canceled bookings or expired pending holds.
+    if (!(booking.status === "CANCELED" || isExpiredPending)) {
+      return NextResponse.json(
+        { error: "Only canceled or expired pending bookings can be deleted." },
+        { status: 400 },
+      );
+    }
+
+    // Delete tracking data if present (ride + locations).
+    if (booking.ride) {
+      await db.location.deleteMany({ where: { rideId: booking.ride.id } });
+      await db.ride.delete({ where: { id: booking.ride.id } });
+    }
+
+    await db.booking.delete({ where: { id } });
+
+    return NextResponse.json({ message: "Booking deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting booking:", error);
+    return NextResponse.json(
+      { error: "Failed to delete booking" },
+      { status: 500 },
+    );
+  }
+}

@@ -67,6 +67,7 @@ export async function GET(
         updatedAt: booking.updatedAt,
         eventType: {
           id: booking.eventType.id,
+          slug: booking.eventType.slug,
           name: booking.eventType.name,
           description: booking.eventType.description,
           durationMin: booking.eventType.durationMin,
@@ -106,6 +107,7 @@ export async function GET(
       updatedAt: booking.updatedAt,
       eventType: {
         id: booking.eventType.id,
+        slug: booking.eventType.slug,
         name: booking.eventType.name,
         description: booking.eventType.description,
         durationMin: booking.eventType.durationMin,

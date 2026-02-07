@@ -190,7 +190,6 @@ export async function GET(request: NextRequest) {
     const pendingCutoff = new Date(Date.now() - holdMinutes * 60_000);
     const existingBookings = await db.booking.findMany({
       where: {
-        eventTypeId: eventType.id,
         startsAt: {
           gte: startOfDay,
           lte: endOfWindow,

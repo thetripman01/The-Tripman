@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BookingEmbed } from "./BookingEmbed";
 import { BookingCalendar } from "./BookingCalendar";
 import { BookingForm } from "./BookingForm";
@@ -34,6 +34,22 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
   > | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const paymentRef = useRef<HTMLDivElement | null>(null);
+
+  const isPromo = useMemo(
+    () => selectedEvent.slug === "tripman-promo-ride",
+    [selectedEvent.slug],
+  );
+
+  useEffect(() => {
+    if (awaitingPayment) {
+      // Auto-jump to payment so the user doesn't miss the next step.
+      paymentRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [awaitingPayment]);
 
   // Default to custom (DB-driven) scheduler so production doesn't silently fall back
   // to embed mode when env vars are missing.
@@ -110,7 +126,7 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
               </div>
 
               {awaitingPayment && bookingId && (
-                <div className="text-left">
+                <div ref={paymentRef} className="text-left">
                   <PaymentForm
                     bookingId={bookingId}
                     amount={(() => {
@@ -233,7 +249,6 @@ END:VCALENDAR`;
                   setBookingId(id || null);
 
                   // For fixed-price packages, require payment before confirming.
-                  const isPromo = selectedEvent.slug === "tripman-promo-ride";
                   setAwaitingPayment(!isPromo);
                   setBookingComplete(true);
                 }}

@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { RideTracking } from "@/components/RideTracking";
+import { PaymentForm } from "@/components/PaymentForm";
+import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
 import {
   Calendar,
   Clock,
@@ -45,6 +47,7 @@ interface BookingDetails {
   updatedAt: string;
   eventType: {
     id: string;
+    slug: string;
     name: string;
     description: string | null;
     durationMin: number;
@@ -67,6 +70,9 @@ export default function BookingDetailsPage() {
   const [refundRequested, setRefundRequested] = useState(false);
   const [accessEmail, setAccessEmail] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
+  const holdMinutes = Number(
+    process.env.NEXT_PUBLIC_PAYMENT_HOLD_MINUTES || 15,
+  );
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -197,6 +203,13 @@ export default function BookingDetailsPage() {
       (bookingStart.getTime() - now.getTime()) / (1000 * 60 * 60);
 
     return hoursUntilBooking >= 12; // Can cancel if more than 12 hours in advance
+  };
+
+  const isPaymentHoldExpired = () => {
+    if (!booking) return false;
+    if (booking.status !== "PENDING") return false;
+    const createdAt = new Date(booking.createdAt);
+    return Date.now() > createdAt.getTime() + holdMinutes * 60 * 1000;
   };
 
   if (loading) {
@@ -426,6 +439,46 @@ export default function BookingDetailsPage() {
               </CardContent>
             </Card>
 
+            {/* Pay Now */}
+            {booking.status === "PENDING" &&
+              booking.paymentStatus !== "COMPLETED" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pay Now</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {isPaymentHoldExpired() ? (
+                      <div className="rounded-md border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
+                        This booking hold has expired. Please make a new
+                        booking.
+                      </div>
+                    ) : (
+                      <PaymentForm
+                        bookingId={booking.id}
+                        amount={
+                          getTripmanPriceForPeople(
+                            booking.eventType.slug,
+                            booking.peopleCount,
+                          ) ??
+                          booking.eventType.priceCents ??
+                          0
+                        }
+                        currency="cad"
+                        onPaymentSuccess={() => {
+                          // Webhook will confirm; refresh to show updated status.
+                          window.location.reload();
+                        }}
+                        onPaymentError={(msg) => alert(msg)}
+                      />
+                    )}
+                    <p className="text-xs text-gray-500">
+                      If you refresh the page, you can still complete payment
+                      here (as long as the hold hasn&apos;t expired).
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
             {/* Actions */}
             <Card>
               <CardHeader>
@@ -523,7 +576,10 @@ export default function BookingDetailsPage() {
                   </p>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4" />
-                    <span className="text-gray-600">Available soon</span>
+                    <span className="text-gray-600">
+                      {process.env.NEXT_PUBLIC_PHONE_NUMBER ||
+                        "+1 (647) 459-4188"}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4" />

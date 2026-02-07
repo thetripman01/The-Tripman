@@ -51,10 +51,12 @@ interface Booking {
   amountPaid?: number | null;
   paymentIntentId?: string | null;
   createdAt: string;
+  isExpiredHold?: boolean;
   eventType: {
     name: string;
     durationMin: number;
     priceCents: number | null;
+    slug?: string;
   };
 }
 
@@ -96,6 +98,8 @@ export default function AdminPage() {
   const [refundRequested, setRefundRequested] = useState(false);
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
   const [showPastBookings, setShowPastBookings] = useState(false);
+  const [showCanceledBookings, setShowCanceledBookings] = useState(false);
+  const [showExpiredPending, setShowExpiredPending] = useState(false);
   const [rules, setRules] = useState<AvailabilityRule[]>([]);
   const [ruleForm, setRuleForm] = useState({
     mode: "available" as "available" | "unavailable",
@@ -137,6 +141,8 @@ export default function AdminPage() {
       if (filters.dateFrom) params.append("dateFrom", filters.dateFrom);
       if (filters.dateTo) params.append("dateTo", filters.dateTo);
       if (showPastBookings) params.append("includePast", "1");
+      if (showCanceledBookings) params.append("includeCanceled", "1");
+      if (showExpiredPending) params.append("includeExpiredPending", "1");
 
       const response = await fetch(`/api/admin/bookings?${params}`, {
         credentials: "include",
@@ -164,6 +170,8 @@ export default function AdminPage() {
     filters.dateFrom,
     filters.dateTo,
     showPastBookings,
+    showCanceledBookings,
+    showExpiredPending,
   ]);
 
   useEffect(() => {
@@ -271,6 +279,34 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Failed to update booking status:", error);
+    }
+  };
+
+  const deleteBooking = async (bookingId: string) => {
+    if (!confirm("Delete this booking? This cannot be undone.")) return;
+    try {
+      const res = await fetch(`/api/admin/bookings/${bookingId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+      const payload = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string;
+      };
+      if (!res.ok) {
+        toast.error(payload.error || "Failed to delete booking");
+        return;
+      }
+      toast.success(payload.message || "Booking deleted");
+      setSelectedBooking(null);
+      fetchBookings();
+    } catch (e) {
+      console.error("Failed to delete booking:", e);
+      toast.error("Failed to delete booking");
     }
   };
 
@@ -1149,15 +1185,39 @@ export default function AdminPage() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-4">
                   <span>Filters</span>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={showPastBookings}
-                      onChange={(e) => setShowPastBookings(e.target.checked)}
-                      className="accent-green-600"
-                    />
-                    Show past bookings
-                  </label>
+                  <div className="flex flex-wrap items-center gap-6">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={showPastBookings}
+                        onChange={(e) => setShowPastBookings(e.target.checked)}
+                        className="accent-green-600"
+                      />
+                      Show past bookings
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={showCanceledBookings}
+                        onChange={(e) =>
+                          setShowCanceledBookings(e.target.checked)
+                        }
+                        className="accent-green-600"
+                      />
+                      Show canceled
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={showExpiredPending}
+                        onChange={(e) =>
+                          setShowExpiredPending(e.target.checked)
+                        }
+                        className="accent-green-600"
+                      />
+                      Show expired pending
+                    </label>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1256,6 +1316,11 @@ export default function AdminPage() {
                           <>
                             <Button
                               size="sm"
+                              disabled={
+                                booking.isExpiredHold ||
+                                (booking.paymentStatus &&
+                                  booking.paymentStatus !== "COMPLETED")
+                              }
                               onClick={() =>
                                 updateBookingStatus(booking.id, "CONFIRMED")
                               }
@@ -1449,11 +1514,26 @@ export default function AdminPage() {
                               )
                             }
                             className="flex-1"
+                            disabled={
+                              selectedBooking.isExpiredHold ||
+                              (selectedBooking.paymentStatus &&
+                                selectedBooking.paymentStatus !== "COMPLETED")
+                            }
                           >
                             <CheckCircle className="w-4 h-4 mr-2" />
                             Confirm Booking
                           </Button>
                         </>
+                      )}
+                      {(selectedBooking.status === "CANCELED" ||
+                        selectedBooking.isExpiredHold) && (
+                        <Button
+                          variant="destructive"
+                          onClick={() => deleteBooking(selectedBooking.id)}
+                          className="flex-1"
+                        >
+                          Delete
+                        </Button>
                       )}
                       <Button
                         variant="outline"

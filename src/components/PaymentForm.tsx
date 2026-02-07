@@ -34,37 +34,6 @@ function PaymentFormContent({
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string>("");
-
-  useEffect(() => {
-    // Create payment intent
-    const createPaymentIntent = async () => {
-      try {
-        const response = await fetch("/api/payment/create-intent", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            bookingId,
-            currency,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to create payment intent");
-        }
-
-        const { clientSecret } = await response.json();
-        setClientSecret(clientSecret);
-      } catch (error) {
-        console.error("Error creating payment intent:", error);
-        onPaymentError("Failed to initialize payment");
-      }
-    };
-
-    createPaymentIntent();
-  }, [bookingId, amount, currency, onPaymentError]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -79,7 +48,8 @@ function PaymentFormContent({
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/booking/success`,
+          // After redirect (3DS, etc), bring the customer back to their booking page.
+          return_url: `${window.location.origin}/booking/${bookingId}`,
         },
         redirect: "if_required",
       });
@@ -96,15 +66,6 @@ function PaymentFormContent({
       setIsProcessing(false);
     }
   };
-
-  if (!clientSecret) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        <span>Initializing payment...</span>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -148,11 +109,13 @@ function PaymentFormContent({
 
 export function PaymentForm(props: PaymentFormProps) {
   const [clientSecret, setClientSecret] = useState<string>("");
+  const [initError, setInitError] = useState<string>("");
 
   useEffect(() => {
     // Create payment intent for Elements
     const createPaymentIntent = async () => {
       try {
+        setInitError("");
         const response = await fetch("/api/payment/create-intent", {
           method: "POST",
           headers: {
@@ -165,25 +128,49 @@ export function PaymentForm(props: PaymentFormProps) {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to create payment intent");
+          const payload = (await response.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          const message =
+            payload?.error ||
+            (response.status === 410
+              ? "This booking hold has expired. Please book again."
+              : "Failed to initialize payment");
+          setInitError(message);
+          props.onPaymentError(message);
+          return;
         }
 
         const { clientSecret } = await response.json();
         setClientSecret(clientSecret);
       } catch (error) {
         console.error("Error creating payment intent:", error);
-        props.onPaymentError("Failed to initialize payment");
+        const message = "Failed to initialize payment";
+        setInitError(message);
+        props.onPaymentError(message);
       }
     };
 
     createPaymentIntent();
-  }, [
-    props.bookingId,
-    props.amount,
-    props.currency,
-    props.onPaymentError,
-    props,
-  ]);
+  }, [props.bookingId, props.currency, props.onPaymentError]);
+
+  if (initError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            Payment
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            {initError}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!clientSecret) {
     return (

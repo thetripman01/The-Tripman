@@ -76,7 +76,6 @@ export async function POST(request: NextRequest) {
     const pendingCutoff = new Date(Date.now() - holdMinutes * 60_000);
     const conflictingBooking = await db.booking.findFirst({
       where: {
-        eventTypeId: validatedData.eventTypeId,
         startsAt: {
           lt: new Date(validatedData.endsAt),
         },

@@ -16,9 +16,15 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");
     const includePast = searchParams.get("includePast") === "1";
+    const includeCanceled = searchParams.get("includeCanceled") === "1";
+    const includeExpiredPending =
+      searchParams.get("includeExpiredPending") === "1";
+    const includePending = searchParams.get("includePending") !== "0"; // default true
 
     // Build where clause
     const where: Record<string, unknown> = {};
+    const holdMinutes = parseInt(process.env.PAYMENT_HOLD_MINUTES || "15", 10);
+    const pendingCutoff = new Date(Date.now() - holdMinutes * 60_000);
 
     if (status) {
       where.status = status;
@@ -47,6 +53,23 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    // Default view: keep the dashboard clean.
+    // If status filter is not explicitly set, we can exclude:
+    // - CANCELED bookings (unless includeCanceled=1)
+    // - Expired PENDING holds (unless includeExpiredPending=1)
+    if (!status) {
+      const ors: Array<Record<string, unknown>> = [{ status: "CONFIRMED" }];
+      if (includePending) {
+        ors.push(
+          includeExpiredPending
+            ? { status: "PENDING" }
+            : { status: "PENDING", createdAt: { gte: pendingCutoff } },
+        );
+      }
+      if (includeCanceled) ors.push({ status: "CANCELED" });
+      where.OR = ors;
+    }
+
     const bookings = await db.booking.findMany({
       where,
       select: {
@@ -70,6 +93,7 @@ export async function GET(request: NextRequest) {
             name: true,
             durationMin: true,
             priceCents: true,
+            slug: true,
           },
         },
       },
@@ -78,7 +102,15 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(bookings);
+    return NextResponse.json(
+      bookings.map((b) => ({
+        ...b,
+        // Convenience for UI: whether a pending booking hold is expired.
+        isExpiredHold:
+          b.status === "PENDING" &&
+          new Date(b.createdAt).getTime() < pendingCutoff.getTime(),
+      })),
+    );
   } catch (error) {
     console.error("Error fetching bookings:", error);
     return NextResponse.json(

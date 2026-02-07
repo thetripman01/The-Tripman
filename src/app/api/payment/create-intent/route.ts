@@ -62,6 +62,38 @@ export async function POST(request: NextRequest) {
 
     const normalizedCurrency = (currency ?? "cad").toLowerCase();
 
+    // If we already created an intent for this booking, reuse it (supports page refresh / retry).
+    if (booking.paymentIntentId) {
+      const existing = await stripe.paymentIntents.retrieve(
+        booking.paymentIntentId,
+      );
+      const status = existing.status;
+      // If already paid, no need to create another intent.
+      if (status === "succeeded") {
+        return NextResponse.json(
+          { error: "Payment has already been completed for this booking." },
+          { status: 409 },
+        );
+      }
+      // If intent is still usable, return its client secret.
+      if (
+        status === "requires_payment_method" ||
+        status === "requires_confirmation" ||
+        status === "requires_action" ||
+        status === "processing"
+      ) {
+        if (existing.client_secret) {
+          return NextResponse.json({
+            clientSecret: existing.client_secret,
+            paymentIntentId: existing.id,
+            currency: existing.currency,
+            amountCents: existing.amount,
+          });
+        }
+      }
+      // Otherwise, fall through to create a new intent.
+    }
+
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountCents,

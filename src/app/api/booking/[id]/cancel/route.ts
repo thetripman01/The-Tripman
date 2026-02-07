@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { stripe } from "@/lib/stripe";
 import { sendCancellationNotification } from "@/lib/email";
 import { getAdminUserFromRequest } from "@/lib/admin-session";
 
@@ -43,7 +42,7 @@ export async function POST(
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // Check if booking can be cancelled (admins can override cancellation window)
+    // Check if booking can be cancelled (admin-only for now)
     const now = new Date();
     const bookingStart = new Date(booking.startsAt);
     const hoursUntilBooking =
@@ -57,53 +56,17 @@ export async function POST(
       );
     }
 
-    // Process refund if requested and payment was made
-    let refundAmount = 0;
-    if (
-      refundRequested &&
-      booking.paymentIntentId &&
-      booking.paymentStatus === "COMPLETED"
-    ) {
-      try {
-        // Calculate refund amount based on cancellation policy
-        let refundPercentage = 1.0; // Full refund by default
-
-        if (hoursUntilBooking < 24) {
-          refundPercentage = 0.5; // 50% refund if less than 24 hours
-        }
-        if (hoursUntilBooking < 2) {
-          refundPercentage = 0.0; // No refund if less than 2 hours
-        }
-
-        const refundAmountCents = Math.floor(
-          (booking.amountPaid || 0) * refundPercentage,
-        );
-
-        if (refundAmountCents > 0) {
-          await stripe.refunds.create({
-            payment_intent: booking.paymentIntentId,
-            amount: refundAmountCents,
-            reason: "requested_by_customer",
-            metadata: {
-              bookingId: booking.id,
-              cancellationReason: reason || "Customer requested",
-            },
-          });
-
-          refundAmount = refundAmountCents;
-        }
-      } catch (error) {
-        console.error("Failed to process refund:", error);
-        // Continue with cancellation even if refund fails
-      }
-    }
+    // IMPORTANT (launch policy): no refunds are processed automatically.
+    // We intentionally ignore `refundRequested` for now.
+    // (Stripe disputes/chargebacks may still occur via Stripe, but we do not initiate refunds here.)
+    void refundRequested;
+    void hoursUntilBooking;
 
     // Update booking status
     const updatedBooking = await db.booking.update({
       where: { id },
       data: {
         status: "CANCELED",
-        paymentStatus: refundAmount > 0 ? "REFUNDED" : booking.paymentStatus,
         notes: booking.notes
           ? `${booking.notes}\n\nCANCELLED: ${reason || "Customer requested"}`
           : `CANCELLED: ${reason || "Customer requested"}`,
@@ -121,11 +84,9 @@ export async function POST(
     return NextResponse.json({
       success: true,
       booking: updatedBooking,
-      refundAmount: refundAmount / 100, // Convert cents to dollars
+      refundAmount: 0,
       message:
-        refundAmount > 0
-          ? `Booking cancelled. Refund of $${(refundAmount / 100).toFixed(2)} will be processed.`
-          : "Booking cancelled successfully.",
+        "Booking cancelled successfully. Refunds are not available at this time.",
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -65,10 +65,10 @@ export default function TermsPage() {
                 directly.
               </li>
               <li>
-                <strong>Refunds</strong>: refunds are not guaranteed. If a
-                refund is approved, it will be issued back to the original
-                payment method via Stripe. Timing depends on your bank/card
-                provider.
+                <strong>No refunds</strong>: all sales are final and refunds are
+                not available at this time, even if a booking is cancelled.
+                Refunds may be issued only where required by law or at our sole
+                discretion in exceptional circumstances.
               </li>
             </ul>
           </section>

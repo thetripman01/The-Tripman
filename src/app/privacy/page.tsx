@@ -70,6 +70,15 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">Refunds</h2>
+            <p>
+              If a refund is ever issued, it will be processed back to the
+              original payment method through Stripe. Refunds are not available
+              at this time, except where required by law.
+            </p>
+          </section>
+
+          <section className="space-y-3">
             <h2 className="text-xl font-semibold text-gray-900">
               How we share information
             </h2>

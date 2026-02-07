@@ -95,7 +95,6 @@ export default function AdminPage() {
     "bookings" | "calendar" | "fraud" | "settings"
   >("bookings");
   const [cancelReason, setCancelReason] = useState("");
-  const [refundRequested, setRefundRequested] = useState(false);
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
   const [showPastBookings, setShowPastBookings] = useState(false);
   const [showCanceledBookings, setShowCanceledBookings] = useState(false);
@@ -318,7 +317,6 @@ export default function AdminPage() {
         credentials: "include",
         body: JSON.stringify({
           reason: cancelReason || "Cancelled by admin",
-          refundRequested,
         }),
       });
 
@@ -340,7 +338,6 @@ export default function AdminPage() {
       alert(data?.message || "Booking cancelled");
       setSelectedBooking(null);
       setCancelReason("");
-      setRefundRequested(false);
       fetchBookings();
     } catch (error) {
       console.error("Failed to cancel booking:", error);
@@ -1476,19 +1473,6 @@ export default function AdminPage() {
                           />
                         </div>
 
-                        {selectedBooking.paymentStatus === "COMPLETED" && (
-                          <label className="flex items-center gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={refundRequested}
-                              onChange={(e) =>
-                                setRefundRequested(e.target.checked)
-                              }
-                            />
-                            Request refund (if applicable)
-                          </label>
-                        )}
-
                         <Button
                           variant="destructive"
                           className="w-full"
@@ -1497,8 +1481,7 @@ export default function AdminPage() {
                           }
                         >
                           <XCircle className="w-4 h-4 mr-2" />
-                          Cancel Booking{" "}
-                          {refundRequested ? "& Request Refund" : ""}
+                          Cancel Booking (No Refund)
                         </Button>
                       </div>
                     )}

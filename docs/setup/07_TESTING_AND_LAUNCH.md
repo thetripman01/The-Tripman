@@ -9,6 +9,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### 1.1 Landing Page Test
 
 **Test Steps**:
+
 1. Visit `https://yourdomain.com`
 2. Check page loads correctly
 3. Verify all sections display:
@@ -20,6 +21,7 @@ Complete all tests before going live to ensure everything works correctly.
    - Footer
 
 **Expected Results**:
+
 - ✅ Page loads in under 3 seconds
 - ✅ All images load
 - ✅ Navigation works
@@ -31,12 +33,14 @@ Complete all tests before going live to ensure everything works correctly.
 ### 1.2 Service Selection Test
 
 **Test Steps**:
+
 1. Scroll to services section
 2. Click on a service card (e.g., "Birthday Uber Ride")
 3. Verify scheduler appears
 4. Check service details are correct
 
 **Expected Results**:
+
 - ✅ Service cards are clickable
 - ✅ Scheduler loads correctly
 - ✅ Service name and price display
@@ -47,6 +51,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### 1.3 Booking Flow Test
 
 **Test Steps**:
+
 1. Select a service
 2. Choose a date and time
 3. Fill out booking form:
@@ -60,6 +65,7 @@ Complete all tests before going live to ensure everything works correctly.
 5. Submit booking
 
 **Expected Results**:
+
 - ✅ Form validation works
 - ✅ Date/time selection works
 - ✅ Required fields enforced
@@ -71,6 +77,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### 1.4 Payment Test (Test Mode)
 
 **Test Steps**:
+
 1. Complete booking form
 2. Proceed to payment
 3. Use Stripe test card: `4242 4242 4242 4242`
@@ -80,6 +87,7 @@ Complete all tests before going live to ensure everything works correctly.
 4. Complete payment
 
 **Expected Results**:
+
 - ✅ Payment form loads
 - ✅ Test card is accepted
 - ✅ Payment processes successfully
@@ -87,6 +95,7 @@ Complete all tests before going live to ensure everything works correctly.
 - ✅ Booking status updates to "CONFIRMED"
 
 **Verify in Stripe Dashboard**:
+
 - Payment appears in Payments
 - Status is "Succeeded"
 - Webhook was received
@@ -96,6 +105,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### 1.5 Email Notification Test
 
 **Test Steps**:
+
 1. Complete a test booking
 2. Check email inbox
 3. Verify emails received:
@@ -103,6 +113,7 @@ Complete all tests before going live to ensure everything works correctly.
    - Admin notification (to admin email)
 
 **Expected Results**:
+
 - ✅ Customer receives confirmation email
 - ✅ Admin receives notification email
 - ✅ Email formatting is correct
@@ -110,6 +121,7 @@ Complete all tests before going live to ensure everything works correctly.
 - ✅ All booking details in email
 
 **Verify in Resend Dashboard**:
+
 - Emails appear in logs
 - Status is "Delivered"
 - No bounces or failures
@@ -121,6 +133,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### 2.1 Admin Login Test
 
 **Test Steps**:
+
 1. Visit `https://yourdomain.com/admin`
 2. Enter admin credentials:
    - Email: (from `ADMIN_EMAIL`)
@@ -128,6 +141,7 @@ Complete all tests before going live to ensure everything works correctly.
 3. Submit login
 
 **Expected Results**:
+
 - ✅ Login form displays
 - ✅ Valid credentials work
 - ✅ Invalid credentials rejected
@@ -138,6 +152,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### 2.2 Booking Management Test
 
 **Test Steps**:
+
 1. Log in to admin panel
 2. View bookings list
 3. Test features:
@@ -147,6 +162,7 @@ Complete all tests before going live to ensure everything works correctly.
    - Search bookings
 
 **Expected Results**:
+
 - ✅ All bookings visible
 - ✅ Filtering works
 - ✅ Booking details accurate
@@ -157,11 +173,13 @@ Complete all tests before going live to ensure everything works correctly.
 ### 2.3 Booking Status Update Test
 
 **Test Steps**:
+
 1. Find a test booking
 2. Update status (e.g., Confirm, Cancel)
 3. Verify status changes
 
 **Expected Results**:
+
 - ✅ Status updates successfully
 - ✅ Changes reflect in database
 - ✅ Customer notified (if applicable)
@@ -171,12 +189,14 @@ Complete all tests before going live to ensure everything works correctly.
 ### 2.4 Fraud Detection Test
 
 **Test Steps**:
+
 1. Go to Fraud Alerts tab
 2. Check if any alerts appear
 3. Review alert details
 4. Test alert actions
 
 **Expected Results**:
+
 - ✅ Fraud alerts display
 - ✅ Alert details are accurate
 - ✅ Actions work correctly
@@ -188,12 +208,14 @@ Complete all tests before going live to ensure everything works correctly.
 ### 3.1 Successful Payment Test
 
 **Test Steps**:
+
 1. Create booking
 2. Use test card: `4242 4242 4242 4242`
 3. Complete payment
 4. Verify in Stripe Dashboard
 
 **Expected Results**:
+
 - ✅ Payment succeeds
 - ✅ Webhook received
 - ✅ Booking updated
@@ -204,11 +226,13 @@ Complete all tests before going live to ensure everything works correctly.
 ### 3.2 Failed Payment Test
 
 **Test Steps**:
+
 1. Create booking
 2. Use declined card: `4000 0000 0000 0002`
 3. Attempt payment
 
 **Expected Results**:
+
 - ✅ Payment fails gracefully
 - ✅ Error message displayed
 - ✅ Booking not confirmed
@@ -216,18 +240,21 @@ Complete all tests before going live to ensure everything works correctly.
 
 ---
 
-### 3.3 Refund Test
+### 3.3 Refunds (not supported)
+
+Tripman’s launch policy is **no refunds** (except where required by law).
 
 **Test Steps**:
+
 1. Find a paid booking
-2. Cancel booking (if within policy)
-3. Verify refund processed
+2. Cancel the booking from the admin panel
+3. Verify no refund is created automatically
 
 **Expected Results**:
-- ✅ Refund created in Stripe
-- ✅ Booking status updated
-- ✅ Customer notified
-- ✅ Refund appears in Stripe Dashboard
+
+- ✅ Booking can be marked as cancelled
+- ✅ No refund is created in Stripe automatically
+- ✅ Any customer-facing messaging is consistent with “no refunds”
 
 ---
 
@@ -236,10 +263,12 @@ Complete all tests before going live to ensure everything works correctly.
 ### 4.1 Booking Confirmation Email
 
 **Test Steps**:
+
 1. Create a booking
 2. Check email received
 
 **Expected Results**:
+
 - ✅ Email delivered
 - ✅ Correct recipient
 - ✅ All booking details included
@@ -251,10 +280,12 @@ Complete all tests before going live to ensure everything works correctly.
 ### 4.2 Payment Confirmation Email
 
 **Test Steps**:
+
 1. Complete a payment
 2. Check email received
 
 **Expected Results**:
+
 - ✅ Email delivered
 - ✅ Payment details included
 - ✅ Transaction ID shown
@@ -265,13 +296,15 @@ Complete all tests before going live to ensure everything works correctly.
 ### 4.3 Cancellation Email
 
 **Test Steps**:
+
 1. Cancel a booking
 2. Check email received
 
 **Expected Results**:
+
 - ✅ Email delivered
 - ✅ Cancellation details included
-- ✅ Refund information (if applicable)
+- ✅ No-refund policy messaging is consistent (no refund promised)
 
 ---
 
@@ -280,6 +313,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### 5.1 Mobile View Test
 
 **Test Steps**:
+
 1. Open site on mobile device
 2. Test all features:
    - Navigation
@@ -289,6 +323,7 @@ Complete all tests before going live to ensure everything works correctly.
    - Admin panel
 
 **Expected Results**:
+
 - ✅ Site is mobile-friendly
 - ✅ Forms are usable
 - ✅ Text is readable
@@ -300,10 +335,12 @@ Complete all tests before going live to ensure everything works correctly.
 ### 5.2 Tablet View Test
 
 **Test Steps**:
+
 1. Open site on tablet
 2. Verify layout adapts correctly
 
 **Expected Results**:
+
 - ✅ Layout optimized for tablet
 - ✅ All features accessible
 - ✅ Good user experience
@@ -315,11 +352,13 @@ Complete all tests before going live to ensure everything works correctly.
 ### 6.1 Page Load Speed
 
 **Test Tools**:
+
 - Google PageSpeed Insights
 - GTmetrix
 - WebPageTest
 
 **Target Metrics**:
+
 - ✅ First Contentful Paint: < 1.8s
 - ✅ Largest Contentful Paint: < 2.5s
 - ✅ Time to Interactive: < 3.8s
@@ -330,6 +369,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### 6.2 API Response Times
 
 **Test Steps**:
+
 1. Test API endpoints:
    - `/api/event-types`
    - `/api/availability`
@@ -337,6 +377,7 @@ Complete all tests before going live to ensure everything works correctly.
    - `/api/payment/create-intent`
 
 **Expected Results**:
+
 - ✅ All APIs respond in < 1 second
 - ✅ No timeouts
 - ✅ Error handling works
@@ -348,11 +389,13 @@ Complete all tests before going live to ensure everything works correctly.
 ### 7.1 HTTPS Test
 
 **Test Steps**:
+
 1. Visit site
 2. Check URL starts with `https://`
 3. Verify SSL certificate is valid
 
 **Expected Results**:
+
 - ✅ HTTPS enabled
 - ✅ Valid SSL certificate
 - ✅ No mixed content warnings
@@ -362,11 +405,13 @@ Complete all tests before going live to ensure everything works correctly.
 ### 7.2 Admin Security Test
 
 **Test Steps**:
+
 1. Try accessing `/admin` without login
 2. Try invalid credentials
 3. Test session timeout
 
 **Expected Results**:
+
 - ✅ Admin panel requires authentication
 - ✅ Invalid credentials rejected
 - ✅ Sessions expire appropriately
@@ -376,11 +421,13 @@ Complete all tests before going live to ensure everything works correctly.
 ### 7.3 API Security Test
 
 **Test Steps**:
+
 1. Test API endpoints
 2. Verify authentication where required
 3. Check for exposed sensitive data
 
 **Expected Results**:
+
 - ✅ Protected endpoints require auth
 - ✅ No sensitive data exposed
 - ✅ Input validation works
@@ -498,6 +545,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### Issue: Payments Not Processing
 
 **Solutions**:
+
 - Check Stripe dashboard for errors
 - Verify webhook is receiving events
 - Check API keys are correct
@@ -506,6 +554,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### Issue: Emails Not Sending
 
 **Solutions**:
+
 - Check Resend dashboard
 - Verify API key is correct
 - Check email logs
@@ -514,6 +563,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### Issue: Database Connection Errors
 
 **Solutions**:
+
 - Verify `DATABASE_URL` is correct
 - Check Neon dashboard for issues
 - Review connection limits
@@ -522,6 +572,7 @@ Complete all tests before going live to ensure everything works correctly.
 ### Issue: Site Not Loading
 
 **Solutions**:
+
 - Check Vercel deployment status
 - Verify domain DNS is correct
 - Check SSL certificate
@@ -573,8 +624,8 @@ Your launch is successful when:
 ---
 
 **Support Resources**:
+
 - Vercel: https://vercel.com/support
 - Stripe: https://support.stripe.com
 - Resend: support@resend.com
 - Neon: https://neon.tech/docs
-

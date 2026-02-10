@@ -15,7 +15,7 @@ This document is the **security baseline** for Tripman: current posture, risks, 
 - **Customer data**: name, email, phone, pickup location, notes.
 - **Bookings**: schedule integrity (prevent fake / duplicate / unpaid bookings).
 - **Payments**: ensure a user cannot “book without paying” (when Stripe is live).
-- **Admin panel**: full access to bookings, cancellations, refunds, availability blocks/rules.
+- **Admin panel**: full access to bookings, cancellations (no refunds), availability blocks/rules.
 - **Operational secrets**: `DATABASE_URL`, `ADMIN_SESSION_SECRET`, Stripe keys, Resend key, Google private key, tracking secret.
 
 ### 1.2 Trust boundaries
@@ -67,7 +67,7 @@ This document is the **security baseline** for Tripman: current posture, risks, 
 - **Payments gating**: ensure **no free booking** once Stripe is enabled (see section 7).
 - **Admin brute force**: relies on password strength + cookie secret; should add lockouts/rate limits.
 - **CSP/security headers**: not explicitly hardened in one place (needs review).
-- **Audit logging**: admin actions (cancel/refund/availability changes) should be logged.
+- **Audit logging**: admin actions (cancel/availability changes) should be logged.
 
 ---
 
@@ -198,7 +198,7 @@ SSRF risk increases if we ever allow users to control URLs that the server fetch
 
 **Additional mitigations**
 
-- Shorten TTL (e.g. 4h) + “re-auth for sensitive actions” (refunds).
+- Shorten TTL (e.g. 4h) + “re-auth for sensitive actions” (refunds, if enabled later).
 - Bind sessions to a server-side record (optional) and revoke on logout.
 - Add CSP + avoid XSS vectors.
 
@@ -247,9 +247,9 @@ User creates bookings without paying, or pays once and reuses that “success”
   - when user starts checkout, create a “held” record or a lock
   - release lock on payment failure/timeout
 
-### 7.4 Refund security
+### 7.4 Refund security (if enabled later)
 
-Refund endpoints must be admin-only.
+Tripman’s launch policy is **no refunds**. If refunds are added in the future, refund endpoints must be admin-only.
 
 - Log refund actions (who, when, amount, reason).
 - Use Stripe idempotency keys for refund calls.
@@ -343,7 +343,7 @@ Log **events**, not raw payloads:
 
 - `booking_created` (bookingId, eventTypeId, startsAt, ip hash)
 - `booking_confirmed` (bookingId, stripePaymentIntentId)
-- `booking_cancelled` (bookingId, actor=customer/admin, refund=true/false)
+- `booking_cancelled` (bookingId, actor=customer/admin, refund=true/false) _(refund is expected to be false under the no-refund policy)_
 - `admin_login_failed` (email hash, ip hash)
 - `admin_login_success` (adminUserId, ip hash)
 
@@ -355,13 +355,13 @@ Log **events**, not raw payloads:
 
 - Convert booking to `PENDING` until Stripe succeeds
 - Add rate limiting for booking + admin login
-- Add audit logs for admin cancel/refund/block
+- Add audit logs for admin cancel/block
 
 ### P1 (soon after)
 
 - Add bot protection (Turnstile) to booking/contact
 - Tighten security headers (CSP)
-- Add “re-auth required” for refunds
+- Add “re-auth required” for refunds (if enabled later)
 
 ### P2 (later)
 

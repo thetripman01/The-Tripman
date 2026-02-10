@@ -50,7 +50,7 @@ This is the single source of truth for **where we are**, **what is done**, and *
 ### Security hardening
 
 - Add rate limiting + basic bot protection on sensitive endpoints.
-- Add audit logging for admin actions (cancel/refund/block).
+- Add audit logging for admin actions (cancel/block).
 - Review CSP/security headers and tighten.
 
 ### Google Calendar integration (optional but recommended)

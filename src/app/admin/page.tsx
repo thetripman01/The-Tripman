@@ -309,7 +309,7 @@ export default function AdminPage() {
     }
   };
 
-  const cancelBookingWithOptionalRefund = async (bookingId: string) => {
+  const cancelBookingNoRefund = async (bookingId: string) => {
     try {
       const response = await fetch(`/api/booking/${bookingId}/cancel`, {
         method: "POST",
@@ -1454,7 +1454,7 @@ export default function AdminPage() {
                       )}
                     </div>
 
-                    {/* Admin actions: cancel + optional refund */}
+                    {/* Admin actions: cancel (no refunds) */}
                     {selectedBooking.status !== "CANCELED" && (
                       <div className="rounded-lg border bg-white p-4 space-y-3">
                         <div className="font-semibold text-gray-900">
@@ -1477,7 +1477,7 @@ export default function AdminPage() {
                           variant="destructive"
                           className="w-full"
                           onClick={() =>
-                            cancelBookingWithOptionalRefund(selectedBooking.id)
+                            cancelBookingNoRefund(selectedBooking.id)
                           }
                         >
                           <XCircle className="w-4 h-4 mr-2" />

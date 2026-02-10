@@ -14,7 +14,7 @@ const faqs = [
   {
     question: "What is your cancellation policy?",
     answer:
-      "You can cancel your booking up to 12 hours before your scheduled time for a full refund. Cancellations made within 12 hours may be subject to a cancellation fee.",
+      "At launch, online changes/cancellations are disabled. If you need to request a change or cancellation, please contact The Tripman directly. Please note: all sales are final and refunds are not available, except where required by law.",
   },
   {
     question: "Do you provide vehicles for different group sizes?",

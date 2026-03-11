@@ -70,12 +70,12 @@ function PaymentFormContent({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center gap-2 text-blue-800 mb-2">
+      <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4">
+        <div className="flex items-center gap-2 text-cyan-800 mb-2">
           <CreditCard className="w-5 h-5" />
           <span className="font-semibold">Secure Payment</span>
         </div>
-        <p className="text-blue-700 text-sm">
+        <p className="text-cyan-700 text-sm">
           Your payment information is encrypted and secure. We use Stripe for
           payment processing.
         </p>
@@ -89,7 +89,7 @@ function PaymentFormContent({
 
       <Button
         type="submit"
-        className="w-full"
+        className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl"
         disabled={!stripe || isProcessing}
       >
         {isProcessing ? (
@@ -199,7 +199,7 @@ export function PaymentForm(props: PaymentFormProps) {
             appearance: {
               theme: "stripe",
               variables: {
-                colorPrimary: "#059669",
+                colorPrimary: "#0891b2",
               },
             },
           }}

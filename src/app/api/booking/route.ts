@@ -109,6 +109,19 @@ export async function POST(request: NextRequest) {
       eventType.slug,
       peopleCountNum,
     );
+
+    // For paid packages, require valid group size (1–4 people)
+    if (
+      eventType.slug !== "tripman-promo-ride" &&
+      eventType.priceCents != null &&
+      tierPriceCents == null
+    ) {
+      return NextResponse.json(
+        { error: "Group size must be 1–4 people for this package." },
+        { status: 400 },
+      );
+    }
+
     const fixedPriceCents = tierPriceCents ?? eventType.priceCents ?? null;
     const requiresPayment = Boolean(fixedPriceCents && fixedPriceCents > 0);
 
@@ -157,7 +170,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid booking data", details: error.issues },
+        { error: "Invalid booking data" },
         { status: 400 },
       );
     }

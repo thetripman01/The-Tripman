@@ -54,7 +54,7 @@ const statusConfig = {
   },
   ARRIVED: {
     label: "Driver Arrived",
-    color: "bg-green-500",
+    color: "bg-cyan-500",
     icon: MapPin,
     message: "Your driver has arrived at the pickup location.",
   },
@@ -66,7 +66,7 @@ const statusConfig = {
   },
   COMPLETED: {
     label: "Ride Completed",
-    color: "bg-green-600",
+    color: "bg-cyan-600",
     icon: CheckCircle,
     message: "Your ride has been completed. Thank you!",
   },
@@ -136,7 +136,7 @@ export function RideTracking({ bookingId, email }: RideTrackingProps) {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
             <span className="ml-2">Loading ride tracking...</span>
           </div>
         </CardContent>
@@ -211,7 +211,7 @@ export function RideTracking({ bookingId, email }: RideTrackingProps) {
                   <Phone className="w-4 h-4" />
                   <a
                     href={`tel:${rideData.driverPhone}`}
-                    className="text-green-600 hover:underline"
+                    className="text-cyan-600 hover:underline"
                   >
                     {rideData.driverPhone}
                   </a>

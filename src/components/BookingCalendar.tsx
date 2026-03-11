@@ -98,13 +98,13 @@ export function BookingCalendar({
     : "";
 
   return (
-    <Card className="border-green-200 shadow-lg">
+    <Card className="border-cyan-200 shadow-lg">
       <CardContent className="p-0">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px]">
           {/* Left: details + timezone */}
           <div className="p-5 border-b lg:border-b-0 lg:border-r bg-white">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-600 text-white flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-cyan-600 text-white flex items-center justify-center">
                 <Calendar className="w-5 h-5" />
               </div>
               <div>
@@ -119,7 +119,7 @@ export function BookingCalendar({
 
             <div className="mt-5">
               <div className="flex items-center gap-2 text-sm font-medium text-gray-800 mb-2">
-                <Globe className="w-4 h-4 text-green-700" />
+                <Globe className="w-4 h-4 text-cyan-700" />
                 Time zone
               </div>
               <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
@@ -134,7 +134,7 @@ export function BookingCalendar({
           {/* Middle: month grid */}
           <div className="p-5 border-b lg:border-b-0 lg:border-r bg-white">
             <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-4 h-4 text-green-700" />
+              <Calendar className="w-4 h-4 text-cyan-700" />
               <span className="font-semibold text-gray-900">Select a date</span>
             </div>
             <div className="border rounded-xl overflow-hidden">
@@ -163,7 +163,7 @@ export function BookingCalendar({
           <div className="p-5 bg-white">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-green-700" />
+                <Clock className="w-4 h-4 text-cyan-700" />
                 <span className="font-semibold text-gray-900">Times</span>
               </div>
               <div className="inline-flex rounded-lg border overflow-hidden">
@@ -172,7 +172,7 @@ export function BookingCalendar({
                   onClick={() => setTimeFormat("12h")}
                   className={`px-3 py-1.5 text-sm ${
                     timeFormat === "12h"
-                      ? "bg-green-600 text-white"
+                      ? "bg-cyan-600 text-white"
                       : "bg-white text-gray-700"
                   }`}
                 >
@@ -183,7 +183,7 @@ export function BookingCalendar({
                   onClick={() => setTimeFormat("24h")}
                   className={`px-3 py-1.5 text-sm ${
                     timeFormat === "24h"
-                      ? "bg-green-600 text-white"
+                      ? "bg-cyan-600 text-white"
                       : "bg-white text-gray-700"
                   }`}
                 >
@@ -198,7 +198,7 @@ export function BookingCalendar({
               </div>
             ) : loading ? (
               <div className="flex items-center justify-center py-10">
-                <Loader2 className="w-5 h-5 animate-spin text-green-600" />
+                <Loader2 className="w-5 h-5 animate-spin text-cyan-600" />
                 <span className="ml-2 text-sm text-gray-600">
                   Loading times…
                 </span>
@@ -218,8 +218,8 @@ export function BookingCalendar({
                         onClick={() => handleDatetimeSelect(slot.datetime)}
                         className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
                           isSelected
-                            ? "border-green-600 bg-green-50 shadow-sm"
-                            : "border-gray-200 hover:border-green-300 hover:bg-green-50/50"
+                            ? "border-cyan-600 bg-cyan-50 shadow-sm"
+                            : "border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/50"
                         }`}
                       >
                         <div className="font-semibold text-gray-900">

@@ -1,7 +1,15 @@
+import Link from "next/link";
+
 export default function TermsPage() {
   return (
     <main className="min-h-screen bg-white">
       <div className="max-w-3xl mx-auto px-4 py-16">
+        <Link
+          href="/"
+          className="inline-flex items-center text-cyan-600 hover:text-cyan-700 font-medium mb-8 transition-colors duration-200"
+        >
+          ← Back to home
+        </Link>
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
           Terms of Service
         </h1>
@@ -9,7 +17,7 @@ export default function TermsPage() {
           Effective date: {new Date().getFullYear()}-01-01
         </p>
 
-        <div className="space-y-10 text-gray-700">
+        <div className="space-y-10 text-gray-700 leading-relaxed">
           <section className="space-y-3">
             <p>
               These Terms of Service (“Terms”) govern your access to and use of
@@ -43,8 +51,15 @@ export default function TermsPage() {
             </h2>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                Pricing may vary by package and group size. Taxes/fees (if any)
-                will be shown during booking/checkout.
+                <strong>The Tripman Experience</strong>: 70 CAD (1–4 people).
+                Journey and party only.
+              </li>
+              <li>
+                <strong>The Tripman Experience +</strong>: 270 CAD (1–4 people).
+                Includes videos shot and shared on our accounts.
+              </li>
+              <li>
+                Taxes/fees (if any) will be shown during booking/checkout.
               </li>
               <li>
                 Payments are processed securely through Stripe. We do not store
@@ -124,7 +139,7 @@ export default function TermsPage() {
             <p>
               Questions? Email{" "}
               <a
-                className="text-green-700 hover:underline"
+                className="text-cyan-700 hover:underline"
                 href="mailto:thetripman01@gmail.com"
               >
                 thetripman01@gmail.com

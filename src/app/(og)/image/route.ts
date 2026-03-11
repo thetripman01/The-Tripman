@@ -1,13 +1,15 @@
-import { ImageResponse } from '@vercel/og'
-import { NextRequest } from 'next/server'
+import { ImageResponse } from "@vercel/og";
+import { NextRequest } from "next/server";
 
-export const runtime = 'edge'
+export const runtime = "edge";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const title = searchParams.get('title') || 'The Tripman'
-    const description = searchParams.get('description') || 'Premium Transportation & Experience Services'
+    const { searchParams } = new URL(request.url);
+    const title = searchParams.get("title") || "The Tripman";
+    const description =
+      searchParams.get("description") ||
+      "Premium Transportation & Experience Services";
 
     const html = `
       <div style="
@@ -17,7 +19,7 @@ export async function GET(request: NextRequest) {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        background: linear-gradient(135deg, #0891b2 0%, #22d3ee 100%);
         color: white;
         padding: 40px;
         font-family: system-ui, sans-serif;
@@ -38,16 +40,18 @@ export async function GET(request: NextRequest) {
           line-height: 1.4;
         ">${description}</p>
       </div>
-    `
+    `;
 
     return new ImageResponse(html as unknown as React.ReactElement, {
       width: 1200,
       height: 630,
-    })
+    });
   } catch (e) {
-    console.log(`Error generating image: ${e instanceof Error ? e.message : 'Unknown error'}`)
+    console.log(
+      `Error generating image: ${e instanceof Error ? e.message : "Unknown error"}`,
+    );
     return new Response(`Failed to generate the image`, {
       status: 500,
-    })
+    });
   }
 }

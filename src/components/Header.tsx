@@ -45,7 +45,7 @@ export function Header() {
             <div
               className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden ${
                 isScrolled
-                  ? "bg-green-500 shadow-lg"
+                  ? "bg-cyan-600 shadow-lg"
                   : "bg-white/10 backdrop-blur-sm border border-white/20"
               }`}
             >
@@ -68,9 +68,9 @@ export function Header() {
           <nav className="hidden md:flex items-center space-x-8">
             <button
               onClick={() => scrollToSection("about")}
-              className={`font-medium transition-colors ${
+              className={`font-medium transition-colors duration-200 ${
                 isScrolled
-                  ? "text-gray-700 hover:text-green-600"
+                  ? "text-gray-700 hover:text-cyan-600"
                   : "text-white/90 hover:text-white"
               }`}
             >
@@ -78,9 +78,9 @@ export function Header() {
             </button>
             <button
               onClick={() => scrollToSection("become-passenger")}
-              className={`font-medium transition-colors ${
+              className={`font-medium transition-colors duration-200 ${
                 isScrolled
-                  ? "text-gray-700 hover:text-green-600"
+                  ? "text-gray-700 hover:text-cyan-600"
                   : "text-white/90 hover:text-white"
               }`}
             >
@@ -88,9 +88,9 @@ export function Header() {
             </button>
             <button
               onClick={() => scrollToSection("faq")}
-              className={`font-medium transition-colors ${
+              className={`font-medium transition-colors duration-200 ${
                 isScrolled
-                  ? "text-gray-700 hover:text-green-600"
+                  ? "text-gray-700 hover:text-cyan-600"
                   : "text-white/90 hover:text-white"
               }`}
             >
@@ -98,9 +98,9 @@ export function Header() {
             </button>
             <button
               onClick={() => scrollToSection("contact")}
-              className={`font-medium transition-colors ${
+              className={`font-medium transition-colors duration-200 ${
                 isScrolled
-                  ? "text-gray-700 hover:text-green-600"
+                  ? "text-gray-700 hover:text-cyan-600"
                   : "text-white/90 hover:text-white"
               }`}
             >
@@ -110,9 +110,9 @@ export function Header() {
               onClick={scrollToPackages}
               className={`${
                 isScrolled
-                  ? "bg-green-500 text-white hover:bg-green-600 shadow-lg"
-                  : "bg-white text-green-600 hover:bg-green-50 shadow-lg"
-              } font-semibold transition-all duration-300 transform hover:scale-105`}
+                  ? "bg-cyan-600 text-white hover:bg-cyan-700 shadow-lg rounded-xl"
+                  : "bg-white text-cyan-700 hover:bg-cyan-50 shadow-lg rounded-xl"
+              } font-semibold transition-all duration-300 hover:scale-[1.02]`}
             >
               Book Now
             </Button>
@@ -139,31 +139,31 @@ export function Header() {
             <nav className="flex flex-col space-y-2 p-4">
               <button
                 onClick={() => scrollToSection("about")}
-                className="text-left px-4 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                className="text-left px-4 py-2 text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors duration-200"
               >
                 About
               </button>
               <button
                 onClick={() => scrollToSection("become-passenger")}
-                className="text-left px-4 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                className="text-left px-4 py-2 text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors duration-200"
               >
                 Become a Passenger
               </button>
               <button
                 onClick={() => scrollToSection("faq")}
-                className="text-left px-4 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                className="text-left px-4 py-2 text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors duration-200"
               >
                 FAQ
               </button>
               <button
                 onClick={() => scrollToSection("contact")}
-                className="text-left px-4 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                className="text-left px-4 py-2 text-gray-700 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors duration-200"
               >
                 Contact
               </button>
               <Button
                 onClick={scrollToPackages}
-                className="bg-green-600 text-white hover:bg-green-700 font-semibold mt-2"
+                className="bg-cyan-600 text-white hover:bg-cyan-700 font-semibold mt-2 rounded-xl"
               >
                 Book Now
               </Button>

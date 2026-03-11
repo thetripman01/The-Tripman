@@ -224,20 +224,16 @@ export async function logFraudAttempt(
   fraudResult: FraudCheckResult,
   bookingData: BookingData,
 ) {
+  void bookingData; // Reserved for future admin alerts / external logging
   try {
-    // Log to database or external fraud detection service
-    console.log("🚨 Fraud Detection Alert:", {
-      bookingId,
-      riskScore: fraudResult.riskScore,
-      reasons: fraudResult.reasons,
-      bookingData: {
-        email: bookingData.email,
-        fullName: bookingData.fullName,
-        amount: bookingData.amountPaid,
-        eventType: bookingData.eventTypeId,
-      },
-    });
-
+    // Log to database or external fraud detection service (server-side only)
+    if (process.env.NODE_ENV === "development") {
+      console.warn("Fraud Detection Alert:", {
+        bookingId,
+        riskScore: fraudResult.riskScore,
+        reasons: fraudResult.reasons,
+      });
+    }
     // In production, you might want to:
     // 1. Send alert to admin
     // 2. Log to external fraud detection service

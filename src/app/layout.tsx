@@ -3,14 +3,15 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export const metadata: Metadata = {
@@ -34,7 +35,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "The Tripman Experience",
-    description: "Join the ride. Feel the chaos. Live the moment.",
+    description:
+      "Book your Tripman Experience. Car karaoke, party lights, unforgettable vibes. Toronto & GTA.",
     url: "/",
     siteName: "The Tripman",
     images: [
@@ -51,7 +53,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "The Tripman Experience",
-    description: "Join the ride. Feel the chaos. Live the moment.",
+    description:
+      "Book your Tripman Experience. Car karaoke, party lights, unforgettable vibes. Toronto & GTA.",
     images: [
       "/api/og?title=The%20Tripman&description=Premium%20Transportation%20%26%20Experience%20Services",
     ],
@@ -82,6 +85,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         {children}
+        <Toaster richColors position="top-center" />
         <Analytics />
         <SpeedInsights />
       </body>

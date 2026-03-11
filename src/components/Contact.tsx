@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import { Phone, Mail, MapPin, Clock, Send, CheckCircle } from "lucide-react";
 
 export function Contact() {
@@ -49,11 +50,10 @@ export function Contact() {
           });
         }, 3000);
       } else {
-        alert(data.error || "Failed to send message. Please try again.");
+        toast.error(data.error || "Failed to send message. Please try again.");
       }
-    } catch (error) {
-      console.error("Contact form error:", error);
-      alert("An error occurred. Please try again later.");
+    } catch {
+      toast.error("An error occurred. Please try again later.");
     } finally {
       setIsSubmitting(false);
     }
@@ -98,7 +98,7 @@ export function Contact() {
             <CardContent>
               {isSubmitted ? (
                 <div className="text-center py-8">
-                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                  <CheckCircle className="w-16 h-16 text-cyan-500 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     Message Sent Successfully!
                   </h3>
@@ -178,7 +178,7 @@ export function Contact() {
                         name="service"
                         value={formData.service}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
                       >
                         <option value="">Select a package</option>
                         <option value="tripman-experience">
@@ -186,9 +186,6 @@ export function Contact() {
                         </option>
                         <option value="tripman-experience-plus">
                           The Tripman Experience +
-                        </option>
-                        <option value="tripman-promo-ride">
-                          The Tripman Promo Ride
                         </option>
                         <option value="other">Other / General question</option>
                       </select>
@@ -217,7 +214,7 @@ export function Contact() {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+                    className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-3 px-6 rounded-xl font-semibold transition-colors duration-200"
                   >
                     {isSubmitting ? (
                       <div className="flex items-center">
@@ -249,7 +246,7 @@ export function Contact() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                  <div className="w-12 h-12 bg-cyan-600 rounded-full flex items-center justify-center mr-4">
                     <Phone className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -271,7 +268,7 @@ export function Contact() {
                 </div>
 
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                  <div className="w-12 h-12 bg-cyan-600 rounded-full flex items-center justify-center mr-4">
                     <Mail className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -284,7 +281,7 @@ export function Contact() {
                 </div>
 
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                  <div className="w-12 h-12 bg-cyan-600 rounded-full flex items-center justify-center mr-4">
                     <MapPin className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -303,14 +300,14 @@ export function Contact() {
                 </div>
 
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                  <div className="w-12 h-12 bg-cyan-600 rounded-full flex items-center justify-center mr-4">
                     <Clock className="w-6 h-6 text-white" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">
                       Business Hours
                     </h3>
-                    <p className="text-sm text-green-500 font-semibold">
+                    <p className="text-sm text-cyan-600 font-semibold">
                       Online booking is available 24/7
                     </p>
                   </div>

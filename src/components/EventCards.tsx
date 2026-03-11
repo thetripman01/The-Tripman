@@ -73,7 +73,7 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
     return (
       <section
         id="events"
-        className="py-20 px-4 bg-gradient-to-br from-green-50 to-green-100"
+        className="py-20 px-4 bg-gradient-to-br from-cyan-50 to-cyan-100"
       >
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
@@ -107,7 +107,7 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
     return (
       <section
         id="events"
-        className="py-20 px-4 bg-gradient-to-br from-green-50 to-green-100"
+        className="py-20 px-4 bg-gradient-to-br from-cyan-50 to-cyan-100"
       >
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
@@ -118,7 +118,7 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
               Packages are temporarily unavailable.
             </p>
           </div>
-          <div className="mx-auto max-w-2xl bg-white/70 border border-green-200 rounded-2xl p-8 shadow-sm text-center">
+          <div className="mx-auto max-w-2xl bg-white/70 border border-cyan-200 rounded-2xl p-8 shadow-sm text-center">
             <p className="text-gray-700 mb-3">
               If you&apos;re seeing this, booking packages haven&apos;t been
               configured in the database yet.
@@ -131,7 +131,7 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
                 const contactSection = document.getElementById("contact");
                 contactSection?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-cyan-600 hover:bg-cyan-700"
             >
               Contact to Book
             </Button>
@@ -144,7 +144,7 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
   return (
     <section
       id="events"
-      className="py-20 px-4 bg-gradient-to-br from-green-50 to-green-100"
+      className="py-20 px-4 bg-gradient-to-br from-cyan-50 to-cyan-100"
     >
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
@@ -169,9 +169,9 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
                 key={eventType.id}
                 className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
                   isSelected
-                    ? "ring-2 ring-green-600 shadow-lg"
+                    ? "ring-2 ring-cyan-600 shadow-lg"
                     : isPopular
-                      ? "ring-2 ring-green-300 shadow-xl hover:scale-[1.03]"
+                      ? "ring-2 ring-cyan-300 shadow-xl hover:scale-[1.03]"
                       : "hover:scale-[1.02]"
                 }`}
                 onClick={() => handleEventSelect(eventType)}
@@ -183,12 +183,12 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       {isPopular && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-1 rounded-full">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-cyan-600 text-white px-2 py-1 rounded-full">
                           Most popular
                         </span>
                       )}
                       {isSelected && (
-                        <Star className="w-5 h-5 text-green-600 fill-current" />
+                        <Star className="w-5 h-5 text-cyan-600 fill-current" />
                       )}
                     </div>
                   </div>
@@ -204,9 +204,9 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
                       <span>{eventType.durationMin} minutes</span>
                     </div>
 
-                    <div className="rounded-lg bg-white/70 border border-green-200 p-3">
+                    <div className="rounded-lg bg-white/70 border border-cyan-200 p-3">
                       <div className="flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-green-700" />
+                        <DollarSign className="w-4 h-4 text-cyan-700" />
                         <div className="text-xl font-extrabold text-gray-900">
                           {priceLabel}
                         </div>

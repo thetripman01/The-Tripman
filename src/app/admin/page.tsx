@@ -331,17 +331,16 @@ export default function AdminPage() {
       } | null;
 
       if (!response.ok) {
-        alert(data?.message || data?.error || "Failed to cancel booking");
+        toast.error(data?.message || data?.error || "Failed to cancel booking");
         return;
       }
 
-      alert(data?.message || "Booking cancelled");
+      toast.success(data?.message || "Booking cancelled");
       setSelectedBooking(null);
       setCancelReason("");
       fetchBookings();
-    } catch (error) {
-      console.error("Failed to cancel booking:", error);
-      alert("Failed to cancel booking");
+    } catch {
+      toast.error("Failed to cancel booking");
     }
   };
 
@@ -356,7 +355,7 @@ export default function AdminPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "CONFIRMED":
-        return <Badge className="bg-green-100 text-green-800">Confirmed</Badge>;
+        return <Badge className="bg-cyan-100 text-cyan-800">Confirmed</Badge>;
       case "PENDING":
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
       case "CANCELED":
@@ -370,7 +369,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
           <p>Loading bookings...</p>
         </div>
       </div>
@@ -395,7 +394,7 @@ export default function AdminPage() {
                 onClick={() => setActiveTab("bookings")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "bookings"
-                    ? "border-green-500 text-green-600"
+                    ? "border-cyan-500 text-cyan-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
@@ -406,7 +405,7 @@ export default function AdminPage() {
                 onClick={() => setActiveTab("calendar")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "calendar"
-                    ? "border-green-500 text-green-600"
+                    ? "border-cyan-500 text-cyan-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
@@ -428,7 +427,7 @@ export default function AdminPage() {
                 onClick={() => setActiveTab("settings")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "settings"
-                    ? "border-green-500 text-green-600"
+                    ? "border-cyan-500 text-cyan-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
@@ -502,7 +501,7 @@ export default function AdminPage() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-cyan-600 hover:bg-cyan-700"
                   disabled={savingAccount}
                   onClick={async () => {
                     if (!currentPassword) {
@@ -675,7 +674,7 @@ export default function AdminPage() {
 
                   <div className="lg:col-span-1">
                     <Button
-                      className="w-full bg-green-600 hover:bg-green-700"
+                      className="w-full bg-cyan-600 hover:bg-cyan-700"
                       onClick={async () => {
                         if (ruleForm.daysOfWeek.length === 0) {
                           toast.error("Select at least one weekday.");
@@ -743,8 +742,8 @@ export default function AdminPage() {
                             }}
                             className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                               active
-                                ? "bg-green-600 text-white border-green-600"
-                                : "bg-white text-gray-700 border-gray-300 hover:border-green-400"
+                                ? "bg-cyan-600 text-white border-cyan-600"
+                                : "bg-white text-gray-700 border-gray-300 hover:border-cyan-400"
                             }`}
                           >
                             {d.label}
@@ -791,7 +790,7 @@ export default function AdminPage() {
                             <span
                               className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mr-2 ${
                                 r.isAvailable
-                                  ? "bg-green-100 text-green-700"
+                                  ? "bg-cyan-100 text-cyan-700"
                                   : "bg-red-100 text-red-700"
                               }`}
                             >
@@ -1188,7 +1187,7 @@ export default function AdminPage() {
                         type="checkbox"
                         checked={showPastBookings}
                         onChange={(e) => setShowPastBookings(e.target.checked)}
-                        className="accent-green-600"
+                        className="accent-cyan-600"
                       />
                       Show past bookings
                     </label>
@@ -1199,7 +1198,7 @@ export default function AdminPage() {
                         onChange={(e) =>
                           setShowCanceledBookings(e.target.checked)
                         }
-                        className="accent-green-600"
+                        className="accent-cyan-600"
                       />
                       Show canceled
                     </label>
@@ -1210,7 +1209,7 @@ export default function AdminPage() {
                         onChange={(e) =>
                           setShowExpiredPending(e.target.checked)
                         }
-                        className="accent-green-600"
+                        className="accent-cyan-600"
                       />
                       Show expired pending
                     </label>
@@ -1496,7 +1495,7 @@ export default function AdminPage() {
                                 "CONFIRMED",
                               )
                             }
-                            className="flex-1"
+                            className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl"
                             disabled={
                               selectedBooking.isExpiredHold ||
                               (selectedBooking.paymentStatus &&

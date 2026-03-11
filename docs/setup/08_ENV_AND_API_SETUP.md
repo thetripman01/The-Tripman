@@ -165,7 +165,7 @@ NEXT_PUBLIC_GA4_ID="G-XXXXXXXXXX"
 
 ## 9) Instagram latest embed – optional
 
-The API route `src/app/api/instagram/latest/route.ts` requires:
+The API route `src/app/api/instagram/latest/route.ts` fetches the **latest video (reel)** and embeds it. When you upload a new reel, it auto-shows. Required:
 
 ```env
 IG_USER_ID=""
@@ -178,7 +178,7 @@ High level:
 
 1. Create a Meta app at `developers.facebook.com`
 2. Connect Instagram to a Facebook page and enable Instagram Graph API
-3. Generate a user token with permissions for reading media
+3. Generate a user token with permissions: `instagram_basic`, `pages_show_list`
 4. Set the values above
 
 If you want, we can walk through your Meta app screens and I’ll tailor the exact steps to your current setup.

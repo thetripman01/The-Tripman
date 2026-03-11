@@ -2,8 +2,7 @@
 
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Music, Video, TrendingUp } from "lucide-react";
+import { Music, Video } from "lucide-react";
 import { toast } from "sonner";
 
 interface EventType {
@@ -16,13 +15,15 @@ interface EventType {
   isActive: boolean;
 }
 
+const BOOKABLE_SLUGS = ["tripman-experience", "tripman-experience-plus"];
+
 export function BecomePassenger(props: {
   eventTypes: EventType[];
   onSelectEvent: (eventType: EventType) => void;
 }) {
   const bySlug = useMemo(() => {
     const map = new Map<string, EventType>();
-    for (const e of props.eventTypes) map.set(e.slug, e);
+    for (const e of props.eventTypes) map.set(e.slug, map.get(e.slug) ?? e);
     return map;
   }, [props.eventTypes]);
 
@@ -30,7 +31,7 @@ export function BecomePassenger(props: {
     const eventType = bySlug.get(slug);
     if (!eventType) {
       toast.error("Booking is temporarily unavailable.", {
-        description: "Please contact us and we’ll help you book manually.",
+        description: "Please contact us and we'll help you book manually.",
       });
       const contact = document.getElementById("contact");
       contact?.scrollIntoView({ behavior: "smooth" });
@@ -41,7 +42,6 @@ export function BecomePassenger(props: {
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        // Scroll to the booking area (more predictable than the scheduler anchor).
         const bookingArea = document.getElementById("events");
         if (bookingArea) bookingArea.scrollIntoView({ behavior: "smooth" });
       });
@@ -49,29 +49,28 @@ export function BecomePassenger(props: {
   };
 
   return (
-    <section id="become-passenger" className="py-24 px-4 bg-white">
-      <div className="max-w-6xl mx-auto">
+    <section
+      id="become-passenger"
+      className="py-24 px-4 bg-white scroll-mt-20"
+      aria-labelledby="become-passenger-heading"
+    >
+      <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+          <h2
+            id="become-passenger-heading"
+            className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
+          >
             Become a Passenger
           </h2>
-          <div className="max-w-3xl mx-auto text-gray-700 space-y-4">
-            <p>
-              You&apos;ve seen the videos. You&apos;ve watched strangers turn
-              into performers, hype machines, best friends, and sometimes
-              therapy clients in the backseat.
-            </p>
-            <p>Now it&apos;s your turn.</p>
-          </div>
-          <p className="mt-8 text-lg font-semibold text-gray-900">
-            The Choice Is Yours!
+          <p className="max-w-2xl mx-auto text-gray-700 text-lg leading-relaxed">
+            You&apos;ve seen the videos. Now it&apos;s your turn.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Tripman Experience */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Tripman Experience - 70 CAD */}
           <Card
-            className="bg-white border border-green-200/70 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col"
+            className="bg-white border border-cyan-200/70 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full flex flex-col focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2"
             onClick={() => selectAndScroll("tripman-experience")}
             role="button"
             tabIndex={0}
@@ -84,8 +83,8 @@ export function BecomePassenger(props: {
           >
             <CardHeader className="pb-2">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-600/10 ring-1 ring-green-600/20 flex items-center justify-center">
-                  <Music className="w-5 h-5 text-green-700" />
+                <div className="w-10 h-10 rounded-full bg-cyan-600/10 ring-1 ring-cyan-600/20 flex items-center justify-center">
+                  <Music className="w-5 h-5 text-cyan-700" aria-hidden />
                 </div>
                 <CardTitle className="text-xl font-semibold text-gray-900">
                   The Tripman Experience
@@ -93,41 +92,23 @@ export function BecomePassenger(props: {
               </div>
             </CardHeader>
             <CardContent className="pt-0 flex-1 flex flex-col">
-              <ul className="text-sm text-gray-700 space-y-2">
-                <li>
-                  • One full hour of pure chaos, music, and unforgettable
-                  energy.
-                </li>
-                <li>• Choose your song, bring your people, set your vibe.</li>
-                <li>
-                  • Pick-up and drop-off at the same location (so you can party
-                  without the stress).
-                </li>
+              <ul className="text-sm text-gray-700 space-y-2" role="list">
+                <li>One full hour of chaos, music, and energy.</li>
+                <li>Choose your songs, bring your people (1–4).</li>
+                <li>Pick-up and drop-off at the same location.</li>
               </ul>
-              <p className="text-sm text-gray-600 italic mt-5">
-                No promises your video will be posted — we only post what
-                genuinely hits. If the vibe is fire, it might just make the
-                feed.
-              </p>
-              <div className="mt-6 rounded-xl bg-green-50 border border-green-200 px-4 py-3 flex items-center justify-between text-sm text-gray-900 font-semibold">
-                <span>1-4 People: $200</span>
-                <span>4-7 People: $400</span>
+              <div className="mt-6 rounded-xl bg-cyan-50 border border-cyan-200 px-4 py-3 text-center text-gray-900 font-semibold">
+                70 CAD — Journey & party only
               </div>
-              <Button
-                className="w-full mt-6 bg-green-600 hover:bg-green-700 font-semibold"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  selectAndScroll("tripman-experience");
-                }}
-              >
+              <span className="inline-flex items-center justify-center w-full mt-6 bg-cyan-600 hover:bg-cyan-700 font-semibold transition-colors duration-200 rounded-md py-2 px-4 text-white text-sm">
                 Book The Tripman Experience
-              </Button>
+              </span>
             </CardContent>
           </Card>
 
-          {/* Tripman Experience + */}
+          {/* Tripman Experience + - 270 CAD */}
           <Card
-            className="bg-white border-2 border-green-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col"
+            className="bg-white border-2 border-cyan-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full flex flex-col focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2"
             onClick={() => selectAndScroll("tripman-experience-plus")}
             role="button"
             tabIndex={0}
@@ -140,8 +121,8 @@ export function BecomePassenger(props: {
           >
             <CardHeader className="pb-2">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-600/10 ring-1 ring-green-600/20 flex items-center justify-center">
-                  <Video className="w-5 h-5 text-green-700" />
+                <div className="w-10 h-10 rounded-full bg-cyan-600/10 ring-1 ring-cyan-600/20 flex items-center justify-center">
+                  <Video className="w-5 h-5 text-cyan-700" aria-hidden />
                 </div>
                 <CardTitle className="text-xl font-semibold text-gray-900">
                   The Tripman Experience +
@@ -149,104 +130,27 @@ export function BecomePassenger(props: {
               </div>
             </CardHeader>
             <CardContent className="pt-0 flex-1 flex flex-col">
-              <ul className="text-sm text-gray-700 space-y-2">
-                <li>• Everything included in The Tripman Experience.</li>
-                <li>
-                  • Full recording of your entire ride — every laugh, every
-                  song, every moment, saved as a memory you can keep forever.
-                </li>
-                <li>
-                  • Guaranteed feature: Your ride will be polished, edited, and
-                  posted on The Tripman accounts.
-                </li>
+              <ul className="text-sm text-gray-700 space-y-2" role="list">
+                <li>Everything in The Tripman Experience.</li>
+                <li>Full recording — every moment saved.</li>
+                <li>Guaranteed feature: edited & posted on our accounts.</li>
               </ul>
-              <div className="mt-6 rounded-xl bg-green-50 border border-green-200 px-4 py-3 flex items-center justify-between text-sm text-gray-900 font-semibold">
-                <span>1-4 People: $500</span>
-                <span>4-7 People: $700</span>
+              <div className="mt-6 rounded-xl bg-cyan-50 border border-cyan-200 px-4 py-3 text-center text-gray-900 font-semibold">
+                270 CAD — Includes videos shot & shared
               </div>
-              <Button
-                className="w-full mt-6 bg-green-600 hover:bg-green-700 font-semibold"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  selectAndScroll("tripman-experience-plus");
-                }}
-              >
+              <span className="inline-flex items-center justify-center w-full mt-6 bg-cyan-600 hover:bg-cyan-700 font-semibold transition-colors duration-200 rounded-md py-2 px-4 text-white text-sm">
                 Book The Tripman Experience +
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Promo Ride */}
-          <Card
-            className="bg-white border border-green-200/70 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col"
-            onClick={() => selectAndScroll("tripman-promo-ride")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                selectAndScroll("tripman-promo-ride");
-              }
-            }}
-          >
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-600/10 ring-1 ring-green-600/20 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-green-700" />
-                </div>
-                <CardTitle className="text-xl font-semibold text-gray-900">
-                  The Tripman <em>Promo</em> Ride
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 flex-1 flex flex-col">
-              <ul className="text-sm text-gray-700 space-y-2">
-                <li>
-                  • One full hour dedicated to showcasing your business,
-                  product, or personal brand in the most unique format online:
-                  Tripman Car Karaoke.
-                </li>
-                <li>
-                  • Instant organic reach to millions of viewers across multiple
-                  platforms — no paid boosts, no gimmicks.
-                </li>
-                <li>
-                  • A creative, high-energy environment where your brand becomes
-                  part of an unforgettable moment.
-                </li>
-              </ul>
-              <p className="text-sm text-gray-700 mt-5">
-                Prices are determined after a short discovery process conducted
-                by Afes Digital, The Tripman&apos;s representative agency.
-              </p>
-              <p className="text-sm text-gray-700 mt-2">
-                For inquiries:{" "}
-                <a
-                  className="text-green-700 hover:underline"
-                  href="mailto:media@afesdigital.com"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  media@afesdigital.com
-                </a>
-              </p>
-              <Button
-                className="w-full mt-6 bg-green-600 hover:bg-green-700 font-semibold"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.location.href = "mailto:media@afesdigital.com";
-                }}
-              >
-                Contact for Inquiries
-              </Button>
+              </span>
             </CardContent>
           </Card>
         </div>
 
-        {props.eventTypes.length === 0 && (
+        {props.eventTypes.filter((e) => BOOKABLE_SLUGS.includes(e.slug))
+          .length === 0 && (
           <div className="text-center mt-10">
             <p className="text-sm text-gray-600">
-              Booking is temporarily unavailable. Please contact us and we’ll
-              help you book.
+              Booking is temporarily unavailable. Please contact us and
+              we&apos;ll help you book.
             </p>
           </div>
         )}

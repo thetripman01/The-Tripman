@@ -33,8 +33,9 @@ import {
   Users,
   FileText,
 } from "lucide-react";
+import { toast } from "sonner";
 import { trackBookingSuccess } from "@/lib/analytics";
-import { formatUsd, getTripmanPriceForPeople } from "@/lib/tripman-packages";
+import { formatCad, getTripmanPriceForPeople } from "@/lib/tripman-packages";
 
 interface EventType {
   id: string;
@@ -105,7 +106,7 @@ export function BookingForm({
       );
       if (eventType.slug !== "tripman-promo-ride" && computedPrice == null) {
         throw new Error(
-          "Please select a valid group size (1–7 people) for this package.",
+          "Please select a valid group size (1–4 people) for this package.",
         );
       }
 
@@ -143,8 +144,7 @@ export function BookingForm({
         );
       }
     } catch (error) {
-      console.error("Booking error:", error);
-      alert(
+      toast.error(
         error instanceof Error
           ? error.message
           : "Failed to create booking. Please try again.",
@@ -204,7 +204,7 @@ export function BookingForm({
                     eventType.slug,
                     people,
                   );
-                  return cents ? formatUsd(cents) : "Select group size";
+                  return cents ? formatCad(cents) : "Select group size";
                 })()}
               </p>
             )}
@@ -287,7 +287,7 @@ export function BookingForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {[1, 2, 3, 4, 5, 6, 7].map((num) => (
+                        {[1, 2, 3, 4].map((num) => (
                           <SelectItem key={num} value={num.toString()}>
                             {num} {num === 1 ? "person" : "people"}
                           </SelectItem>
@@ -387,7 +387,11 @@ export function BookingForm({
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-semibold"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

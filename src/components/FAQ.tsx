@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 const faqs = [
   {
@@ -19,7 +19,7 @@ const faqs = [
   {
     question: "Do you provide vehicles for different group sizes?",
     answer:
-      "Yes! We have a fleet of vehicles to accommodate different group sizes, from intimate rides for 2 people to larger vehicles for groups up to 7 people.",
+      "Yes! We accommodate groups of 1–4 people — from solo rides to small crews.",
   },
   {
     question: "What areas in Ontario do you ride?",
@@ -45,43 +45,68 @@ export function FAQ() {
   };
 
   return (
-    <section className="py-20 px-4 bg-gradient-to-br from-green-50 to-green-100">
+    <section className="py-20 px-4 bg-gradient-to-br from-cyan-50 to-cyan-100">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Frequently Asked Questions
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Everything you need to know about booking with The Tripman
           </p>
         </div>
 
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <Card key={index} className="overflow-hidden">
+            <Card
+              key={index}
+              className="overflow-hidden border-cyan-100 transition-all duration-300 hover:border-cyan-200 hover:shadow-md"
+            >
               <CardHeader
-                className="cursor-pointer hover:bg-gray-50 transition-colors"
+                className="cursor-pointer hover:bg-cyan-50/50 transition-colors duration-200 py-5"
                 onClick={() => toggleItem(index)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleItem(index);
+                  }
+                }}
+                aria-expanded={openItems.includes(index)}
+                aria-controls={`faq-answer-${index}`}
+                id={`faq-question-${index}`}
               >
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-semibold text-gray-900">
+                <div className="flex items-center justify-between gap-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900 leading-snug">
                     {faq.question}
                   </CardTitle>
-                  <Button variant="ghost" size="sm" className="p-0 h-auto">
-                    {openItems.includes(index) ? (
-                      <ChevronUp className="w-5 h-5 text-gray-600" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-600" />
-                    )}
-                  </Button>
+                  <span
+                    className={`shrink-0 transition-transform duration-300 ${
+                      openItems.includes(index) ? "rotate-180" : ""
+                    }`}
+                  >
+                    <ChevronDown className="w-5 h-5 text-cyan-600" />
+                  </span>
                 </div>
               </CardHeader>
 
-              {openItems.includes(index) && (
-                <CardContent className="pt-0">
-                  <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+              <div
+                id={`faq-answer-${index}`}
+                role="region"
+                aria-labelledby={`faq-question-${index}`}
+                className={`accordion-content overflow-hidden transition-all duration-300 ease-out ${
+                  openItems.includes(index)
+                    ? "max-h-96 opacity-100"
+                    : "max-h-0 opacity-0"
+                }`}
+              >
+                <CardContent className="pt-0 pb-5">
+                  <p className="text-gray-600 leading-relaxed text-base">
+                    {faq.answer}
+                  </p>
                 </CardContent>
-              )}
+              </div>
             </Card>
           ))}
         </div>
@@ -101,7 +126,7 @@ export function FAQ() {
                   )}`;
                   window.open(whatsappUrl, "_blank");
                 }}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-cyan-600 hover:bg-cyan-700 transition-colors duration-200 rounded-xl"
               >
                 Contact via WhatsApp
               </Button>
@@ -114,6 +139,7 @@ export function FAQ() {
                 }
               }}
               variant="outline"
+              className="border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:border-cyan-300 transition-colors duration-200 rounded-xl"
             >
               Send us an Email
             </Button>

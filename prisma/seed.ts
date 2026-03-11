@@ -12,18 +12,18 @@ async function main() {
       slug: "tripman-experience",
       name: "The Tripman Experience",
       description:
-        "One full hour of chaos, music, and unforgettable energy. 1–4 people: $200 • 5–7 people: $400.",
+        "One full hour of chaos, music, and energy. 1–4 people: 70 CAD. Journey & party only.",
       durationMin: 60,
-      priceCents: 20000, // From $200
+      priceCents: 7000, // 70 CAD
       isActive: true,
     },
     {
       slug: "tripman-experience-plus",
       name: "The Tripman Experience +",
       description:
-        "Everything in The Tripman Experience + full recording + guaranteed feature. 1–4 people: $500 • 5–7 people: $700.",
+        "Everything in The Tripman Experience + full recording + guaranteed feature. 1–4 people: 270 CAD.",
       durationMin: 60,
-      priceCents: 50000, // From $500
+      priceCents: 27000, // 270 CAD
       isActive: true,
     },
     {
@@ -33,7 +33,7 @@ async function main() {
         "Showcase your brand in Tripman Car Karaoke. Prices determined after a discovery process (Afes Digital).",
       durationMin: 60,
       priceCents: null,
-      isActive: true,
+      isActive: false, // Not shown in main booking flow
     },
   ] as const;
 

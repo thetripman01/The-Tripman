@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { BookingEmbed } from "./BookingEmbed";
 import { BookingCalendar } from "./BookingCalendar";
 import { BookingForm } from "./BookingForm";
+import { toast } from "sonner";
 import { PaymentForm } from "./PaymentForm";
 import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
 
@@ -64,11 +65,11 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
     return (
       <section
         id="scheduler"
-        className="py-20 px-4 bg-gradient-to-br from-green-50 to-green-100"
+        className="py-20 px-4 bg-gradient-to-br from-cyan-50 to-cyan-100"
       >
         <div className="max-w-2xl mx-auto text-center">
-          <div className="bg-white border border-green-200 rounded-lg p-8 shadow-lg">
-            <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white border border-cyan-200 rounded-lg p-8 shadow-lg">
+            <div className="w-16 h-16 bg-cyan-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
                 className="w-8 h-8 text-white"
                 fill="none"
@@ -148,12 +149,12 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
                       // This UI is optimistic; customers will receive the confirmation email shortly.
                     }}
                     onPaymentError={(msg) => {
-                      alert(msg);
+                      toast.error(msg);
                     }}
                   />
                   {paymentIntentId && (
                     <p className="text-xs text-gray-500 mt-3">
-                      Payment processed. Transaction: {paymentIntentId}
+                      Payment processed successfully.
                     </p>
                   )}
                 </div>
@@ -182,7 +183,7 @@ END:VCALENDAR`;
                     link.click();
                     URL.revokeObjectURL(url);
                   }}
-                  className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                  className="flex-1 bg-cyan-600 text-white px-6 py-3 rounded-xl hover:bg-cyan-700 transition-colors duration-200"
                 >
                   Add to Calendar
                 </button>
@@ -193,7 +194,7 @@ END:VCALENDAR`;
                     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
                     window.open(whatsappUrl, "_blank");
                   }}
-                  className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                  className="flex-1 bg-cyan-600 text-white px-6 py-3 rounded-xl hover:bg-cyan-700 transition-colors duration-200"
                 >
                   Contact via WhatsApp
                 </button>
@@ -208,7 +209,7 @@ END:VCALENDAR`;
   return (
     <section
       id="scheduler"
-      className="py-20 px-4 bg-gradient-to-br from-green-50 to-green-100"
+      className="py-20 px-4 bg-gradient-to-br from-cyan-50 to-cyan-100"
     >
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">

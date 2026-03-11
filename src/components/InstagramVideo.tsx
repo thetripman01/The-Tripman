@@ -1,31 +1,33 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Play, Instagram, RefreshCw, AlertCircle } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Play, Instagram, RefreshCw, AlertCircle } from "lucide-react";
 
 interface InstagramData {
-  html: string
-  mediaType?: string
-  permalink?: string
-  timestamp?: string
-  error?: string
-  fallback?: boolean
+  html: string;
+  mediaType?: string;
+  permalink?: string;
+  timestamp?: string;
+  error?: string;
+  fallback?: boolean;
 }
 
 export function InstagramVideo() {
-  const [instagramData, setInstagramData] = useState<InstagramData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [instagramData, setInstagramData] = useState<InstagramData | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchLatestInstagram = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      
-      const response = await fetch('/api/instagram/latest')
-      const data = await response.json()
-      
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch("/api/instagram/latest");
+      const data = await response.json();
+
       if (data.error && data.fallback) {
         // Use fallback static embed if API fails
         setInstagramData({
@@ -86,24 +88,24 @@ export function InstagramVideo() {
               </p>
             </div>
           </blockquote>`,
-          fallback: true
-        })
+          fallback: true,
+        });
       } else if (data.html) {
-        setInstagramData(data)
+        setInstagramData(data);
       } else {
-        setError(data.error || 'Failed to load Instagram content')
+        setError(data.error || "Failed to load Instagram content");
       }
     } catch (err) {
-      console.error('Failed to fetch Instagram:', err)
-      setError('Failed to load Instagram content')
+      console.error("Failed to fetch Instagram:", err);
+      setError("Failed to load Instagram content");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchLatestInstagram()
-  }, [])
+    fetchLatestInstagram();
+  }, []);
 
   useEffect(() => {
     // Load Instagram embed script when content is available
@@ -111,85 +113,89 @@ export function InstagramVideo() {
       const loadInstagramScript = () => {
         try {
           if (!window.instgrm) {
-            const script = document.createElement('script')
-            script.src = '//www.instagram.com/embed.js'
-            script.async = true
+            const script = document.createElement("script");
+            script.src = "//www.instagram.com/embed.js";
+            script.async = true;
             script.onload = () => {
               try {
                 if (window.instgrm?.Embeds?.process) {
-                  window.instgrm.Embeds.process()
+                  window.instgrm.Embeds.process();
                 }
               } catch (error) {
-                console.warn('Instagram embed processing failed:', error)
+                console.warn("Instagram embed processing failed:", error);
               }
-            }
+            };
             script.onerror = () => {
-              console.warn('Failed to load Instagram embed script')
-            }
-            document.body.appendChild(script)
+              console.warn("Failed to load Instagram embed script");
+            };
+            document.body.appendChild(script);
           } else {
             try {
               if (window.instgrm?.Embeds?.process) {
-                window.instgrm.Embeds.process()
+                window.instgrm.Embeds.process();
               }
             } catch (error) {
-              console.warn('Instagram embed processing failed:', error)
+              console.warn("Instagram embed processing failed:", error);
             }
           }
         } catch (error) {
-          console.warn('Instagram script loading failed:', error)
+          console.warn("Instagram script loading failed:", error);
         }
-      }
+      };
 
       // Small delay to ensure DOM is ready
-      const timer = setTimeout(loadInstagramScript, 100)
+      const timer = setTimeout(loadInstagramScript, 100);
       return () => {
-        clearTimeout(timer)
+        clearTimeout(timer);
         // Clean up any existing Instagram embeds to prevent DOM conflicts
         try {
-          const existingEmbeds = document.querySelectorAll('.instagram-media')
-          existingEmbeds.forEach(embed => {
+          const existingEmbeds = document.querySelectorAll(".instagram-media");
+          existingEmbeds.forEach((embed) => {
             if (embed.parentNode) {
-              embed.parentNode.removeChild(embed)
+              embed.parentNode.removeChild(embed);
             }
-          })
+          });
         } catch (error) {
-          console.warn('Cleanup failed:', error)
+          console.warn("Cleanup failed:", error);
         }
-      }
+      };
     }
-  }, [instagramData])
+  }, [instagramData]);
 
   return (
-         <section className="py-24 px-4 bg-gradient-to-br from-green-50 to-green-100">
-       <div className="max-w-7xl mx-auto">
-                   <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full mb-6">
-              <Instagram className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              See The Tripman in Action
-            </h2>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Check out our latest Instagram content to see the experience firsthand — the energy, the moments, and everything that makes a Tripman ride unforgettable.
-            </p>
+    <section className="py-24 px-4 bg-gradient-to-br from-cyan-50 to-cyan-100">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-cyan-600 rounded-full mb-6">
+            <Instagram className="w-8 h-8 text-white" />
           </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            See The Tripman in Action
+          </h2>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Check out our latest Instagram content to see the experience
+            firsthand — the energy, the moments, and everything that makes a
+            Tripman ride unforgettable.
+          </p>
+        </div>
 
-                 <div className="flex justify-center">
-           <Card className="w-full max-w-lg md:max-w-2xl shadow-2xl border-0 overflow-hidden rounded-2xl">
-            <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white text-center">
+        <div className="flex justify-center">
+          <Card className="w-full max-w-lg md:max-w-2xl shadow-2xl border-0 overflow-hidden rounded-2xl">
+            <CardHeader className="bg-gradient-to-r from-cyan-600 to-cyan-700 text-white text-center">
               <div className="flex items-center justify-between">
-                                 <CardTitle className="flex items-center gap-2">
-                   <Play className="w-5 h-5" />
-                   Latest from The Tripman
-                 </CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Play className="w-5 h-5" />
+                  Latest from The Tripman
+                </CardTitle>
                 <button
                   onClick={fetchLatestInstagram}
                   disabled={loading}
-                  className="p-2 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-2 hover:bg-cyan-700 rounded-lg transition-colors disabled:opacity-50"
                   title="Refresh content"
                 >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                  />
                 </button>
               </div>
             </CardHeader>
@@ -198,7 +204,7 @@ export function InstagramVideo() {
                 {loading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
                       <p className="text-gray-600">Loading latest content...</p>
                     </div>
                   </div>
@@ -211,7 +217,7 @@ export function InstagramVideo() {
                       <p className="text-gray-600 mb-4">{error}</p>
                       <button
                         onClick={fetchLatestInstagram}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                        className="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
                       >
                         Try Again
                       </button>
@@ -219,13 +225,13 @@ export function InstagramVideo() {
                   </div>
                 )}
 
-                                 {instagramData?.html && (
-                   <div 
-                     key={instagramData.permalink || 'fallback'}
-                     className="relative flex justify-center"
-                     dangerouslySetInnerHTML={{ __html: instagramData.html }}
-                   />
-                 )}
+                {instagramData?.html && (
+                  <div
+                    key={instagramData.permalink || "fallback"}
+                    className="relative flex justify-center"
+                    dangerouslySetInnerHTML={{ __html: instagramData.html }}
+                  />
+                )}
 
                 {/* Fallback message hidden from customers */}
               </div>
@@ -235,11 +241,12 @@ export function InstagramVideo() {
 
         <div className="text-center mt-8">
           <p className="text-gray-600 mb-4">
-            Follow us on Instagram for more behind-the-scenes content and special offers!
+            Follow us on Instagram for more behind-the-scenes content and
+            special offers!
           </p>
-          <a 
-            href="https://www.instagram.com/thetripman_/" 
-            target="_blank" 
+          <a
+            href="https://www.instagram.com/thetripman_/"
+            target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-semibold"
           >
@@ -249,5 +256,5 @@ export function InstagramVideo() {
         </div>
       </div>
     </section>
-  )
+  );
 }

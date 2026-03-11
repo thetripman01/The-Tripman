@@ -13,7 +13,6 @@ import { FAQ } from "@/components/FAQ";
 import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
-import { Toaster } from "@/components/ui/sonner";
 import { initializeAnalytics, trackPageView } from "@/lib/analytics";
 
 interface EventType {
@@ -54,6 +53,12 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
+      <a
+        href="#become-passenger"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-cyan-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-cyan-600"
+      >
+        Skip to main content
+      </a>
       <LoadingScreen />
       <Header />
       <Hero />
@@ -77,7 +82,6 @@ export default function HomePage() {
       </div>
       <Footer />
       <FloatingActionButton />
-      <Toaster />
     </div>
   );
 }

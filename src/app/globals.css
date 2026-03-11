@@ -44,38 +44,38 @@
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.875rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.13 0.028 261.692);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.13 0.028 261.692);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.13 0.028 261.692);
-  --primary: oklch(0.65 0.18 145);
+  --primary: oklch(0.65 0.17 185);
   --primary-foreground: oklch(0.985 0.002 247.839);
-  --secondary: oklch(0.95 0.08 145);
-  --secondary-foreground: oklch(0.65 0.18 145);
-  --muted: oklch(0.97 0.04 145);
+  --secondary: oklch(0.95 0.07 185);
+  --secondary-foreground: oklch(0.65 0.17 185);
+  --muted: oklch(0.97 0.03 185);
   --muted-foreground: oklch(0.551 0.027 264.364);
-  --accent: oklch(0.95 0.08 145);
-  --accent-foreground: oklch(0.65 0.18 145);
+  --accent: oklch(0.95 0.07 185);
+  --accent-foreground: oklch(0.65 0.17 185);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.06 145);
-  --input: oklch(0.92 0.06 145);
-  --ring: oklch(0.65 0.18 145);
-  --chart-1: oklch(0.65 0.18 145);
-  --chart-2: oklch(0.7 0.15 150);
-  --chart-3: oklch(0.75 0.12 155);
-  --chart-4: oklch(0.8 0.09 160);
-  --chart-5: oklch(0.85 0.06 165);
+  --border: oklch(0.92 0.05 185);
+  --input: oklch(0.92 0.05 185);
+  --ring: oklch(0.65 0.17 185);
+  --chart-1: oklch(0.65 0.17 185);
+  --chart-2: oklch(0.68 0.15 186);
+  --chart-3: oklch(0.72 0.12 187);
+  --chart-4: oklch(0.76 0.1 188);
+  --chart-5: oklch(0.8 0.08 189);
   --sidebar: oklch(0.985 0.002 247.839);
   --sidebar-foreground: oklch(0.13 0.028 261.692);
-  --sidebar-primary: oklch(0.65 0.18 145);
+  --sidebar-primary: oklch(0.65 0.17 185);
   --sidebar-primary-foreground: oklch(0.985 0.002 247.839);
-  --sidebar-accent: oklch(0.95 0.08 145);
-  --sidebar-accent-foreground: oklch(0.65 0.18 145);
-  --sidebar-border: oklch(0.92 0.06 145);
-  --sidebar-ring: oklch(0.65 0.18 145);
+  --sidebar-accent: oklch(0.95 0.07 185);
+  --sidebar-accent-foreground: oklch(0.65 0.17 185);
+  --sidebar-border: oklch(0.92 0.05 185);
+  --sidebar-ring: oklch(0.65 0.17 185);
 }
 
 .dark {
@@ -119,24 +119,40 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Accessibility: respect reduced motion preference (Ontario AODA) */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 @layer utilities {
   .animate-fade-in {
-    animation: fadeIn 1s ease-out forwards;
+    animation: fadeIn 0.6s ease-out forwards;
     opacity: 0;
   }
 
   .animate-slide-up {
-    animation: slideUp 0.8s ease-out forwards;
+    animation: slideUp 0.6s ease-out forwards;
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px);
   }
 
   .animate-scale-in {
-    animation: scaleIn 0.6s ease-out forwards;
+    animation: scaleIn 0.4s ease-out forwards;
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.98);
+  }
+
+  /* Accordion expand/collapse */
+  .accordion-content {
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -151,26 +167,26 @@
 }
 
 .fc .fc-button-primary {
-  background: #16a34a;
-  border-color: #16a34a;
+  background: #06b6d4;
+  border-color: #06b6d4;
 }
 
 .fc .fc-button-primary:hover {
-  background: #15803d;
-  border-color: #15803d;
+  background: #0891b2;
+  border-color: #0891b2;
 }
 
 .fc .fc-button-primary:disabled {
-  background: rgba(22, 163, 74, 0.5);
-  border-color: rgba(22, 163, 74, 0.5);
+  background: rgba(6, 182, 212, 0.5);
+  border-color: rgba(6, 182, 212, 0.5);
 }
 
 .fc .fc-daygrid-day.fc-day-today {
-  background: rgba(22, 163, 74, 0.08);
+  background: rgba(6, 182, 212, 0.08);
 }
 
 .fc .fc-highlight {
-  background: rgba(22, 163, 74, 0.18);
+  background: rgba(6, 182, 212, 0.18);
 }
 
 @keyframes fadeIn {
@@ -191,6 +207,14 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* Fix Next.js dev tools portal layout (dev only - not in production) */
+nextjs-portal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 99999;
 }
 
 /* Mobile-specific optimizations */

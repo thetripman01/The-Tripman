@@ -36,11 +36,11 @@ describe("ICS Generation", () => {
 
       expect(icsContent).toContain("BEGIN:VCALENDAR");
       expect(icsContent).toContain("VERSION:2.0");
-      expect(icsContent).toContain("PRODID:-//The TripMan//Booking System//EN");
+      expect(icsContent).toContain("PRODID:-//The Tripman//Booking System//EN");
       expect(icsContent).toContain("BEGIN:VEVENT");
       expect(icsContent).toContain("UID:test-booking-id");
       expect(icsContent).toContain(
-        "SUMMARY:The Tripman Experience with The TripMan",
+        "SUMMARY:The Tripman Experience with The Tripman",
       );
       expect(icsContent).toContain("DESCRIPTION:Booking Details:");
       expect(icsContent).toContain("LOCATION:123 Main St");
@@ -60,7 +60,7 @@ describe("ICS Generation", () => {
       const icsContent = generateICS(bookingWithoutOptional);
 
       expect(icsContent).toContain(
-        "SUMMARY:The Tripman Experience with The TripMan",
+        "SUMMARY:The Tripman Experience with The Tripman",
       );
       expect(icsContent).not.toContain("PHONE:");
       expect(icsContent).not.toContain("NOTES:");

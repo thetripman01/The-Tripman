@@ -10,9 +10,9 @@ export function About() {
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Meet The Tripman
           </h2>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Your favorite driver on social media turning every trip into a viral
-            karaoke night under the party lights with goofy glasses.
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Every trip becomes a viral karaoke night. Party lights, goofy
+            glasses, unforgettable vibes.
           </p>
         </div>
 
@@ -28,7 +28,7 @@ export function About() {
                 className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
           </div>
 

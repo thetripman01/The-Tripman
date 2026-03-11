@@ -1,7 +1,15 @@
+import Link from "next/link";
+
 export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-white">
       <div className="max-w-3xl mx-auto px-4 py-16">
+        <Link
+          href="/"
+          className="inline-flex items-center text-cyan-600 hover:text-cyan-700 font-medium mb-8 transition-colors duration-200"
+        >
+          ← Back to home
+        </Link>
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
           Privacy Policy
         </h1>
@@ -9,7 +17,7 @@ export default function PrivacyPage() {
           Effective date: {new Date().getFullYear()}-01-01
         </p>
 
-        <section className="space-y-4 text-gray-700">
+        <section className="space-y-4 text-gray-700 leading-relaxed">
           <p>
             This Privacy Policy explains how <strong>The Tripman</strong> (“we”,
             “us”) collects, uses, and shares information when you use our
@@ -17,7 +25,7 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <div className="mt-10 space-y-10 text-gray-700">
+        <div className="mt-10 space-y-10 text-gray-700 leading-relaxed">
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-gray-900">
               Information we collect
@@ -141,7 +149,7 @@ export default function PrivacyPage() {
             <p>
               If you have questions about this Privacy Policy, contact us at{" "}
               <a
-                className="text-green-700 hover:underline"
+                className="text-cyan-700 hover:underline"
                 href="mailto:thetripman01@gmail.com"
               >
                 thetripman01@gmail.com

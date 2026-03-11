@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { RideTracking } from "@/components/RideTracking";
 import { PaymentForm } from "@/components/PaymentForm";
 import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
+import { toast } from "sonner";
 import {
   Calendar,
   Clock,
@@ -120,7 +121,7 @@ export default function BookingDetailsPage() {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       PENDING: { label: "Pending", color: "bg-yellow-500" },
-      CONFIRMED: { label: "Confirmed", color: "bg-green-500" },
+      CONFIRMED: { label: "Confirmed", color: "bg-cyan-500" },
       CANCELED: { label: "Cancelled", color: "bg-red-500" },
     };
 
@@ -135,7 +136,7 @@ export default function BookingDetailsPage() {
   const getPaymentStatusBadge = (status: string) => {
     const statusConfig = {
       PENDING: { label: "Payment Pending", color: "bg-yellow-500" },
-      COMPLETED: { label: "Paid", color: "bg-green-500" },
+      COMPLETED: { label: "Paid", color: "bg-cyan-500" },
       FAILED: { label: "Payment Failed", color: "bg-red-500" },
       REFUNDED: { label: "Refunded", color: "bg-blue-500" },
     };
@@ -200,7 +201,7 @@ export default function BookingDetailsPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
           <p>Loading booking details...</p>
         </div>
       </div>
@@ -413,7 +414,7 @@ export default function BookingDetailsPage() {
                           // Webhook will confirm; refresh to show updated status.
                           window.location.reload();
                         }}
-                        onPaymentError={(msg) => alert(msg)}
+                        onPaymentError={(msg) => toast.error(msg)}
                       />
                     )}
                     <p className="text-xs text-gray-500">
@@ -459,7 +460,7 @@ export default function BookingDetailsPage() {
                     <Mail className="w-4 h-4" />
                     <a
                       href="mailto:thetripman01@gmail.com"
-                      className="text-green-600 hover:underline"
+                      className="text-cyan-600 hover:underline"
                     >
                       thetripman01@gmail.com
                     </a>

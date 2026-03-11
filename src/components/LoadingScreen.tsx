@@ -18,8 +18,23 @@ export function LoadingScreen() {
   if (!isLoading) return null;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-cyan-600 via-cyan-500 to-cyan-400 z-50 flex items-center justify-center">
-      <div className="text-center text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+      {/* Background image - same as Hero */}
+      <div className="absolute inset-0">
+        <Image
+          src="/tripman-background.jpg"
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+          sizes="100vw"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80"
+          aria-hidden
+        />
+      </div>
+      <div className="relative z-10 text-center text-white">
         <div className="relative">
           <div className="w-24 h-24 mx-auto mb-8">
             <div className="w-full h-full bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center animate-pulse border border-white/20 shadow-2xl overflow-hidden">

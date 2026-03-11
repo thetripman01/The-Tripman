@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true);
@@ -18,44 +17,26 @@ export function LoadingScreen() {
   if (!isLoading) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
-      {/* Background image - same as Hero */}
-      <div className="absolute inset-0">
-        <Image
-          src="/tripman-background.jpg"
-          alt=""
-          fill
-          className="object-cover object-center"
-          priority
-          sizes="100vw"
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80"
-          aria-hidden
-        />
-      </div>
-      <div className="relative z-10 text-center text-white">
-        <div className="relative">
-          <div className="w-24 h-24 mx-auto mb-8">
-            <div className="w-full h-full bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center animate-pulse border border-white/20 shadow-2xl overflow-hidden">
-              <Image
-                src="/tripman-logo.jpg"
-                alt="The Tripman"
-                width={96}
-                height={96}
-                className="w-full h-full object-cover rounded-full"
-              />
-            </div>
-          </div>
-          <div className="absolute inset-0 w-24 h-24 mx-auto">
-            <div className="w-full h-full border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-gradient-to-b from-cyan-600 via-cyan-500 to-cyan-400">
+      <div className="text-center text-white">
+        {/* Stylized T logo (no circular image) */}
+        <div className="mb-8 flex justify-center">
+          <svg
+            width="64"
+            height="64"
+            viewBox="0 0 512 512"
+            className="animate-pulse"
+            aria-hidden
+          >
+            <path
+              d="M140 150 H372 L340 190 H290 V360 L256 400 L222 360 V190 H172 Z"
+              fill="white"
+            />
+          </svg>
         </div>
 
-        <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-white to-cyan-100 bg-clip-text text-transparent">
-          The Tripman
-        </h1>
-        <p className="text-cyan-100 mb-8 font-light">Your journey. Your way.</p>
+        <h1 className="text-4xl font-bold mb-3 text-white">The Tripman</h1>
+        <p className="text-white/90 mb-8 font-light">Your journey. Your way.</p>
 
         <div className="flex justify-center space-x-3">
           <div className="w-3 h-3 bg-white rounded-full animate-bounce"></div>
@@ -69,7 +50,7 @@ export function LoadingScreen() {
           ></div>
         </div>
 
-        <p className="text-sm text-cyan-200 mt-8">
+        <p className="text-sm text-white/80 mt-8">
           Loading your premium experience...
         </p>
       </div>

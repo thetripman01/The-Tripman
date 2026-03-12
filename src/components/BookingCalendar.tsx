@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Clock, Globe, Loader2 } from "lucide-react";
 import FullCalendar from "@fullcalendar/react";
@@ -36,10 +36,17 @@ export function BookingCalendar({
   const [selectedDatetime, setSelectedDatetime] = useState<string | null>(null);
   const [timeFormat, setTimeFormat] = useState<"12h" | "24h">("12h");
   const [timeZone] = useState<string>(torontoTz);
+  const timesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     trackCalendarView();
   }, []);
+
+  useEffect(() => {
+    if (selectedDate && timesRef.current) {
+      timesRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selectedDate]);
 
   const tzLabel = useMemo(() => "Toronto (ET) — Canada", []);
 
@@ -64,6 +71,15 @@ export function BookingCalendar({
     setSelectedDate(date);
     setSelectedDatetime(null);
     fetchAvailableSlots(date);
+    // Scroll to times section after a short delay (for layout to update)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        timesRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    });
   };
 
   const handleDatetimeSelect = (datetime: string) => {
@@ -98,11 +114,11 @@ export function BookingCalendar({
     : "";
 
   return (
-    <Card className="border-cyan-200 shadow-lg">
+    <Card className="border-cyan-200/80 shadow-xl rounded-2xl overflow-hidden">
       <CardContent className="p-0">
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px]">
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px]">
           {/* Left: details + timezone */}
-          <div className="p-5 border-b lg:border-b-0 lg:border-r bg-white">
+          <div className="p-6 border-b lg:border-b-0 lg:border-r border-gray-100 bg-white">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-cyan-600 text-white flex items-center justify-center">
                 <Calendar className="w-5 h-5" />
@@ -132,12 +148,12 @@ export function BookingCalendar({
           </div>
 
           {/* Middle: month grid */}
-          <div className="p-5 border-b lg:border-b-0 lg:border-r bg-white">
+          <div className="p-6 border-b lg:border-b-0 lg:border-r border-gray-100 bg-white">
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="w-4 h-4 text-cyan-700" />
               <span className="font-semibold text-gray-900">Select a date</span>
             </div>
-            <div className="border rounded-xl overflow-hidden">
+            <div className="border border-cyan-100 rounded-xl overflow-hidden shadow-sm">
               <FullCalendar
                 plugins={[dayGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
@@ -159,21 +175,21 @@ export function BookingCalendar({
             </div>
           </div>
 
-          {/* Right: time list */}
-          <div className="p-5 bg-white">
+          {/* Right: time list - scroll target when date selected */}
+          <div ref={timesRef} className="p-6 bg-white scroll-mt-8">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-cyan-700" />
                 <span className="font-semibold text-gray-900">Times</span>
               </div>
-              <div className="inline-flex rounded-lg border overflow-hidden">
+              <div className="inline-flex rounded-xl border border-cyan-200 overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setTimeFormat("12h")}
-                  className={`px-3 py-1.5 text-sm ${
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                     timeFormat === "12h"
                       ? "bg-cyan-600 text-white"
-                      : "bg-white text-gray-700"
+                      : "bg-white text-gray-600 hover:bg-cyan-50"
                   }`}
                 >
                   12h
@@ -181,10 +197,10 @@ export function BookingCalendar({
                 <button
                   type="button"
                   onClick={() => setTimeFormat("24h")}
-                  className={`px-3 py-1.5 text-sm ${
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                     timeFormat === "24h"
                       ? "bg-cyan-600 text-white"
-                      : "bg-white text-gray-700"
+                      : "bg-white text-gray-600 hover:bg-cyan-50"
                   }`}
                 >
                   24h
@@ -193,7 +209,7 @@ export function BookingCalendar({
             </div>
 
             {!selectedDate ? (
-              <div className="text-sm text-gray-500 rounded-xl border border-dashed p-6 text-center">
+              <div className="text-sm text-gray-500 rounded-xl border-2 border-dashed border-cyan-100 p-8 text-center bg-cyan-50/30">
                 Pick a date to see available times.
               </div>
             ) : loading ? (
@@ -216,9 +232,9 @@ export function BookingCalendar({
                         key={slot.datetime}
                         type="button"
                         onClick={() => handleDatetimeSelect(slot.datetime)}
-                        className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
+                        className={`w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 ${
                           isSelected
-                            ? "border-cyan-600 bg-cyan-50 shadow-sm"
+                            ? "border-cyan-600 bg-cyan-50 shadow-md ring-2 ring-cyan-200"
                             : "border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/50"
                         }`}
                       >

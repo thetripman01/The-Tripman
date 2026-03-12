@@ -36,6 +36,7 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const paymentRef = useRef<HTMLDivElement | null>(null);
+  const bookingFormRef = useRef<HTMLDivElement | null>(null);
 
   const isPromo = useMemo(
     () => selectedEvent?.slug === "tripman-promo-ride",
@@ -51,6 +52,15 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
       });
     }
   }, [awaitingPayment]);
+
+  useEffect(() => {
+    if (selectedSlot && bookingFormRef.current) {
+      bookingFormRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [selectedSlot]);
 
   // Default to custom (DB-driven) scheduler so production doesn't silently fall back
   // to embed mode when env vars are missing.
@@ -241,19 +251,21 @@ END:VCALENDAR`;
             />
 
             {selectedSlot && (
-              <BookingForm
-                eventType={selectedEvent}
-                selectedSlot={selectedSlot}
-                onBookingComplete={(data) => {
-                  setBookingData(data);
-                  const id = String(data.id ?? "");
-                  setBookingId(id || null);
+              <div ref={bookingFormRef} className="scroll-mt-8">
+                <BookingForm
+                  eventType={selectedEvent}
+                  selectedSlot={selectedSlot}
+                  onBookingComplete={(data) => {
+                    setBookingData(data);
+                    const id = String(data.id ?? "");
+                    setBookingId(id || null);
 
-                  // For fixed-price packages, require payment before confirming.
-                  setAwaitingPayment(!isPromo);
-                  setBookingComplete(true);
-                }}
-              />
+                    // For fixed-price packages, require payment before confirming.
+                    setAwaitingPayment(!isPromo);
+                    setBookingComplete(true);
+                  }}
+                />
+              </div>
             )}
           </div>
         )}

@@ -1,11 +1,22 @@
 import { Resend } from "resend";
 import { Booking, EventType } from "@prisma/client";
+import { formatInTimeZone } from "date-fns-tz";
 import { generateICS } from "./ics";
 import type Stripe from "stripe";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
+
+const TZ = process.env.BUSINESS_TIMEZONE || "America/Toronto";
+
+function fmtDate(d: Date | string) {
+  return formatInTimeZone(new Date(d), TZ, "MMMM d, yyyy");
+}
+
+function fmtTime(d: Date | string) {
+  return formatInTimeZone(new Date(d), TZ, "h:mm a");
+}
 
 export interface BookingWithEventType extends Booking {
   eventType: EventType;
@@ -32,8 +43,8 @@ export async function sendBookingConfirmation(booking: BookingWithEventType) {
           
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>${booking.eventType.name}</h3>
-            <p><strong>Date:</strong> ${new Date(booking.startsAt).toLocaleDateString()}</p>
-            <p><strong>Time:</strong> ${new Date(booking.startsAt).toLocaleTimeString()} - ${new Date(booking.endsAt).toLocaleTimeString()}</p>
+            <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
+            <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
             <p><strong>Duration:</strong> ${booking.eventType.durationMin} minutes</p>
             ${booking.pickup ? `<p><strong>Pickup Location:</strong> ${booking.pickup}</p>` : ""}
             ${booking.peopleCount ? `<p><strong>Number of People:</strong> ${booking.peopleCount}</p>` : ""}
@@ -86,8 +97,8 @@ export async function sendAdminNotification(booking: BookingWithEventType) {
             <p><strong>Customer:</strong> ${booking.fullName}</p>
             <p><strong>Email:</strong> ${booking.email}</p>
             <p><strong>Phone:</strong> ${booking.phone || "Not provided"}</p>
-            <p><strong>Date:</strong> ${new Date(booking.startsAt).toLocaleDateString()}</p>
-            <p><strong>Time:</strong> ${new Date(booking.startsAt).toLocaleTimeString()} - ${new Date(booking.endsAt).toLocaleTimeString()}</p>
+            <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
+            <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
             <p><strong>Duration:</strong> ${booking.eventType.durationMin} minutes</p>
             ${booking.pickup ? `<p><strong>Pickup Location:</strong> ${booking.pickup}</p>` : ""}
             ${booking.peopleCount ? `<p><strong>Number of People:</strong> ${booking.peopleCount}</p>` : ""}
@@ -129,8 +140,8 @@ export async function sendCancellationNotification(
           
           <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>${booking.eventType.name}</h3>
-            <p><strong>Date:</strong> ${new Date(booking.startsAt).toLocaleDateString()}</p>
-            <p><strong>Time:</strong> ${new Date(booking.startsAt).toLocaleTimeString()} - ${new Date(booking.endsAt).toLocaleTimeString()}</p>
+            <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
+            <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
           </div>
           
           <p>If you have any questions, please contact us.</p>
@@ -178,8 +189,8 @@ export async function sendPaymentConfirmation(
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>Booking Details</h3>
             <p><strong>Service:</strong> ${booking.eventType.name}</p>
-            <p><strong>Date:</strong> ${new Date(booking.startsAt).toLocaleDateString()}</p>
-            <p><strong>Time:</strong> ${new Date(booking.startsAt).toLocaleTimeString()} - ${new Date(booking.endsAt).toLocaleTimeString()}</p>
+            <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
+            <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
             ${booking.pickup ? `<p><strong>Pickup Location:</strong> ${booking.pickup}</p>` : ""}
           </div>
           
@@ -240,8 +251,8 @@ export async function sendRideStatusUpdate(
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>Ride Details</h3>
             <p><strong>Service:</strong> ${booking.eventType.name}</p>
-            <p><strong>Date:</strong> ${new Date(booking.startsAt).toLocaleDateString()}</p>
-            <p><strong>Time:</strong> ${new Date(booking.startsAt).toLocaleTimeString()} - ${new Date(booking.endsAt).toLocaleTimeString()}</p>
+            <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
+            <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
             ${booking.pickup ? `<p><strong>Pickup Location:</strong> ${booking.pickup}</p>` : ""}
             <p><strong>Status:</strong> ${status.replace("_", " ")}</p>
           </div>

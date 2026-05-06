@@ -1,0 +1,29 @@
+# Triggers a Vercel production deploy via Deploy Hook (authorized as your Vercel owner).
+# Vercel Hobby blocks Git-based deploys when the GitHub pusher is not on the Vercel team.
+# This workflow bypasses that by calling your project Deploy Hook after each push to main.
+#
+# One-time setup:
+# 1) Vercel: Project → Settings → Git → Deploy Hooks → Add hook (branch: main). Copy URL.
+# 2) GitHub: repo → Settings → Secrets and variables → Actions → New repository secret:
+#    Name: VERCEL_DEPLOY_HOOK_URL   Value: (paste URL)
+
+name: Vercel production (deploy hook)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST deploy hook
+        env:
+          HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK_URL" ]; then
+            echo "::error::Add repository secret VERCEL_DEPLOY_HOOK_URL (Vercel → Project → Settings → Git → Deploy Hooks)."
+            exit 1
+          fi
+          curl -fsS -X POST "$HOOK_URL"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
@@ -12,9 +12,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CreditCard } from "lucide-react";
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
-);
+// Lazy-init Stripe so a missing publishable key doesn't crash module load.
+let stripePromiseCache: Promise<Stripe | null> | null = null;
+function getStripePromise(): Promise<Stripe | null> | null {
+  if (stripePromiseCache) return stripePromiseCache;
+  const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  if (!key) return null;
+  stripePromiseCache = loadStripe(key);
+  return stripePromiseCache;
+}
 
 interface PaymentFormProps {
   bookingId: string;
@@ -112,8 +118,16 @@ export function PaymentForm(props: PaymentFormProps) {
   const { bookingId, currency, onPaymentError } = props;
   const [clientSecret, setClientSecret] = useState<string>("");
   const [initError, setInitError] = useState<string>("");
+  const stripePromise = getStripePromise();
 
   useEffect(() => {
+    if (!stripePromise) {
+      const message =
+        "Online payment is not configured yet. Please contact us to complete your booking.";
+      setInitError(message);
+      onPaymentError(message);
+      return;
+    }
     // Create payment intent for Elements
     const createPaymentIntent = async () => {
       try {
@@ -154,7 +168,7 @@ export function PaymentForm(props: PaymentFormProps) {
     };
 
     createPaymentIntent();
-  }, [bookingId, currency, onPaymentError]);
+  }, [bookingId, currency, onPaymentError, stripePromise]);
 
   if (initError) {
     return (

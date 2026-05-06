@@ -8,34 +8,29 @@ import {
 
 describe("tripman-packages", () => {
   describe("formatCad", () => {
-    it("formats cents as CAD", () => {
+    it("formats whole dollars without decimals", () => {
+      expect(formatCad(9900)).toBe("$99 CAD");
       expect(formatCad(7000)).toBe("$70 CAD");
-      expect(formatCad(27000)).toBe("$270 CAD");
+    });
+    it("includes decimals when cents are present", () => {
+      expect(formatCad(9999)).toBe("$99.99 CAD");
     });
   });
 
   describe("getTripmanPriceForPeople", () => {
-    it("returns 7000 for tripman-experience with 1-4 people", () => {
-      expect(getTripmanPriceForPeople("tripman-experience", 1)).toBe(7000);
-      expect(getTripmanPriceForPeople("tripman-experience", 2)).toBe(7000);
-      expect(getTripmanPriceForPeople("tripman-experience", 4)).toBe(7000);
-    });
-
-    it("returns 27000 for tripman-experience-plus with 1-4 people", () => {
-      expect(getTripmanPriceForPeople("tripman-experience-plus", 1)).toBe(
-        27000,
-      );
-      expect(getTripmanPriceForPeople("tripman-experience-plus", 4)).toBe(
-        27000,
-      );
+    it("returns 9900 for tripman-experience with 1-4 people", () => {
+      expect(getTripmanPriceForPeople("tripman-experience", 1)).toBe(9900);
+      expect(getTripmanPriceForPeople("tripman-experience", 2)).toBe(9900);
+      expect(getTripmanPriceForPeople("tripman-experience", 4)).toBe(9900);
     });
 
     it("returns null for 5+ people", () => {
       expect(getTripmanPriceForPeople("tripman-experience", 5)).toBeNull();
-      expect(getTripmanPriceForPeople("tripman-experience-plus", 7)).toBeNull();
+      expect(getTripmanPriceForPeople("tripman-experience", 7)).toBeNull();
     });
 
-    it("returns null for tripman-promo-ride", () => {
+    it("returns null for unknown package slug", () => {
+      expect(getTripmanPriceForPeople("tripman-experience-plus", 2)).toBeNull();
       expect(getTripmanPriceForPeople("tripman-promo-ride", 2)).toBeNull();
     });
 
@@ -59,27 +54,22 @@ describe("tripman-packages", () => {
   });
 
   describe("getTripmanFromPriceLabel", () => {
-    it("returns From label for priced packages", () => {
-      expect(getTripmanFromPriceLabel("tripman-experience")).toBe(
-        "From $70 CAD",
-      );
-      expect(getTripmanFromPriceLabel("tripman-experience-plus")).toBe(
-        "From $270 CAD",
-      );
+    it("returns formatted price for the experience package", () => {
+      expect(getTripmanFromPriceLabel("tripman-experience")).toBe("$99 CAD");
     });
 
-    it("returns Custom for promo ride", () => {
-      expect(getTripmanFromPriceLabel("tripman-promo-ride")).toBe("Custom");
+    it("returns null for unknown packages", () => {
+      expect(getTripmanFromPriceLabel("tripman-promo-ride")).toBeNull();
     });
   });
 
   describe("getTripmanTierBreakdownLabel", () => {
-    it("returns tier breakdown for priced packages", () => {
+    it("returns tier breakdown for the experience package", () => {
       expect(getTripmanTierBreakdownLabel("tripman-experience")).toContain(
         "1–4 people",
       );
       expect(getTripmanTierBreakdownLabel("tripman-experience")).toContain(
-        "$70 CAD",
+        "$99 CAD",
       );
     });
   });

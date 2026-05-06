@@ -13,9 +13,7 @@ export default function TermsPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
           Terms of Service
         </h1>
-        <p className="text-gray-600 mb-8">
-          Effective date: {new Date().getFullYear()}-01-01
-        </p>
+        <p className="text-gray-600 mb-8">Effective date: 2026-05-06</p>
 
         <div className="space-y-10 text-gray-700 leading-relaxed">
           <section className="space-y-3">
@@ -51,12 +49,13 @@ export default function TermsPage() {
             </h2>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                <strong>The Tripman Experience</strong>: 70 CAD (1–4 people).
-                Journey and party only.
+                <strong>The Tripman Experience</strong>: a flat rate of{" "}
+                <strong>99 CAD</strong> for a 60-minute ride covering 1–4
+                people.
               </li>
               <li>
-                <strong>The Tripman Experience +</strong>: 270 CAD (1–4 people).
-                Includes videos shot and shared on our accounts.
+                The flat rate covers the ride itself: pick-up, drop-off at the
+                same location, music, and the on-board party.
               </li>
               <li>
                 Taxes/fees (if any) will be shown during booking/checkout.
@@ -90,12 +89,30 @@ export default function TermsPage() {
 
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-gray-900">
-              Content and posting
+              Content, recording & video features
             </h2>
             <p>
-              The Tripman experience is content-driven. We may record or create
-              content during rides. Posting is not guaranteed unless explicitly
-              included in the package description (for example, “Experience +”).
+              The Tripman experience is content-driven. We may record audio,
+              video, and photos during rides for use across our social channels
+              (Instagram, TikTok, YouTube, Facebook), our website, and other
+              promotional materials.
+            </p>
+            <p>
+              <strong>
+                Being featured in a Tripman video is not guaranteed.
+              </strong>{" "}
+              The flat-rate price covers the ride itself only. Whether your ride
+              is filmed, edited, posted, or featured depends on the energy of
+              the night, technical conditions, and our editorial discretion —
+              there is no obligation, deadline, or refund tied to whether or
+              when content from your ride is published. By booking, you grant
+              The Tripman a perpetual, royalty-free license to use any
+              recordings or images captured during your ride for the purposes
+              described above.
+            </p>
+            <p>
+              If you do not want to be filmed, please tell us before the ride
+              begins.
             </p>
           </section>
 

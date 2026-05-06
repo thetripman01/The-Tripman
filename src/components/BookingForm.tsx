@@ -104,7 +104,7 @@ export function BookingForm({
         eventType.slug,
         peopleCountNum,
       );
-      if (eventType.slug !== "tripman-promo-ride" && computedPrice == null) {
+      if (computedPrice == null) {
         throw new Error(
           "Please select a valid group size (1–4 people) for this package.",
         );
@@ -189,25 +189,20 @@ export function BookingForm({
             <p>
               <strong>Duration:</strong> {eventType.durationMin} minutes
             </p>
-            {eventType.slug === "tripman-promo-ride" ? (
-              <p>
-                <strong>Price:</strong> Custom (you’ll be contacted)
-              </p>
-            ) : (
-              <p>
-                <strong>Estimated Price:</strong>{" "}
-                {(() => {
-                  const people = form.watch("peopleCount")
-                    ? parseInt(form.watch("peopleCount") as string, 10)
-                    : null;
-                  const cents = getTripmanPriceForPeople(
-                    eventType.slug,
-                    people,
-                  );
-                  return cents ? formatCad(cents) : "Select group size";
-                })()}
-              </p>
-            )}
+            <p>
+              <strong>Price:</strong>{" "}
+              {(() => {
+                const people = form.watch("peopleCount")
+                  ? parseInt(form.watch("peopleCount") as string, 10)
+                  : null;
+                const cents = getTripmanPriceForPeople(eventType.slug, people);
+                return cents ? formatCad(cents) : "Select group size";
+              })()}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Video feature is not guaranteed — based on the energy and a bit of
+              luck.
+            </p>
           </div>
         </div>
 

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Music, Video } from "lucide-react";
+import { Music } from "lucide-react";
 import { toast } from "sonner";
 
 interface EventType {
@@ -14,8 +14,6 @@ interface EventType {
   priceCents: number | null;
   isActive: boolean;
 }
-
-const BOOKABLE_SLUGS = ["tripman-experience", "tripman-experience-plus"];
 
 export function BecomePassenger(props: {
   eventTypes: EventType[];
@@ -30,11 +28,10 @@ export function BecomePassenger(props: {
   const selectAndScroll = (slug: string) => {
     const eventType = bySlug.get(slug);
     if (!eventType) {
-      toast.error("Booking is temporarily unavailable.", {
-        description: "Please contact us and we'll help you book manually.",
+      toast.error("We couldn't open the booking form.", {
+        description:
+          "Please refresh the page or contact us if the issue persists.",
       });
-      const contact = document.getElementById("contact");
-      contact?.scrollIntoView({ behavior: "smooth" });
       return;
     }
 
@@ -54,7 +51,7 @@ export function BecomePassenger(props: {
       className="py-24 px-4 bg-white scroll-mt-20"
       aria-labelledby="become-passenger-heading"
     >
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <h2
             id="become-passenger-heading"
@@ -67,10 +64,10 @@ export function BecomePassenger(props: {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Tripman Experience - 70 CAD */}
+        <div className="grid grid-cols-1 gap-6">
+          {/* The Tripman Experience — single flat rate */}
           <Card
-            className="bg-white border border-cyan-200/70 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full flex flex-col focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2"
+            className="bg-white border-2 border-cyan-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full flex flex-col focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2"
             onClick={() => selectAndScroll("tripman-experience")}
             role="button"
             tabIndex={0}
@@ -96,64 +93,23 @@ export function BecomePassenger(props: {
                 <li>One full hour of chaos, music, and energy.</li>
                 <li>Choose your songs, bring your people (1–4).</li>
                 <li>Pick-up and drop-off at the same location.</li>
+                <li>
+                  Being featured in our videos isn&apos;t guaranteed — it
+                  depends on the energy of the night and a bit of luck.
+                </li>
               </ul>
               <div className="mt-6 rounded-xl bg-cyan-50 border border-cyan-200 px-4 py-3 text-center text-gray-900 font-semibold">
-                70 CAD — Journey & party only
+                $99 CAD — Flat rate, 1–4 people
               </div>
+              <p className="mt-3 text-xs text-gray-500 text-center">
+                Video feature not guaranteed. Based on the vibe and luck.
+              </p>
               <span className="inline-flex items-center justify-center w-full mt-6 bg-cyan-600 hover:bg-cyan-700 font-semibold transition-colors duration-200 rounded-md py-2 px-4 text-white text-sm">
                 Book The Tripman Experience
               </span>
             </CardContent>
           </Card>
-
-          {/* Tripman Experience + - 270 CAD */}
-          <Card
-            className="bg-white border-2 border-cyan-500 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full flex flex-col focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2"
-            onClick={() => selectAndScroll("tripman-experience-plus")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                selectAndScroll("tripman-experience-plus");
-              }
-            }}
-          >
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-cyan-600/10 ring-1 ring-cyan-600/20 flex items-center justify-center">
-                  <Video className="w-5 h-5 text-cyan-700" aria-hidden />
-                </div>
-                <CardTitle className="text-xl font-semibold text-gray-900">
-                  The Tripman Experience +
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 flex-1 flex flex-col">
-              <ul className="text-sm text-gray-700 space-y-2" role="list">
-                <li>Everything in The Tripman Experience.</li>
-                <li>Full recording — every moment saved.</li>
-                <li>Guaranteed feature: edited & posted on our accounts.</li>
-              </ul>
-              <div className="mt-6 rounded-xl bg-cyan-50 border border-cyan-200 px-4 py-3 text-center text-gray-900 font-semibold">
-                270 CAD — Includes videos shot & shared
-              </div>
-              <span className="inline-flex items-center justify-center w-full mt-6 bg-cyan-600 hover:bg-cyan-700 font-semibold transition-colors duration-200 rounded-md py-2 px-4 text-white text-sm">
-                Book The Tripman Experience +
-              </span>
-            </CardContent>
-          </Card>
         </div>
-
-        {props.eventTypes.filter((e) => BOOKABLE_SLUGS.includes(e.slug))
-          .length === 0 && (
-          <div className="text-center mt-10">
-            <p className="text-sm text-gray-600">
-              Booking is temporarily unavailable. Please contact us and
-              we&apos;ll help you book.
-            </p>
-          </div>
-        )}
       </div>
     </section>
   );

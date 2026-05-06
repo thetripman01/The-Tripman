@@ -9,18 +9,9 @@ const mockEventTypes = [
     id: "1",
     slug: "tripman-experience",
     name: "The Tripman Experience",
-    description: "Journey & party only",
+    description: "Flat rate ride",
     durationMin: 60,
-    priceCents: 7000,
-    isActive: true,
-  },
-  {
-    id: "2",
-    slug: "tripman-experience-plus",
-    name: "The Tripman Experience +",
-    description: "Includes videos",
-    durationMin: 60,
-    priceCents: 27000,
+    priceCents: 9900,
     isActive: true,
   },
 ];
@@ -32,7 +23,7 @@ describe("BecomePassenger", () => {
     onSelectEvent.mockClear();
   });
 
-  it("renders two package cards with correct pricing", () => {
+  it("renders the single package card with $99 CAD pricing", () => {
     render(
       <BecomePassenger
         eventTypes={mockEventTypes}
@@ -40,9 +31,10 @@ describe("BecomePassenger", () => {
       />,
     );
     expect(screen.getByText("The Tripman Experience")).toBeInTheDocument();
-    expect(screen.getByText("The Tripman Experience +")).toBeInTheDocument();
-    expect(screen.getByText(/70 CAD — Journey/)).toBeInTheDocument();
-    expect(screen.getByText(/270 CAD — Includes/)).toBeInTheDocument();
+    expect(screen.getByText(/\$99 CAD — Flat rate/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Video feature not guaranteed/i),
+    ).toBeInTheDocument();
   });
 
   it("has no critical accessibility violations", async () => {

@@ -4,31 +4,21 @@ export const TRIPMAN_PACKAGES = [
     name: "The Tripman Experience",
     durationMin: 60,
     price: {
-      baseCents: 7000, // 70 CAD — journey/party only, 1–4 people
+      baseCents: 9900, // 99 CAD — single flat rate, 1–4 people. Video feature not guaranteed.
       maxPeople: 4,
     },
-  },
-  {
-    slug: "tripman-experience-plus",
-    name: "The Tripman Experience +",
-    durationMin: 60,
-    price: {
-      baseCents: 27000, // 270 CAD — includes videos shot & shared, 1–4 people
-      maxPeople: 4,
-    },
-  },
-  {
-    slug: "tripman-promo-ride",
-    name: "The Tripman Promo Ride",
-    durationMin: 60,
-    price: null,
   },
 ] as const;
 
 export type TripmanPackageSlug = (typeof TRIPMAN_PACKAGES)[number]["slug"];
 
 export function formatCad(cents: number) {
-  return `$${(cents / 100).toFixed(0)} CAD`;
+  const dollars = cents / 100;
+  // Whole dollars: "$99 CAD". Otherwise: "$99.50 CAD".
+  const formatted = Number.isInteger(dollars)
+    ? dollars.toFixed(0)
+    : dollars.toFixed(2);
+  return `$${formatted} CAD`;
 }
 
 /** @deprecated Use formatCad for display. Kept for backward compatibility. */
@@ -44,7 +34,7 @@ export function getTripmanFromPriceLabel(slug: string) {
   const pkg = getTripmanPackage(slug);
   if (!pkg) return null;
   if (!pkg.price) return "Custom";
-  return `From ${formatCad(pkg.price.baseCents)}`;
+  return formatCad(pkg.price.baseCents);
 }
 
 export function getTripmanTierBreakdownLabel(slug: string) {

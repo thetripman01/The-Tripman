@@ -180,12 +180,9 @@ export function Contact() {
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
                       >
-                        <option value="">Select a package</option>
+                        <option value="">Select a topic</option>
                         <option value="tripman-experience">
                           The Tripman Experience
-                        </option>
-                        <option value="tripman-experience-plus">
-                          The Tripman Experience +
                         </option>
                         <option value="other">Other / General question</option>
                       </select>

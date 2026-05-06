@@ -13,9 +13,7 @@ export default function PrivacyPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
           Privacy Policy
         </h1>
-        <p className="text-gray-600 mb-8">
-          Effective date: {new Date().getFullYear()}-01-01
-        </p>
+        <p className="text-gray-600 mb-8">Effective date: 2026-05-06</p>
 
         <section className="space-y-4 text-gray-700 leading-relaxed">
           <p>
@@ -33,14 +31,19 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-2">
               <li>
                 <strong>Booking details</strong>: name, email, phone (optional),
-                pickup details (optional), notes (optional), selected package,
-                date/time, and related communications.
+                pickup details (optional), notes (optional), date/time, and
+                related communications.
               </li>
               <li>
                 <strong>Payment information</strong>: payments are processed by{" "}
                 <strong>Stripe</strong>. We do not store your full card number.
                 Stripe may collect payment method details and device/transaction
                 information.
+              </li>
+              <li>
+                <strong>Audio, video & photos</strong>: rides may be recorded
+                for content. See the “Content & recordings” section below for
+                how this is used.
               </li>
               <li>
                 <strong>Usage data</strong>: basic analytics events (if enabled)
@@ -51,6 +54,27 @@ export default function PrivacyPage() {
                 contacting us (email/forms).
               </li>
             </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Content & recordings
+            </h2>
+            <p>
+              Because The Tripman is a content-driven experience, audio, video,
+              and photographs may be recorded during rides. Featuring your ride
+              in a Tripman video is <strong>not guaranteed</strong> — it depends
+              on the energy of the night and editorial choice. By booking, you
+              grant The Tripman a perpetual, royalty-free license to use these
+              recordings on our social channels, website, and promotional
+              materials.
+            </p>
+            <p>
+              If you do not want to be filmed, please tell us before the ride
+              begins. You can also request that already-published content
+              featuring you be reviewed by emailing us — we will consider such
+              requests in good faith.
+            </p>
           </section>
 
           <section className="space-y-3">

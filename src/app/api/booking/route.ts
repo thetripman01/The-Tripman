@@ -111,11 +111,7 @@ export async function POST(request: NextRequest) {
     );
 
     // For paid packages, require valid group size (1–4 people)
-    if (
-      eventType.slug !== "tripman-promo-ride" &&
-      eventType.priceCents != null &&
-      tierPriceCents == null
-    ) {
+    if (eventType.priceCents != null && tierPriceCents == null) {
       return NextResponse.json(
         { error: "Group size must be 1–4 people for this package." },
         { status: 400 },

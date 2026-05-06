@@ -6,38 +6,20 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting database seed...");
 
-  // Create default event types
+  // Create default event types — single flat-rate package.
   const eventTypes = [
     {
       slug: "tripman-experience",
       name: "The Tripman Experience",
       description:
-        "One full hour of chaos, music, and energy. 1–4 people: 70 CAD. Journey & party only.",
+        "One full hour of chaos, music, and energy. Flat rate 99 CAD for 1–4 people. Video feature is not guaranteed — based on the energy of the night and luck.",
       durationMin: 60,
-      priceCents: 7000, // 70 CAD
+      priceCents: 9900, // 99 CAD
       isActive: true,
-    },
-    {
-      slug: "tripman-experience-plus",
-      name: "The Tripman Experience +",
-      description:
-        "Everything in The Tripman Experience + full recording + guaranteed feature. 1–4 people: 270 CAD.",
-      durationMin: 60,
-      priceCents: 27000, // 270 CAD
-      isActive: true,
-    },
-    {
-      slug: "tripman-promo-ride",
-      name: "The Tripman Promo Ride",
-      description:
-        "Showcase your brand in Tripman Car Karaoke. Prices determined after a discovery process (Afes Digital).",
-      durationMin: 60,
-      priceCents: null,
-      isActive: false, // Not shown in main booking flow
     },
   ] as const;
 
-  // Deactivate any old event types so the UI shows ONLY the 3 packages above.
+  // Deactivate any old/legacy event types so the UI shows ONLY the package above.
   await prisma.eventType.updateMany({
     where: { slug: { notIn: eventTypes.map((e) => e.slug) } },
     data: { isActive: false },

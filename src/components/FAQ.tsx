@@ -7,29 +7,39 @@ import { ChevronDown } from "lucide-react";
 
 const faqs = [
   {
+    question: "How much does The Tripman Experience cost?",
+    answer:
+      "There is one flat rate: $99 CAD for a 60-minute ride for 1–4 people. No hidden tiers and no upsells.",
+  },
+  {
+    question: "Will I be featured in a Tripman video?",
+    answer:
+      "Being featured is not guaranteed. Whether a moment from your ride ends up posted on our channels depends on the energy of the night and a bit of luck. Some rides become highlights, some stay private — that’s part of the experience.",
+  },
+  {
     question: "How far in advance should I book?",
     answer:
-      "We recommend booking at least 24 hours in advance to ensure availability. For special events or peak times, booking 48-72 hours ahead is ideal.",
+      "We recommend booking at least 24 hours in advance to ensure availability. For weekends and peak times, booking 48–72 hours ahead is ideal.",
   },
   {
     question: "What is your cancellation policy?",
     answer:
-      "At launch, online changes/cancellations are disabled. If you need to request a change or cancellation, please contact The Tripman directly. Please note: all sales are final and refunds are not available, except where required by law.",
+      "Online changes and cancellations are disabled. If you need to request a change or cancellation, please contact The Tripman directly. All sales are final and refunds are not available, except where required by law.",
   },
   {
-    question: "Do you provide vehicles for different group sizes?",
+    question: "How many people can join a ride?",
     answer:
-      "Yes! We accommodate groups of 1–4 people — from solo rides to small crews.",
+      "Each booking covers 1–4 people. The flat rate is the same whether you’re solo or rolling with the full crew.",
   },
   {
-    question: "What areas in Ontario do you ride?",
+    question: "What areas do you serve?",
     answer:
-      "We provide service in most cities throughout the Greater Toronto Area (Toronto, Mississauga, Brampton, Markham, Etobicoke, North York, Scarborough, and Richmond Hill). Contact us for specific coverage areas and any additional charges for extended distances.",
+      "We operate across the Greater Toronto Area — Toronto, Mississauga, Brampton, Markham, Etobicoke, North York, Scarborough, and Richmond Hill. Contact us for extended pickups outside the GTA.",
   },
   {
     question: "What payment methods do you accept?",
     answer:
-      "We accept all major credit cards, debit cards, and digital payment methods. Payment is processed securely at the time of booking.",
+      "All major credit cards, debit cards, and supported digital wallets via Stripe. Payment is processed securely at the time of booking.",
   },
 ];
 

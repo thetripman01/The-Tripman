@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BookingEmbed } from "./BookingEmbed";
 import { BookingCalendar } from "./BookingCalendar";
 import { BookingForm } from "./BookingForm";
@@ -37,11 +37,6 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const paymentRef = useRef<HTMLDivElement | null>(null);
   const bookingFormRef = useRef<HTMLDivElement | null>(null);
-
-  const isPromo = useMemo(
-    () => selectedEvent?.slug === "tripman-promo-ride",
-    [selectedEvent?.slug],
-  );
 
   useEffect(() => {
     if (awaitingPayment) {
@@ -260,8 +255,8 @@ END:VCALENDAR`;
                     const id = String(data.id ?? "");
                     setBookingId(id || null);
 
-                    // For fixed-price packages, require payment before confirming.
-                    setAwaitingPayment(!isPromo);
+                    // Always require payment before confirming the booking.
+                    setAwaitingPayment(true);
                     setBookingComplete(true);
                   }}
                 />

@@ -69,24 +69,40 @@ export function Footer() {
             </nav>
           </div>
 
-          {/* Packages */}
+          {/* Quick Links */}
           <div>
-            <h4 className="font-semibold mb-4">Packages</h4>
+            <h4 className="font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2 text-gray-300" role="list">
               <li>
                 <a
-                  href="#events"
+                  href="#become-passenger"
                   className="hover:text-white transition-colors duration-200 hover:underline"
                 >
-                  The Tripman Experience
+                  Book a Ride
                 </a>
               </li>
               <li>
                 <a
-                  href="#events"
+                  href="#about"
                   className="hover:text-white transition-colors duration-200 hover:underline"
                 >
-                  The Tripman Experience +
+                  About
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#faq"
+                  className="hover:text-white transition-colors duration-200 hover:underline"
+                >
+                  FAQ
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#contact"
+                  className="hover:text-white transition-colors duration-200 hover:underline"
+                >
+                  Contact
                 </a>
               </li>
             </ul>

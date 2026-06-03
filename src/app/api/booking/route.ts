@@ -4,18 +4,22 @@ import { db } from "@/lib/db";
 import { sendAdminNotification, sendBookingConfirmation } from "@/lib/email";
 import { checkForFraud, logFraudAttempt } from "@/lib/fraud-detection";
 import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
+import { isLocationAvailableOn } from "@/lib/service-locations";
 
 const bookingSchema = z.object({
   eventTypeId: z.string(),
-  fullName: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().optional(),
-  pickup: z.string().min(3),
+  fullName: z.string().min(2).max(120),
+  email: z.string().email().max(254),
+  phone: z.string().max(40).optional(),
+  // Structured pickup location.
+  pickupCountry: z.string().trim().min(1).max(100),
+  pickupCity: z.string().trim().min(1).max(100),
+  pickupAddress: z.string().trim().min(3).max(200),
   peopleCount: z.string().optional(),
-  notes: z.string().optional(),
+  notes: z.string().max(2000).optional(),
   startsAt: z.string(),
   endsAt: z.string(),
-  timezone: z.string(),
+  timezone: z.string().max(64),
 });
 
 export async function POST(request: NextRequest) {
@@ -32,6 +36,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Event type not found" },
         { status: 404 },
+      );
+    }
+
+    // Validate the pickup location against the admin-managed list.
+    // This is the authoritative check — the client-side filter is just UX.
+    // We do this BEFORE fraud detection so attackers spamming garbage cities
+    // get a clear 400 without ever entering the fraud-detection path.
+    const startsAtDate = new Date(validatedData.startsAt);
+    if (Number.isNaN(startsAtDate.getTime())) {
+      return NextResponse.json(
+        { error: "Invalid booking start time" },
+        { status: 400 },
+      );
+    }
+    const locationMatch = await db.serviceLocation.findUnique({
+      where: {
+        country_city: {
+          country: validatedData.pickupCountry,
+          city: validatedData.pickupCity,
+        },
+      },
+    });
+    if (!locationMatch || !isLocationAvailableOn(locationMatch, startsAtDate)) {
+      return NextResponse.json(
+        {
+          error:
+            "Selected pickup city is not available for this date. Please refresh and pick a serviced city.",
+        },
+        { status: 400 },
       );
     }
 
@@ -121,6 +154,11 @@ export async function POST(request: NextRequest) {
     const fixedPriceCents = tierPriceCents ?? eventType.priceCents ?? null;
     const requiresPayment = Boolean(fixedPriceCents && fixedPriceCents > 0);
 
+    // Compose a human-readable legacy `pickup` string for downstream consumers
+    // (calendar invites, older email templates, fraud-detection text checks).
+    // The structured fields remain the source of truth.
+    const combinedPickup = `${validatedData.pickupAddress}, ${validatedData.pickupCity}, ${validatedData.pickupCountry}`;
+
     // Create booking (IMPORTANT: do NOT confirm until payment succeeds for paid packages)
     const booking = await db.booking.create({
       data: {
@@ -128,7 +166,10 @@ export async function POST(request: NextRequest) {
         fullName: validatedData.fullName,
         email: validatedData.email,
         phone: validatedData.phone,
-        pickup: validatedData.pickup,
+        pickup: combinedPickup,
+        pickupCountry: validatedData.pickupCountry,
+        pickupCity: validatedData.pickupCity,
+        pickupAddress: validatedData.pickupAddress,
         peopleCount: peopleCountNum,
         notes: validatedData.notes,
         startsAt: new Date(validatedData.startsAt),

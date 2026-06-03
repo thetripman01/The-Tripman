@@ -34,7 +34,12 @@ const faqs = [
   {
     question: "What areas do you serve?",
     answer:
-      "We operate across the Greater Toronto Area — Toronto, Mississauga, Brampton, Markham, Etobicoke, North York, Scarborough, and Richmond Hill. Contact us for extended pickups outside the GTA.",
+      "We pick up across the Greater Toronto Area — currently Toronto, Mississauga, Vaughan, Markham, and Richmond Hill. When you start a booking, the city dropdown will show every area we're servicing on your selected date (including occasional tour stops in cities like Ottawa, Montreal, New York, etc.).",
+  },
+  {
+    question: "What if my city isn't in the list?",
+    answer:
+      "Our pickup cities are managed in real time, so the dropdown shows only the areas we can actually service on your chosen date. If your city isn't listed and you'd still like to ride, send us a message from the Contact section below (or via WhatsApp) — we'll let you know if we can make it work or if a tour is coming through your area soon.",
   },
   {
     question: "What payment methods do you accept?",

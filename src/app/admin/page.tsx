@@ -41,6 +41,9 @@ interface Booking {
   email: string;
   phone: string | null;
   pickup: string | null;
+  pickupCountry: string | null;
+  pickupCity: string | null;
+  pickupAddress: string | null;
   peopleCount: number | null;
   notes: string | null;
   startsAt: string;
@@ -80,6 +83,19 @@ interface AvailabilityRule {
   createdAt: string;
 }
 
+interface ServiceLocation {
+  id: string;
+  country: string;
+  city: string;
+  isActive: boolean;
+  availableFrom: string | null;
+  availableUntil: string | null;
+  isDefault: boolean;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
@@ -110,6 +126,35 @@ export default function AdminPage() {
     note: "",
     daysOfWeek: [0, 1, 2, 3, 4, 5, 6] as number[],
   });
+
+  // Service locations (admin-managed pickup countries/cities)
+  const [serviceLocations, setServiceLocations] = useState<ServiceLocation[]>(
+    [],
+  );
+  const [locationForm, setLocationForm] = useState({
+    country: "Canada",
+    city: "",
+    isActive: true,
+    availableFrom: "",
+    availableUntil: "",
+    isDefault: false,
+    note: "",
+  });
+  const [savingLocation, setSavingLocation] = useState(false);
+  // ID of the row currently being inline-edited (null = no row in edit mode).
+  const [editingLocationId, setEditingLocationId] = useState<string | null>(
+    null,
+  );
+  // Buffer for the row being edited (changes here don't touch the live list
+  // until the user clicks Save).
+  const [editLocationForm, setEditLocationForm] = useState({
+    isActive: true,
+    availableFrom: "",
+    availableUntil: "",
+    isDefault: false,
+    note: "",
+  });
+  const [savingEditLocation, setSavingEditLocation] = useState(false);
 
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -219,6 +264,211 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === "calendar") fetchRules();
   }, [activeTab, fetchRules]);
+
+  const fetchServiceLocations = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/service-locations", {
+        credentials: "include",
+      });
+      if (res.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+      if (res.ok) {
+        const data = (await res.json()) as ServiceLocation[];
+        setServiceLocations(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch service locations:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "calendar") fetchServiceLocations();
+  }, [activeTab, fetchServiceLocations]);
+
+  const createServiceLocation = useCallback(async () => {
+    if (!locationForm.country.trim() || !locationForm.city.trim()) {
+      toast.error("Country and city are required.");
+      return;
+    }
+    if (
+      locationForm.availableFrom &&
+      locationForm.availableUntil &&
+      locationForm.availableUntil < locationForm.availableFrom
+    ) {
+      toast.error("End date must be on or after start date.");
+      return;
+    }
+    setSavingLocation(true);
+    try {
+      const res = await fetch("/api/admin/service-locations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          country: locationForm.country.trim(),
+          city: locationForm.city.trim(),
+          isActive: locationForm.isActive,
+          availableFrom: locationForm.availableFrom || undefined,
+          availableUntil: locationForm.availableUntil || undefined,
+          isDefault: locationForm.isDefault,
+          note: locationForm.note.trim() || undefined,
+        }),
+      });
+      if (res.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+      const payload = (await res.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      if (!res.ok) {
+        toast.error(payload.error || "Failed to create location.");
+        return;
+      }
+      toast.success("Location added.");
+      setLocationForm({
+        country: "Canada",
+        city: "",
+        isActive: true,
+        availableFrom: "",
+        availableUntil: "",
+        isDefault: false,
+        note: "",
+      });
+      fetchServiceLocations();
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to create location.");
+    } finally {
+      setSavingLocation(false);
+    }
+  }, [locationForm, fetchServiceLocations]);
+
+  const toggleLocationActive = useCallback(
+    async (loc: ServiceLocation) => {
+      try {
+        const res = await fetch(`/api/admin/service-locations/${loc.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ isActive: !loc.isActive }),
+        });
+        if (res.status === 401) {
+          window.location.href = "/admin/login";
+          return;
+        }
+        if (!res.ok) {
+          const payload = (await res.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          toast.error(payload.error || "Failed to update location.");
+          return;
+        }
+        fetchServiceLocations();
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to update location.");
+      }
+    },
+    [fetchServiceLocations],
+  );
+
+  const startEditLocation = useCallback((loc: ServiceLocation) => {
+    setEditingLocationId(loc.id);
+    setEditLocationForm({
+      isActive: loc.isActive,
+      availableFrom: loc.availableFrom ? loc.availableFrom.slice(0, 10) : "",
+      availableUntil: loc.availableUntil ? loc.availableUntil.slice(0, 10) : "",
+      isDefault: loc.isDefault,
+      note: loc.note ?? "",
+    });
+  }, []);
+
+  const cancelEditLocation = useCallback(() => {
+    setEditingLocationId(null);
+  }, []);
+
+  const saveEditLocation = useCallback(
+    async (locId: string) => {
+      if (
+        editLocationForm.availableFrom &&
+        editLocationForm.availableUntil &&
+        editLocationForm.availableUntil < editLocationForm.availableFrom
+      ) {
+        toast.error("End date must be on or after start date.");
+        return;
+      }
+      setSavingEditLocation(true);
+      try {
+        const res = await fetch(`/api/admin/service-locations/${locId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            isActive: editLocationForm.isActive,
+            availableFrom: editLocationForm.availableFrom || null,
+            availableUntil: editLocationForm.availableUntil || null,
+            isDefault: editLocationForm.isDefault,
+            note: editLocationForm.note.trim() || null,
+          }),
+        });
+        if (res.status === 401) {
+          window.location.href = "/admin/login";
+          return;
+        }
+        const payload = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        if (!res.ok) {
+          toast.error(payload.error || "Failed to update location.");
+          return;
+        }
+        toast.success("Location updated.");
+        setEditingLocationId(null);
+        fetchServiceLocations();
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to update location.");
+      } finally {
+        setSavingEditLocation(false);
+      }
+    },
+    [editLocationForm, fetchServiceLocations],
+  );
+
+  const deleteServiceLocation = useCallback(
+    async (loc: ServiceLocation) => {
+      const ok = window.confirm(
+        `Delete ${loc.city}, ${loc.country}? This cannot be undone.`,
+      );
+      if (!ok) return;
+      try {
+        const res = await fetch(`/api/admin/service-locations/${loc.id}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        if (res.status === 401) {
+          window.location.href = "/admin/login";
+          return;
+        }
+        if (!res.ok) {
+          const payload = (await res.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          toast.error(payload.error || "Failed to delete location.");
+          return;
+        }
+        toast.success("Location deleted.");
+        fetchServiceLocations();
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to delete location.");
+      }
+    },
+    [fetchServiceLocations],
+  );
 
   const fetchAccount = useCallback(async () => {
     try {
@@ -857,6 +1107,366 @@ export default function AdminPage() {
 
             <Card>
               <CardHeader>
+                <CardTitle>Service Locations (Pickup Areas)</CardTitle>
+                <p className="text-sm text-gray-600">
+                  Manage the countries and cities customers can choose for
+                  pickup. Leave the date range empty for permanently-serviced
+                  cities (e.g. GTA). Set a date range for tour windows (e.g.
+                  Ottawa Jul 12–14) — the city becomes bookable only for those
+                  dates.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Add new location */}
+                <div className="rounded-xl border border-cyan-100 bg-cyan-50/40 p-4">
+                  <h3 className="font-semibold text-gray-900 mb-3 text-sm">
+                    Add a new location
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+                    <div className="lg:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Country *
+                      </label>
+                      <Input
+                        value={locationForm.country}
+                        onChange={(e) =>
+                          setLocationForm((p) => ({
+                            ...p,
+                            country: e.target.value,
+                          }))
+                        }
+                        placeholder="Canada"
+                      />
+                    </div>
+                    <div className="lg:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        City *
+                      </label>
+                      <Input
+                        value={locationForm.city}
+                        onChange={(e) =>
+                          setLocationForm((p) => ({
+                            ...p,
+                            city: e.target.value,
+                          }))
+                        }
+                        placeholder="Toronto"
+                      />
+                    </div>
+                    <div className="lg:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Available from
+                      </label>
+                      <Input
+                        type="date"
+                        value={locationForm.availableFrom}
+                        onChange={(e) =>
+                          setLocationForm((p) => ({
+                            ...p,
+                            availableFrom: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="lg:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Available until
+                      </label>
+                      <Input
+                        type="date"
+                        value={locationForm.availableUntil}
+                        onChange={(e) =>
+                          setLocationForm((p) => ({
+                            ...p,
+                            availableUntil: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="lg:col-span-1">
+                      <Button
+                        className="w-full bg-cyan-600 hover:bg-cyan-700 text-white"
+                        disabled={savingLocation}
+                        onClick={createServiceLocation}
+                      >
+                        {savingLocation ? "Saving…" : "Add Location"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={locationForm.isActive}
+                        onChange={(e) =>
+                          setLocationForm((p) => ({
+                            ...p,
+                            isActive: e.target.checked,
+                          }))
+                        }
+                        className="accent-cyan-600 w-4 h-4"
+                      />
+                      Active (bookable)
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={locationForm.isDefault}
+                        onChange={(e) =>
+                          setLocationForm((p) => ({
+                            ...p,
+                            isDefault: e.target.checked,
+                          }))
+                        }
+                        className="accent-cyan-600 w-4 h-4"
+                      />
+                      Default city for this country
+                    </label>
+                    <Input
+                      value={locationForm.note}
+                      onChange={(e) =>
+                        setLocationForm((p) => ({
+                          ...p,
+                          note: e.target.value,
+                        }))
+                      }
+                      placeholder="Internal note (optional)"
+                    />
+                  </div>
+                </div>
+
+                {/* Existing locations */}
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">
+                    Existing Locations
+                  </h3>
+                  {serviceLocations.length === 0 ? (
+                    <p className="text-sm text-gray-600">
+                      No locations yet. Add at least one (e.g. Canada / Toronto)
+                      so customers can book.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {serviceLocations.map((loc) => {
+                        const isEditing = editingLocationId === loc.id;
+                        return (
+                          <div
+                            key={loc.id}
+                            className={`border rounded-xl p-4 transition-colors ${
+                              isEditing
+                                ? "border-cyan-300 bg-cyan-50/40"
+                                : loc.isActive
+                                  ? "border-gray-200 bg-white"
+                                  : "border-gray-200 bg-gray-50"
+                            }`}
+                          >
+                            {/* Header row: badges + name + actions */}
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                      loc.isActive
+                                        ? "bg-cyan-100 text-cyan-800"
+                                        : "bg-gray-200 text-gray-700"
+                                    }`}
+                                  >
+                                    {loc.isActive ? "Active" : "Disabled"}
+                                  </span>
+                                  {loc.isDefault && (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                                      Default
+                                    </span>
+                                  )}
+                                  {(loc.availableFrom ||
+                                    loc.availableUntil) && (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                      Date window
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="font-semibold text-gray-900">
+                                  {loc.country} — {loc.city}
+                                </div>
+                                {(loc.availableFrom ||
+                                  loc.availableUntil ||
+                                  loc.note) && (
+                                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
+                                    {(loc.availableFrom ||
+                                      loc.availableUntil) && (
+                                      <span>
+                                        Window:{" "}
+                                        <strong className="text-gray-800">
+                                          {loc.availableFrom
+                                            ? loc.availableFrom.slice(0, 10)
+                                            : "always"}
+                                        </strong>{" "}
+                                        →{" "}
+                                        <strong className="text-gray-800">
+                                          {loc.availableUntil
+                                            ? loc.availableUntil.slice(0, 10)
+                                            : "always"}
+                                        </strong>
+                                      </span>
+                                    )}
+                                    {loc.note && (
+                                      <span className="truncate">
+                                        Note:{" "}
+                                        <span className="text-gray-700">
+                                          {loc.note}
+                                        </span>
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 sm:justify-end">
+                                {!isEditing && (
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => startEditLocation(loc)}
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className={
+                                        loc.isActive
+                                          ? "text-amber-700 border-amber-300 hover:bg-amber-50"
+                                          : "text-cyan-700 border-cyan-300 hover:bg-cyan-50"
+                                      }
+                                      onClick={() => toggleLocationActive(loc)}
+                                    >
+                                      {loc.isActive ? "Disable" : "Enable"}
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-red-700 border-red-300 hover:bg-red-50"
+                                      onClick={() => deleteServiceLocation(loc)}
+                                    >
+                                      Delete
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Inline edit panel */}
+                            {isEditing && (
+                              <div className="mt-4 pt-4 border-t border-cyan-200 space-y-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Available from
+                                    </label>
+                                    <Input
+                                      type="date"
+                                      value={editLocationForm.availableFrom}
+                                      onChange={(e) =>
+                                        setEditLocationForm((p) => ({
+                                          ...p,
+                                          availableFrom: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Available until
+                                    </label>
+                                    <Input
+                                      type="date"
+                                      value={editLocationForm.availableUntil}
+                                      onChange={(e) =>
+                                        setEditLocationForm((p) => ({
+                                          ...p,
+                                          availableUntil: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                    <input
+                                      type="checkbox"
+                                      checked={editLocationForm.isActive}
+                                      onChange={(e) =>
+                                        setEditLocationForm((p) => ({
+                                          ...p,
+                                          isActive: e.target.checked,
+                                        }))
+                                      }
+                                      className="accent-cyan-600 w-4 h-4"
+                                    />
+                                    Active (bookable)
+                                  </label>
+                                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                    <input
+                                      type="checkbox"
+                                      checked={editLocationForm.isDefault}
+                                      onChange={(e) =>
+                                        setEditLocationForm((p) => ({
+                                          ...p,
+                                          isDefault: e.target.checked,
+                                        }))
+                                      }
+                                      className="accent-cyan-600 w-4 h-4"
+                                    />
+                                    Default for {loc.country}
+                                  </label>
+                                  <Input
+                                    value={editLocationForm.note}
+                                    onChange={(e) =>
+                                      setEditLocationForm((p) => ({
+                                        ...p,
+                                        note: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Internal note (optional)"
+                                  />
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 justify-end">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={cancelEditLocation}
+                                    disabled={savingEditLocation}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                                    disabled={savingEditLocation}
+                                    onClick={() => saveEditLocation(loc.id)}
+                                  >
+                                    {savingEditLocation
+                                      ? "Saving…"
+                                      : "Save changes"}
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Calendar (Bookings + One-off Blocks)</CardTitle>
                 <p className="text-sm text-gray-600">
                   Drag to create an unavailable block. You’ll be asked to
@@ -1411,12 +2021,25 @@ export default function AdminPage() {
                           <p>{selectedBooking.peopleCount}</p>
                         </div>
                       )}
-                      {selectedBooking.pickup && (
+                      {(selectedBooking.pickupAddress ||
+                        selectedBooking.pickup) && (
                         <div className="col-span-2">
                           <label className="font-semibold">
                             Pickup Location
                           </label>
-                          <p>{selectedBooking.pickup}</p>
+                          {selectedBooking.pickupAddress ? (
+                            <p>
+                              {selectedBooking.pickupAddress}
+                              {selectedBooking.pickupCity
+                                ? `, ${selectedBooking.pickupCity}`
+                                : ""}
+                              {selectedBooking.pickupCountry
+                                ? `, ${selectedBooking.pickupCountry}`
+                                : ""}
+                            </p>
+                          ) : (
+                            <p>{selectedBooking.pickup}</p>
+                          )}
                         </div>
                       )}
                       {selectedBooking.notes && (

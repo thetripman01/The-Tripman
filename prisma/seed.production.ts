@@ -56,6 +56,58 @@ async function main() {
     console.log(`✅ Event type created: ${created.name}`);
   }
 
+  // Permanent GTA cities, all active by default, no date window.
+  const gtaLocations = [
+    { country: "Canada", city: "Toronto", isDefault: true },
+    { country: "Canada", city: "Mississauga", isDefault: false },
+    { country: "Canada", city: "Vaughan", isDefault: false },
+    { country: "Canada", city: "Markham", isDefault: false },
+    { country: "Canada", city: "Richmond Hill", isDefault: false },
+  ] as const;
+
+  for (const loc of gtaLocations) {
+    await prisma.serviceLocation.upsert({
+      where: { country_city: { country: loc.country, city: loc.city } },
+      update: {
+        isActive: true,
+        isDefault: loc.isDefault,
+        availableFrom: null,
+        availableUntil: null,
+      },
+      create: {
+        country: loc.country,
+        city: loc.city,
+        isActive: true,
+        isDefault: loc.isDefault,
+      },
+    });
+  }
+  console.log(`✅ Seeded ${gtaLocations.length} GTA service locations`);
+
+  // Tour cities — inactive by default. Admin enables + sets dates per tour.
+  const tourLocations = [
+    { country: "Canada", city: "Ottawa" },
+    { country: "Canada", city: "Quebec City" },
+    { country: "Canada", city: "Montreal" },
+    { country: "USA", city: "New York" },
+    { country: "USA", city: "New Jersey" },
+  ] as const;
+
+  for (const loc of tourLocations) {
+    await prisma.serviceLocation.upsert({
+      where: { country_city: { country: loc.country, city: loc.city } },
+      update: {},
+      create: {
+        country: loc.country,
+        city: loc.city,
+        isActive: false,
+        isDefault: false,
+        note: "Tour city — enable + set date window when a tour is confirmed.",
+      },
+    });
+  }
+  console.log(`✅ Seeded ${tourLocations.length} tour cities (inactive)`);
+
   // Default availability (only if none exists): every day 7pm → 3am
   const existingRules = await prisma.availabilityRule.count();
   if (existingRules === 0) {

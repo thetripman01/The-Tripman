@@ -57,7 +57,12 @@ const bookingSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().optional(),
-  pickup: z.string().min(3, "Pickup location is required"),
+  pickupCountry: z.string().min(1, "Country is required"),
+  pickupCity: z.string().min(1, "City is required"),
+  pickupAddress: z
+    .string()
+    .min(3, "Pickup address is required")
+    .max(200, "Address is too long"),
   peopleCount: z.string().optional(),
   notes: z.string().optional(),
   terms: z
@@ -67,6 +72,13 @@ const bookingSchema = z.object({
 
 type BookingFormData = z.infer<typeof bookingSchema>;
 
+interface ServiceLocationOption {
+  id: string;
+  country: string;
+  city: string;
+  isDefault: boolean;
+}
+
 export function BookingForm({
   eventType,
   selectedSlot,
@@ -74,6 +86,13 @@ export function BookingForm({
 }: BookingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timezone, setTimezone] = useState("");
+
+  // Service location selectors are populated from /api/service-locations,
+  // filtered to what's bookable on the selected ride date. This prevents
+  // typos and lets admin geofence the service area in real time.
+  const [locations, setLocations] = useState<ServiceLocationOption[]>([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
+  const [locationsError, setLocationsError] = useState<string | null>(null);
 
   // Get user's timezone
   useEffect(() => {
@@ -86,12 +105,93 @@ export function BookingForm({
       fullName: "",
       email: "",
       phone: "",
-      pickup: "",
+      pickupCountry: "",
+      pickupCity: "",
+      pickupAddress: "",
       peopleCount: "",
       notes: "",
       terms: false,
     },
   });
+
+  // Fetch available locations for the selected booking date.
+  useEffect(() => {
+    let cancelled = false;
+    const fetchLocations = async () => {
+      try {
+        setLocationsLoading(true);
+        setLocationsError(null);
+
+        const dateParam = selectedSlot.startsAt.toISOString().slice(0, 10); // YYYY-MM-DD
+        const res = await fetch(`/api/service-locations?date=${dateParam}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          throw new Error("Failed to load service locations");
+        }
+        const data = (await res.json()) as ServiceLocationOption[];
+        if (cancelled) return;
+
+        setLocations(data);
+
+        // Auto-select sensible defaults: prefer the country/city flagged
+        // isDefault; fall back to Canada/Toronto if present; otherwise
+        // first option. Only apply if user hasn't already chosen.
+        const currentCountry = form.getValues("pickupCountry");
+        const currentCity = form.getValues("pickupCity");
+        if (!currentCountry && data.length > 0) {
+          const defaultRow =
+            data.find(
+              (l) => l.isDefault && l.country.toLowerCase() === "canada",
+            ) ??
+            data.find((l) => l.isDefault) ??
+            data.find(
+              (l) =>
+                l.country.toLowerCase() === "canada" &&
+                l.city.toLowerCase() === "toronto",
+            ) ??
+            data[0];
+          form.setValue("pickupCountry", defaultRow.country);
+          if (!currentCity) form.setValue("pickupCity", defaultRow.city);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        console.error("Failed to fetch service locations:", err);
+        setLocationsError(
+          "Could not load service areas. Please refresh or contact us.",
+        );
+      } finally {
+        if (!cancelled) setLocationsLoading(false);
+      }
+    };
+    fetchLocations();
+    return () => {
+      cancelled = true;
+    };
+    // selectedSlot.startsAt drives which date's availability we fetch.
+    // Intentionally omit `form` (stable instance) to avoid refetch loops.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSlot.startsAt]);
+
+  // Derive country/city options from the fetched locations.
+  const countries = Array.from(new Set(locations.map((l) => l.country))).sort();
+  const selectedCountry = form.watch("pickupCountry");
+  const citiesForCountry = locations
+    .filter((l) => l.country === selectedCountry)
+    .map((l) => l.city);
+
+  // When the country changes, ensure the city stays consistent.
+  useEffect(() => {
+    if (!selectedCountry) return;
+    const currentCity = form.getValues("pickupCity");
+    if (currentCity && !citiesForCountry.includes(currentCity)) {
+      // Pick first available city for the new country.
+      form.setValue("pickupCity", citiesForCountry[0] ?? "");
+    } else if (!currentCity && citiesForCountry.length > 0) {
+      form.setValue("pickupCity", citiesForCountry[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCountry, locations]);
 
   const onSubmit = async (data: BookingFormData) => {
     setIsSubmitting(true);
@@ -107,6 +207,18 @@ export function BookingForm({
       if (computedPrice == null) {
         throw new Error(
           "Please select a valid group size (1–4 people) for this package.",
+        );
+      }
+
+      // Defense in depth: confirm the chosen country/city is still in the
+      // list we fetched. The server re-validates against the DB regardless,
+      // but this catches a stale-tab race before submitting.
+      const stillValid = locations.some(
+        (l) => l.country === data.pickupCountry && l.city === data.pickupCity,
+      );
+      if (!stillValid) {
+        throw new Error(
+          "Selected pickup city is no longer available for this date. Please re-select.",
         );
       }
 
@@ -295,32 +407,120 @@ export function BookingForm({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="pickup"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Pickup Location *
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter your pickup address (Toronto/GTA only)"
-                      {...field}
+            {/* Pickup location: structured Country + City selectors plus a
+                free-text street address. The selectors are filtered by the
+                ride date so customers can only pick currently-serviced cities. */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-gray-900 font-semibold text-sm">
+                <MapPin className="w-4 h-4 text-cyan-600" aria-hidden />
+                Pickup Location *
+              </div>
+
+              {locationsError ? (
+                <div
+                  className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+                  role="alert"
+                >
+                  {locationsError}
+                </div>
+              ) : locationsLoading ? (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600">
+                  Loading available service areas…
+                </div>
+              ) : locations.length === 0 ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                  We&apos;re not currently servicing any pickup areas for this
+                  date. Please pick a different date or{" "}
+                  <a href="#contact" className="underline font-medium">
+                    contact us
+                  </a>
+                  .
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="pickupCountry"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Country *</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select country" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {countries.map((c) => (
+                                <SelectItem key={c} value={c}>
+                                  {c}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <p className="text-xs text-gray-500">
-                    Service areas: <strong>Toronto</strong>,{" "}
-                    <strong>Mississauga</strong>, <strong>North York</strong>,{" "}
-                    <strong>Scarborough</strong>, <strong>Etobicoke</strong>. If
-                    you’re outside GTA (e.g. Hamilton), contact us before
-                    booking.
-                  </p>
-                  <FormMessage />
-                </FormItem>
+
+                    <FormField
+                      control={form.control}
+                      name="pickupCity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City *</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={citiesForCountry.length === 0}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select city" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {citiesForCountry.map((c) => (
+                                <SelectItem key={c} value={c}>
+                                  {c}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="pickupAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Street address *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. 75 Laurelcrest Street"
+                            autoComplete="street-address"
+                            {...field}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-gray-500 mt-1">
+                          The address inside the selected city where we should
+                          pick you up.
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
-            />
+            </div>
 
             <FormField
               control={form.control}
@@ -385,7 +585,12 @@ export function BookingForm({
             <Button
               type="submit"
               className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-semibold"
-              disabled={isSubmitting}
+              disabled={
+                isSubmitting ||
+                locationsLoading ||
+                locations.length === 0 ||
+                Boolean(locationsError)
+              }
             >
               {isSubmitting ? (
                 <>

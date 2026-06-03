@@ -37,7 +37,16 @@ model Booking {
   timezone        String
   startsAt        DateTime
   endsAt          DateTime
+  // Legacy free-text pickup field. Kept nullable for backward compatibility
+  // with bookings created before structured location fields existed.
+  // New bookings additionally populate pickupCountry/pickupCity/pickupAddress
+  // and also write a human-readable combined string here for display fallbacks.
   pickup          String?
+  // Structured pickup location (introduced 2026-06). All three are required
+  // for new bookings; nullable in schema only to preserve legacy rows.
+  pickupCountry   String?
+  pickupCity      String?
+  pickupAddress   String?
   peopleCount     Int?
   status          BookingStatus @default(PENDING)
   googleEventId   String?       // For custom mode: store Google Calendar event ID
@@ -47,6 +56,40 @@ model Booking {
   ride            Ride?         // Real-time tracking
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+}
+
+// A bookable pickup location (country + city) that customers can choose
+// when making a booking. Admin manages this list.
+//
+// Availability semantics:
+//   - isActive == false           => never bookable, hidden from customers
+//   - availableFrom == null AND
+//     availableUntil == null      => always bookable (e.g. permanent GTA cities)
+//   - availableFrom set / both    => bookable only when the booking's start
+//     date falls within [availableFrom, availableUntil] (inclusive).
+//
+// This lets the admin model both "permanent" service cities and short-lived
+// tour windows (e.g. Ottawa only Jul 12-14) with a single schema.
+model ServiceLocation {
+  id             String    @id @default(cuid())
+  country        String
+  city           String
+  // Master switch. Admin can flip off without losing date range / settings.
+  isActive       Boolean   @default(true)
+  // Optional date window. Null on both => always available. Inclusive bounds.
+  availableFrom  DateTime?
+  availableUntil DateTime?
+  // If true, this row is the default city pre-selected for its country in
+  // the public booking form. At most one default per country (enforced in
+  // application code, not DB).
+  isDefault      Boolean   @default(false)
+  // Internal admin note (e.g. "Tour window – Bekir announced 2026-05-31").
+  note           String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([country, city])
+  @@index([isActive, country])
 }
 
 model AvailabilityBlock {

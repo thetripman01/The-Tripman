@@ -31,8 +31,8 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-2">
               <li>
                 <strong>Booking details</strong>: name, email, phone (optional),
-                pickup details (optional), notes (optional), date/time, and
-                related communications.
+                pickup country, pickup city, pickup street address, notes
+                (optional), date/time, and related communications.
               </li>
               <li>
                 <strong>Payment information</strong>: payments are processed by{" "}

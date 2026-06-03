@@ -27,6 +27,9 @@ interface BookingDetails {
   email: string;
   phone: string | null;
   pickup: string | null;
+  pickupCountry: string | null;
+  pickupCity: string | null;
+  pickupAddress: string | null;
   peopleCount: number | null;
   notes: string | null;
   startsAt: string;
@@ -322,11 +325,23 @@ export default function BookingDetailsPage() {
                     </div>
                   )}
 
-                  {booking.pickup && (
+                  {(booking.pickupAddress || booking.pickup) && (
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-gray-500" />
                       <span className="font-medium">Pickup:</span>
-                      <span>{booking.pickup}</span>
+                      <span>
+                        {booking.pickupAddress
+                          ? `${booking.pickupAddress}${
+                              booking.pickupCity
+                                ? `, ${booking.pickupCity}`
+                                : ""
+                            }${
+                              booking.pickupCountry
+                                ? `, ${booking.pickupCountry}`
+                                : ""
+                            }`
+                          : booking.pickup}
+                      </span>
                     </div>
                   )}
 

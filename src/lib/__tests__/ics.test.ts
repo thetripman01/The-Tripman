@@ -13,6 +13,9 @@ describe("ICS Generation", () => {
     createdAt: new Date("2024-01-15T10:00:00Z"),
     updatedAt: new Date("2024-01-15T10:00:00Z"),
     pickup: "123 Main St",
+    pickupCountry: null,
+    pickupCity: null,
+    pickupAddress: null,
     peopleCount: 2,
     eventTypeId: "event-type-id",
     status: "PENDING",
@@ -77,6 +80,27 @@ describe("ICS Generation", () => {
       );
       expect(icsContent).toContain("TRIGGER:-PT15M");
       expect(icsContent).toContain("END:VALARM");
+    });
+  });
+
+  describe("structured pickup location", () => {
+    it("uses structured pickup fields when present", () => {
+      const structured = {
+        ...mockBooking,
+        pickup: null,
+        pickupCountry: "Canada",
+        pickupCity: "Toronto",
+        pickupAddress: "75 Laurelcrest Street",
+      };
+      const ics = generateICS(structured);
+      expect(ics).toContain(
+        "LOCATION:75 Laurelcrest Street\\, Toronto\\, Canada",
+      );
+    });
+
+    it("falls back to legacy pickup when structured fields are missing", () => {
+      const ics = generateICS(mockBooking); // legacy pickup="123 Main St"
+      expect(ics).toContain("LOCATION:123 Main St");
     });
   });
 

@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { Booking, EventType } from "@prisma/client";
 import { formatInTimeZone } from "date-fns-tz";
 import { generateICS } from "./ics";
+import { formatPickupLocation } from "./service-locations";
 import type Stripe from "stripe";
 
 const resend = process.env.RESEND_API_KEY
@@ -16,6 +17,27 @@ function fmtDate(d: Date | string) {
 
 function fmtTime(d: Date | string) {
   return formatInTimeZone(new Date(d), TZ, "h:mm a");
+}
+
+/**
+ * Escapes HTML special characters so user-supplied strings can't inject
+ * markup into our transactional emails. Use for any field originating from
+ * the customer (name, notes, pickup, etc.).
+ */
+function escapeHtml(value: string | null | undefined): string {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function pickupLine(booking: BookingWithEventType): string {
+  const display = formatPickupLocation(booking);
+  if (!display) return "";
+  return `<p><strong>Pickup Location:</strong> ${escapeHtml(display)}</p>`;
 }
 
 export interface BookingWithEventType extends Booking {
@@ -46,7 +68,7 @@ export async function sendBookingConfirmation(booking: BookingWithEventType) {
             <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
             <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
             <p><strong>Duration:</strong> ${booking.eventType.durationMin} minutes</p>
-            ${booking.pickup ? `<p><strong>Pickup Location:</strong> ${booking.pickup}</p>` : ""}
+            ${pickupLine(booking)}
             ${booking.peopleCount ? `<p><strong>Number of People:</strong> ${booking.peopleCount}</p>` : ""}
             ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ""}
             ${booking.eventType.priceCents ? `<p><strong>Price:</strong> $${(booking.eventType.priceCents / 100).toFixed(2)}</p>` : ""}
@@ -100,7 +122,7 @@ export async function sendAdminNotification(booking: BookingWithEventType) {
             <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
             <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
             <p><strong>Duration:</strong> ${booking.eventType.durationMin} minutes</p>
-            ${booking.pickup ? `<p><strong>Pickup Location:</strong> ${booking.pickup}</p>` : ""}
+            ${pickupLine(booking)}
             ${booking.peopleCount ? `<p><strong>Number of People:</strong> ${booking.peopleCount}</p>` : ""}
             ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ""}
             ${booking.eventType.priceCents ? `<p><strong>Price:</strong> $${(booking.eventType.priceCents / 100).toFixed(2)}</p>` : ""}
@@ -191,7 +213,7 @@ export async function sendPaymentConfirmation(
             <p><strong>Service:</strong> ${booking.eventType.name}</p>
             <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
             <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
-            ${booking.pickup ? `<p><strong>Pickup Location:</strong> ${booking.pickup}</p>` : ""}
+            ${pickupLine(booking)}
           </div>
           
           <p>Your booking is now confirmed and paid for. We'll see you soon!</p>
@@ -253,7 +275,7 @@ export async function sendRideStatusUpdate(
             <p><strong>Service:</strong> ${booking.eventType.name}</p>
             <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
             <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
-            ${booking.pickup ? `<p><strong>Pickup Location:</strong> ${booking.pickup}</p>` : ""}
+            ${pickupLine(booking)}
             <p><strong>Status:</strong> ${status.replace("_", " ")}</p>
           </div>
           

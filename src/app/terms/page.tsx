@@ -33,14 +33,34 @@ export default function TermsPage() {
               </li>
               <li>
                 <strong>Accurate information</strong>: you agree to provide
-                accurate booking details (contact info, date/time, and any
-                pickup notes).
+                accurate booking details — including your full name, contact
+                info, date/time, pickup country, pickup city, and street
+                address.
               </li>
               <li>
                 <strong>Timing</strong>: you are responsible for being ready at
-                the scheduled time.
+                the scheduled time and at the address you provided.
               </li>
             </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Service area
+            </h2>
+            <p>
+              Our standard pickup area is the Greater Toronto Area (currently
+              Toronto, Mississauga, Vaughan, Markham, and Richmond Hill). From
+              time to time we run tour windows in additional cities (for example
+              Ottawa, Montreal, New York). The country/city list shown in the
+              booking form on a given date is the authoritative source for where
+              we can pick up — only cities visible there can be booked.
+            </p>
+            <p>
+              If your city is not listed on your chosen date, please contact us
+              before booking. We may be able to arrange a special pickup or let
+              you know when a tour will pass through your area.
+            </p>
           </section>
 
           <section className="space-y-3">

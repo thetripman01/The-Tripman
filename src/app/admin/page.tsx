@@ -91,6 +91,7 @@ interface ServiceLocation {
   availableFrom: string | null;
   availableUntil: string | null;
   isDefault: boolean;
+  exclusive: boolean;
   note: string | null;
   createdAt: string;
   updatedAt: string;
@@ -138,6 +139,7 @@ export default function AdminPage() {
     availableFrom: "",
     availableUntil: "",
     isDefault: false,
+    exclusive: false,
     note: "",
   });
   const [savingLocation, setSavingLocation] = useState(false);
@@ -152,6 +154,7 @@ export default function AdminPage() {
     availableFrom: "",
     availableUntil: "",
     isDefault: false,
+    exclusive: false,
     note: "",
   });
   const [savingEditLocation, setSavingEditLocation] = useState(false);
@@ -313,6 +316,7 @@ export default function AdminPage() {
           availableFrom: locationForm.availableFrom || undefined,
           availableUntil: locationForm.availableUntil || undefined,
           isDefault: locationForm.isDefault,
+          exclusive: locationForm.exclusive,
           note: locationForm.note.trim() || undefined,
         }),
       });
@@ -335,6 +339,7 @@ export default function AdminPage() {
         availableFrom: "",
         availableUntil: "",
         isDefault: false,
+        exclusive: false,
         note: "",
       });
       fetchServiceLocations();
@@ -382,6 +387,7 @@ export default function AdminPage() {
       availableFrom: loc.availableFrom ? loc.availableFrom.slice(0, 10) : "",
       availableUntil: loc.availableUntil ? loc.availableUntil.slice(0, 10) : "",
       isDefault: loc.isDefault,
+      exclusive: loc.exclusive,
       note: loc.note ?? "",
     });
   }, []);
@@ -411,6 +417,7 @@ export default function AdminPage() {
             availableFrom: editLocationForm.availableFrom || null,
             availableUntil: editLocationForm.availableUntil || null,
             isDefault: editLocationForm.isDefault,
+            exclusive: editLocationForm.exclusive,
             note: editLocationForm.note.trim() || null,
           }),
         });
@@ -1194,7 +1201,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                       <input
                         type="checkbox"
@@ -1223,6 +1230,23 @@ export default function AdminPage() {
                       />
                       Default city for this country
                     </label>
+                    <label
+                      className="flex items-center gap-2 text-sm font-medium text-gray-700"
+                      title="During this city's date window, ALL other (non-exclusive) cities are hidden. Use for tours."
+                    >
+                      <input
+                        type="checkbox"
+                        checked={locationForm.exclusive}
+                        onChange={(e) =>
+                          setLocationForm((p) => ({
+                            ...p,
+                            exclusive: e.target.checked,
+                          }))
+                        }
+                        className="accent-purple-600 w-4 h-4"
+                      />
+                      Exclusive (tour mode)
+                    </label>
                     <Input
                       value={locationForm.note}
                       onChange={(e) =>
@@ -1234,6 +1258,13 @@ export default function AdminPage() {
                       placeholder="Internal note (optional)"
                     />
                   </div>
+                  {locationForm.exclusive && (
+                    <p className="mt-2 text-xs text-purple-800 bg-purple-50 border border-purple-200 rounded-md p-2">
+                      <strong>Tour mode:</strong> While this city&apos;s date
+                      window is active, only exclusive cities will be bookable —
+                      every other city is hidden until the window ends.
+                    </p>
+                  )}
                 </div>
 
                 {/* Existing locations */}
@@ -1281,8 +1312,16 @@ export default function AdminPage() {
                                   )}
                                   {(loc.availableFrom ||
                                     loc.availableUntil) && (
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                       Date window
+                                    </span>
+                                  )}
+                                  {loc.exclusive && (
+                                    <span
+                                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800"
+                                      title="During this city's date window, all non-exclusive cities are hidden."
+                                    >
+                                      Exclusive
                                     </span>
                                   )}
                                 </div>
@@ -1393,7 +1432,7 @@ export default function AdminPage() {
                                   </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                                     <input
                                       type="checkbox"
@@ -1422,6 +1461,23 @@ export default function AdminPage() {
                                     />
                                     Default for {loc.country}
                                   </label>
+                                  <label
+                                    className="flex items-center gap-2 text-sm font-medium text-gray-700"
+                                    title="During this city's date window, ALL other (non-exclusive) cities are hidden. Use for tours."
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={editLocationForm.exclusive}
+                                      onChange={(e) =>
+                                        setEditLocationForm((p) => ({
+                                          ...p,
+                                          exclusive: e.target.checked,
+                                        }))
+                                      }
+                                      className="accent-purple-600 w-4 h-4"
+                                    />
+                                    Exclusive (tour mode)
+                                  </label>
                                   <Input
                                     value={editLocationForm.note}
                                     onChange={(e) =>
@@ -1433,6 +1489,14 @@ export default function AdminPage() {
                                     placeholder="Internal note (optional)"
                                   />
                                 </div>
+                                {editLocationForm.exclusive && (
+                                  <p className="text-xs text-purple-800 bg-purple-50 border border-purple-200 rounded-md p-2">
+                                    <strong>Tour mode:</strong> While this
+                                    city&apos;s date window is active, only
+                                    exclusive cities will be bookable — every
+                                    other city is hidden until the window ends.
+                                  </p>
+                                )}
 
                                 <div className="flex flex-wrap gap-2 justify-end">
                                   <Button

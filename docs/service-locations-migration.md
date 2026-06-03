@@ -109,6 +109,23 @@ ON CONFLICT ("country", "city") DO NOTHING;
 > ALTER TABLE "ServiceLocation" DROP COLUMN IF EXISTS "sortOrder";
 > ```
 
+### Subsequent migration — `exclusive` flag (tour mode)
+
+If your production DB was migrated before the `exclusive` column existed,
+run this to add it:
+
+```sql
+ALTER TABLE "ServiceLocation"
+  ADD COLUMN IF NOT EXISTS "exclusive" BOOLEAN NOT NULL DEFAULT false;
+```
+
+**What it does**: When a row is `isActive=true` AND `exclusive=true` AND
+its `availableFrom`/`availableUntil` window covers the booking date, the
+public dropdown shows ONLY exclusive rows for that date — every other
+non-exclusive city is hidden. This is how a Montreal tour (Jul 18–21,
+exclusive) hides every GTA city during the window without disabling them.
+Multiple exclusives can coexist (e.g. NY + NJ for a USA tour).
+
 After running, verify:
 
 ```sql

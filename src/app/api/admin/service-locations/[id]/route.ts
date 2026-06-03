@@ -21,6 +21,7 @@ const patchSchema = z
       .union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null()])
       .optional(),
     isDefault: z.boolean().optional(),
+    exclusive: z.boolean().optional(),
     note: z
       .union([z.string().trim().max(MAX_NOTE_LENGTH), z.null()])
       .optional(),
@@ -69,6 +70,7 @@ export async function PATCH(
   if (data.city !== undefined) updateData.city = data.city;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
   if (data.isDefault !== undefined) updateData.isDefault = data.isDefault;
+  if (data.exclusive !== undefined) updateData.exclusive = data.exclusive;
   if (data.note !== undefined) updateData.note = data.note;
 
   if (data.availableFrom !== undefined) {

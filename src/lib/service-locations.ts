@@ -44,6 +44,10 @@ export function isLocationAvailableOn(
  *
  * Returns the matching ServiceLocation if valid + available for the date,
  * or null if it should be rejected.
+ *
+ * Note: this only checks the standalone availability window. For full
+ * "is this city actually bookable today, considering exclusive tours"
+ * use `isLocationBookableOn` which also enforces exclusive-mode hiding.
  */
 export function findMatchingActiveLocation(
   candidates: ServiceLocation[],
@@ -63,6 +67,57 @@ export function findMatchingActiveLocation(
   if (!match) return null;
   if (!isLocationAvailableOn(match, bookingDate)) return null;
   return match;
+}
+
+/**
+ * Filters a list of locations down to the set actually bookable on the
+ * given date. Enforces two-stage logic:
+ *
+ *   1. Drop anything failing isLocationAvailableOn (isActive + date window).
+ *   2. If any of the survivors are flagged `exclusive`, return ONLY the
+ *      exclusive ones — every non-exclusive city is hidden for that date.
+ *      This is the "tour takeover" mode: marking Montreal exclusive with
+ *      window Jul 18–21 hides every GTA city during that window without
+ *      the admin having to disable them one by one.
+ *
+ * Multiple exclusive locations can coexist (e.g. NY + NJ together on a
+ * USA tour) — all of them remain bookable, just nothing else.
+ */
+export function filterBookableLocations<
+  T extends Pick<
+    ServiceLocation,
+    "isActive" | "availableFrom" | "availableUntil" | "exclusive"
+  >,
+>(locations: T[], bookingDate: Date): T[] {
+  const available = locations.filter((loc) =>
+    isLocationAvailableOn(loc, bookingDate),
+  );
+  const exclusiveActive = available.filter((loc) => loc.exclusive);
+  if (exclusiveActive.length > 0) return exclusiveActive;
+  return available;
+}
+
+/**
+ * Authoritative server-side check for booking POST validation: is THIS
+ * specific (country, city) bookable on the given date, considering both
+ * its own availability window AND any active exclusive tours?
+ *
+ * Pass in the full active-locations list (typically every isActive=true
+ * row from DB) so the function can detect exclusive takeovers.
+ */
+export function isLocationBookableOn(
+  target: Pick<ServiceLocation, "country" | "city">,
+  allLocations: ServiceLocation[],
+  bookingDate: Date,
+): boolean {
+  const bookable = filterBookableLocations(allLocations, bookingDate);
+  const normalizedCountry = target.country.trim().toLowerCase();
+  const normalizedCity = target.city.trim().toLowerCase();
+  return bookable.some(
+    (loc) =>
+      loc.country.trim().toLowerCase() === normalizedCountry &&
+      loc.city.trim().toLowerCase() === normalizedCity,
+  );
 }
 
 /**

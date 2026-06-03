@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { sendAdminNotification, sendBookingConfirmation } from "@/lib/email";
 import { checkForFraud, logFraudAttempt } from "@/lib/fraud-detection";
 import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
-import { isLocationAvailableOn } from "@/lib/service-locations";
+import { isLocationBookableOn } from "@/lib/service-locations";
 
 const bookingSchema = z.object({
   eventTypeId: z.string(),
@@ -50,15 +50,23 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    const locationMatch = await db.serviceLocation.findUnique({
-      where: {
-        country_city: {
-          country: validatedData.pickupCountry,
-          city: validatedData.pickupCity,
-        },
-      },
+    // Pull ALL active locations so isLocationBookableOn can enforce
+    // exclusive-mode hiding (e.g. during a Montreal tour, GTA cities are
+    // hidden even though they're isActive=true). Fetching all active is
+    // cheap — we keep a single source of truth (DB) for "is this city
+    // really bookable today" instead of trusting client filtering.
+    const allActiveLocations = await db.serviceLocation.findMany({
+      where: { isActive: true },
     });
-    if (!locationMatch || !isLocationAvailableOn(locationMatch, startsAtDate)) {
+    const isBookable = isLocationBookableOn(
+      {
+        country: validatedData.pickupCountry,
+        city: validatedData.pickupCity,
+      },
+      allActiveLocations,
+      startsAtDate,
+    );
+    if (!isBookable) {
       return NextResponse.json(
         {
           error:

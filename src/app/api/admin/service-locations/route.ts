@@ -30,6 +30,7 @@ const createSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   isDefault: z.boolean().default(false),
+  exclusive: z.boolean().default(false),
   note: z.string().trim().max(MAX_NOTE_LENGTH).optional(),
 });
 
@@ -97,6 +98,7 @@ export async function POST(request: NextRequest) {
           availableFrom,
           availableUntil,
           isDefault: data.isDefault,
+          exclusive: data.exclusive,
           note: data.note,
         },
       });

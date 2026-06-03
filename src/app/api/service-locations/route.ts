@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { isLocationAvailableOn } from "@/lib/service-locations";
+import { filterBookableLocations } from "@/lib/service-locations";
 
 // GET /api/service-locations?date=YYYY-MM-DD
 //
@@ -48,14 +48,18 @@ export async function GET(request: NextRequest) {
       orderBy: [{ country: "asc" }, { city: "asc" }],
     });
 
-    const bookable = allActive
-      .filter((loc) => isLocationAvailableOn(loc, bookingDate))
-      .map((loc) => ({
+    // filterBookableLocations also enforces "exclusive" mode: if any active
+    // city has its date window covering this date AND is flagged exclusive,
+    // only those exclusive rows are returned — every other city is hidden.
+    // This is how a Montreal tour can hide the GTA without disabling them.
+    const bookable = filterBookableLocations(allActive, bookingDate).map(
+      (loc) => ({
         id: loc.id,
         country: loc.country,
         city: loc.city,
         isDefault: loc.isDefault,
-      }));
+      }),
+    );
 
     return NextResponse.json(bookable);
   } catch (error) {

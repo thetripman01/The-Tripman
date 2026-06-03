@@ -2,6 +2,8 @@ import {
   isLocationAvailableOn,
   findMatchingActiveLocation,
   formatPickupLocation,
+  filterBookableLocations,
+  isLocationBookableOn,
 } from "../service-locations";
 import type { ServiceLocation } from "@prisma/client";
 
@@ -14,6 +16,7 @@ function loc(overrides: Partial<ServiceLocation>): ServiceLocation {
     availableFrom: null,
     availableUntil: null,
     isDefault: false,
+    exclusive: false,
     note: null,
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-01T00:00:00Z"),
@@ -191,5 +194,185 @@ describe("formatPickupLocation", () => {
         pickup: "fallback",
       }),
     ).toBe("fallback");
+  });
+});
+
+describe("filterBookableLocations (exclusive mode)", () => {
+  // GTA always-on cities used in the scenarios below.
+  const toronto = loc({ id: "tor", country: "Canada", city: "Toronto" });
+  const mississauga = loc({
+    id: "mis",
+    country: "Canada",
+    city: "Mississauga",
+  });
+
+  it("returns all available locations when no exclusive is active", () => {
+    const result = filterBookableLocations(
+      [toronto, mississauga],
+      new Date("2026-07-15"),
+    );
+    expect(result.map((l) => l.id).sort()).toEqual(["mis", "tor"]);
+  });
+
+  it("hides non-exclusive cities when an exclusive city covers the date", () => {
+    const montreal = loc({
+      id: "mtl",
+      country: "Canada",
+      city: "Montreal",
+      exclusive: true,
+      availableFrom: new Date("2026-07-18T00:00:00Z"),
+      availableUntil: new Date("2026-07-21T23:59:59Z"),
+    });
+    const result = filterBookableLocations(
+      [toronto, mississauga, montreal],
+      new Date("2026-07-19"),
+    );
+    expect(result.map((l) => l.id)).toEqual(["mtl"]);
+  });
+
+  it("returns GTA again outside the exclusive window", () => {
+    const montreal = loc({
+      id: "mtl",
+      country: "Canada",
+      city: "Montreal",
+      exclusive: true,
+      availableFrom: new Date("2026-07-18T00:00:00Z"),
+      availableUntil: new Date("2026-07-21T23:59:59Z"),
+    });
+    const result = filterBookableLocations(
+      [toronto, mississauga, montreal],
+      new Date("2026-07-22"),
+    );
+    expect(result.map((l) => l.id).sort()).toEqual(["mis", "tor"]);
+  });
+
+  it("supports multiple coexisting exclusives (e.g. USA tour with NY + NJ)", () => {
+    const ny = loc({
+      id: "ny",
+      country: "USA",
+      city: "New York",
+      exclusive: true,
+      availableFrom: new Date("2026-07-25T00:00:00Z"),
+      availableUntil: new Date("2026-07-27T23:59:59Z"),
+    });
+    const nj = loc({
+      id: "nj",
+      country: "USA",
+      city: "New Jersey",
+      exclusive: true,
+      availableFrom: new Date("2026-07-25T00:00:00Z"),
+      availableUntil: new Date("2026-07-27T23:59:59Z"),
+    });
+    const result = filterBookableLocations(
+      [toronto, mississauga, ny, nj],
+      new Date("2026-07-26"),
+    );
+    expect(result.map((l) => l.id).sort()).toEqual(["nj", "ny"]);
+  });
+
+  it("ignores exclusive cities outside their window when computing exclusive mode", () => {
+    // Montreal is exclusive but its window has passed — should NOT hide GTA.
+    const pastMontreal = loc({
+      id: "mtl",
+      country: "Canada",
+      city: "Montreal",
+      exclusive: true,
+      availableFrom: new Date("2025-01-01T00:00:00Z"),
+      availableUntil: new Date("2025-01-03T23:59:59Z"),
+    });
+    const result = filterBookableLocations(
+      [toronto, mississauga, pastMontreal],
+      new Date("2026-07-19"),
+    );
+    expect(result.map((l) => l.id).sort()).toEqual(["mis", "tor"]);
+  });
+
+  it("ignores inactive exclusive cities", () => {
+    const inactiveMontreal = loc({
+      id: "mtl",
+      country: "Canada",
+      city: "Montreal",
+      isActive: false,
+      exclusive: true,
+      availableFrom: new Date("2026-07-18T00:00:00Z"),
+      availableUntil: new Date("2026-07-21T23:59:59Z"),
+    });
+    const result = filterBookableLocations(
+      [toronto, mississauga, inactiveMontreal],
+      new Date("2026-07-19"),
+    );
+    expect(result.map((l) => l.id).sort()).toEqual(["mis", "tor"]);
+  });
+});
+
+describe("isLocationBookableOn", () => {
+  const toronto = loc({ id: "tor", country: "Canada", city: "Toronto" });
+  const montrealExclusive = loc({
+    id: "mtl",
+    country: "Canada",
+    city: "Montreal",
+    exclusive: true,
+    availableFrom: new Date("2026-07-18T00:00:00Z"),
+    availableUntil: new Date("2026-07-21T23:59:59Z"),
+  });
+
+  it("returns true for an always-on city outside any exclusive window", () => {
+    expect(
+      isLocationBookableOn(
+        { country: "Canada", city: "Toronto" },
+        [toronto, montrealExclusive],
+        new Date("2026-07-22"),
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false for an always-on city during an exclusive window", () => {
+    expect(
+      isLocationBookableOn(
+        { country: "Canada", city: "Toronto" },
+        [toronto, montrealExclusive],
+        new Date("2026-07-19"),
+      ),
+    ).toBe(false);
+  });
+
+  it("returns true for the exclusive city during its window", () => {
+    expect(
+      isLocationBookableOn(
+        { country: "Canada", city: "Montreal" },
+        [toronto, montrealExclusive],
+        new Date("2026-07-19"),
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false for the exclusive city OUTSIDE its window", () => {
+    expect(
+      isLocationBookableOn(
+        { country: "Canada", city: "Montreal" },
+        [toronto, montrealExclusive],
+        new Date("2026-07-22"),
+      ),
+    ).toBe(false);
+  });
+
+  it("is case-insensitive on country/city match", () => {
+    expect(
+      isLocationBookableOn(
+        { country: "  CANADA ", city: " toronto " },
+        [toronto],
+        new Date("2026-07-22"),
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false for an unknown city", () => {
+    expect(
+      isLocationBookableOn(
+        { country: "Canada", city: "Hamilton" },
+        [toronto, montrealExclusive],
+        new Date("2026-07-22"),
+      ),
+    ).toBe(false);
   });
 });

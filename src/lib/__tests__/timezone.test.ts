@@ -5,6 +5,7 @@ import {
   toBusinessSessionDay,
   businessDayStartUtc,
   businessDayEndUtc,
+  sessionAnchorUtc,
 } from "../timezone";
 
 // These tests pin the business-TZ behaviour that the location/availability
@@ -164,6 +165,47 @@ describe("toBusinessSessionDay (overnight shift)", () => {
     // Jan 20 6am EST = Jan 20 11:00 UTC. At cutoff.
     expect(toBusinessSessionDay(new Date("2026-01-20T11:00:00Z"))).toBe(
       "2026-01-20",
+    );
+  });
+});
+
+describe("sessionAnchorUtc", () => {
+  it("returns 8pm EDT in summer", () => {
+    // Jun 16 8pm EDT = Jun 17 00:00 UTC
+    expect(sessionAnchorUtc("2026-06-16").toISOString()).toBe(
+      "2026-06-17T00:00:00.000Z",
+    );
+  });
+
+  it("returns 8pm EST in winter (UTC-5)", () => {
+    // Jan 15 8pm EST = Jan 16 01:00 UTC
+    expect(sessionAnchorUtc("2026-01-15").toISOString()).toBe(
+      "2026-01-16T01:00:00.000Z",
+    );
+  });
+
+  it("round-trips exactly: toBusinessSessionDay(sessionAnchorUtc(d)) === d", () => {
+    // This is the contract that prevents the Jun 16 → Jun 15 off-by-one
+    // bug. If this test ever fails, the public service-locations API
+    // will start mis-attributing tour-window matches by one day.
+    for (const day of [
+      "2026-06-12",
+      "2026-06-16",
+      "2026-01-15",
+      "2026-11-02",
+      "2026-03-09", // DST spring-forward day
+      "2026-11-01", // DST fall-back day
+    ]) {
+      expect(toBusinessSessionDay(sessionAnchorUtc(day))).toBe(day);
+    }
+  });
+
+  it("does NOT round-trip when using businessDayStartUtc (the bug)", () => {
+    // Pins the original bug: midnight EDT rolls back to previous day.
+    // If you ever swap sessionAnchorUtc back to businessDayStartUtc in
+    // /api/service-locations, this assertion is the early-warning siren.
+    expect(toBusinessSessionDay(businessDayStartUtc("2026-06-16"))).toBe(
+      "2026-06-15",
     );
   });
 });

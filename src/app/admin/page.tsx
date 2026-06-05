@@ -27,6 +27,7 @@ import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { toast } from "sonner";
+import { toBusinessCalendarDay } from "@/lib/timezone";
 
 interface EventType {
   id: string;
@@ -414,8 +415,16 @@ export default function AdminPage() {
     setEditingLocationId(loc.id);
     setEditLocationForm({
       isActive: loc.isActive,
-      availableFrom: loc.availableFrom ? loc.availableFrom.slice(0, 10) : "",
-      availableUntil: loc.availableUntil ? loc.availableUntil.slice(0, 10) : "",
+      // CRITICAL: stored timestamps are end-of-day BUSINESS TZ (e.g. Jun 15
+      // EDT 23:59:59 = Jun 16 03:59:59 UTC). Slicing the UTC ISO would
+      // show "Jun 16" — wrong by one day. Convert back to business-TZ
+      // calendar day so the date input pre-fills with what admin entered.
+      availableFrom: loc.availableFrom
+        ? toBusinessCalendarDay(loc.availableFrom)
+        : "",
+      availableUntil: loc.availableUntil
+        ? toBusinessCalendarDay(loc.availableUntil)
+        : "",
       isDefault: loc.isDefault,
       exclusive: loc.exclusive,
       note: loc.note ?? "",
@@ -1545,13 +1554,17 @@ export default function AdminPage() {
                                         Window:{" "}
                                         <strong className="text-gray-800">
                                           {loc.availableFrom
-                                            ? loc.availableFrom.slice(0, 10)
+                                            ? toBusinessCalendarDay(
+                                                loc.availableFrom,
+                                              )
                                             : "always"}
                                         </strong>{" "}
                                         →{" "}
                                         <strong className="text-gray-800">
                                           {loc.availableUntil
-                                            ? loc.availableUntil.slice(0, 10)
+                                            ? toBusinessCalendarDay(
+                                                loc.availableUntil,
+                                              )
                                             : "always"}
                                         </strong>
                                       </span>

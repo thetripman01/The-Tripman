@@ -31,10 +31,8 @@ describe("BecomePassenger", () => {
       />,
     );
     expect(screen.getByText("The Tripman Experience")).toBeInTheDocument();
-    // Price block shows "$99 CAD + 13% HST · 1–4 people" plus the
-    // explicit total. Both should be visible to the customer.
-    expect(screen.getByText(/\$99 CAD \+ 13% HST/)).toBeInTheDocument();
-    expect(screen.getByText(/Total \$111\.87 CAD/)).toBeInTheDocument();
+    // Price block: "$99 CAD + HST · 1–4 people" (compact form).
+    expect(screen.getByText(/\$99 CAD \+ HST/)).toBeInTheDocument();
     expect(
       screen.getByText(/Video feature not guaranteed/i),
     ).toBeInTheDocument();

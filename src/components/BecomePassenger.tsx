@@ -98,16 +98,8 @@ export function BecomePassenger(props: {
                   depends on the energy of the night and a bit of luck.
                 </li>
               </ul>
-              <div className="mt-6 rounded-xl bg-cyan-50 border border-cyan-200 px-4 py-3 text-center text-gray-900">
-                <div className="font-semibold">
-                  $99 CAD + 13% HST · 1–4 people
-                </div>
-                <div className="text-xs text-cyan-800 mt-0.5">
-                  Total $111.87 CAD at checkout
-                </div>
-                <div className="text-[11px] text-gray-600 mt-1">
-                  USA pickups: $110 USD + 13% sales tax (total $124.30 USD)
-                </div>
+              <div className="mt-6 rounded-xl bg-cyan-50 border border-cyan-200 px-4 py-3 text-center text-gray-900 font-semibold">
+                $99 CAD + HST · 1–4 people
               </div>
               <p className="mt-3 text-xs text-gray-500 text-center">
                 Video feature not guaranteed. Based on the vibe and luck.

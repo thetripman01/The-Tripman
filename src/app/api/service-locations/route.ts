@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { filterBookableLocations } from "@/lib/service-locations";
-import { businessDayStartUtc } from "@/lib/timezone";
+import { sessionAnchorUtc } from "@/lib/timezone";
 
 // GET /api/service-locations?date=YYYY-MM-DD
 //
@@ -34,12 +34,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid date" }, { status: 400 });
     }
 
-    // Parse the YYYY-MM-DD as a business-TZ day. Using business TZ end-of-day
-    // would also work since isLocationAvailableOn normalizes both sides via
-    // toBusinessCalendarDay; pick start-of-day for clarity. Today's date in
-    // business TZ is used if no param.
+    // Parse YYYY-MM-DD as a SESSION ANCHOR (8pm EDT on that day), NOT
+    // midnight. Midnight EDT falls before the BUSINESS_DAY_CUTOFF_HOUR,
+    // which makes toBusinessSessionDay() roll back one day — the exact
+    // off-by-one that made Jun 16 queries match Jun 15's tour window.
+    // 8pm is unambiguously in the named session.
     const bookingDate = parsed.data.date
-      ? businessDayStartUtc(parsed.data.date)
+      ? sessionAnchorUtc(parsed.data.date)
       : new Date();
 
     if (Number.isNaN(bookingDate.getTime())) {

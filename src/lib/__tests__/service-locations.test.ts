@@ -5,7 +5,11 @@ import {
   filterBookableLocations,
   isLocationBookableOn,
 } from "../service-locations";
-import { businessDayStartUtc, businessDayEndUtc } from "../timezone";
+import {
+  businessDayStartUtc,
+  businessDayEndUtc,
+  sessionAnchorUtc,
+} from "../timezone";
 import type { ServiceLocation } from "@prisma/client";
 
 /**
@@ -491,5 +495,76 @@ describe("isLocationBookableOn", () => {
         businessAfternoon("2026-07-22"),
       ),
     ).toBe(false);
+  });
+});
+
+// Bekir's reproduction: Ottawa Jun 12-15, Montreal Jun 16-20. Before the
+// fix, querying for Jun 16 returned Ottawa (because the public API passed
+// midnight EDT, which session-day rolled back to Jun 15). This block uses
+// sessionAnchorUtc() — the same anchor the API now uses — so a regression
+// in either the API or sessionAnchorUtc trips here loudly.
+describe("Bekir's last-day overlap bug (regression pin)", () => {
+  const ottawa = loc({
+    id: "ott",
+    country: "Canada",
+    city: "Ottawa",
+    availableFrom: businessDayStartUtc("2026-06-12"),
+    availableUntil: businessDayEndUtc("2026-06-15"),
+  });
+  const montreal = loc({
+    id: "mtl",
+    country: "Canada",
+    city: "Montreal",
+    availableFrom: businessDayStartUtc("2026-06-16"),
+    availableUntil: businessDayEndUtc("2026-06-20"),
+  });
+  const cities = [ottawa, montreal];
+
+  it("Jun 12 (first day) — Ottawa shown, Montreal NOT", () => {
+    const result = filterBookableLocations(
+      cities,
+      sessionAnchorUtc("2026-06-12"),
+    );
+    expect(result.map((l) => l.id).sort()).toEqual(["ott"]);
+  });
+
+  it("Jun 15 (Ottawa last day) — Ottawa shown, Montreal NOT", () => {
+    const result = filterBookableLocations(
+      cities,
+      sessionAnchorUtc("2026-06-15"),
+    );
+    expect(result.map((l) => l.id).sort()).toEqual(["ott"]);
+  });
+
+  it("Jun 16 (Montreal first day) — Montreal shown, Ottawa NOT (THE bug)", () => {
+    const result = filterBookableLocations(
+      cities,
+      sessionAnchorUtc("2026-06-16"),
+    );
+    expect(result.map((l) => l.id).sort()).toEqual(["mtl"]);
+  });
+
+  it("Jun 20 (Montreal last day) — Montreal shown, Ottawa NOT", () => {
+    const result = filterBookableLocations(
+      cities,
+      sessionAnchorUtc("2026-06-20"),
+    );
+    expect(result.map((l) => l.id).sort()).toEqual(["mtl"]);
+  });
+
+  it("Jun 21 (after both tours) — neither shown", () => {
+    const result = filterBookableLocations(
+      cities,
+      sessionAnchorUtc("2026-06-21"),
+    );
+    expect(result.map((l) => l.id)).toEqual([]);
+  });
+
+  it("Jun 11 (before either tour) — neither shown", () => {
+    const result = filterBookableLocations(
+      cities,
+      sessionAnchorUtc("2026-06-11"),
+    );
+    expect(result.map((l) => l.id)).toEqual([]);
   });
 });

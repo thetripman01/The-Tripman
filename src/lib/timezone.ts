@@ -51,6 +51,25 @@ export function businessDayEndUtc(yyyyMmDd: string): Date {
 }
 
 /**
+ * Returns a UTC instant safely INSIDE the named business session day —
+ * 8pm in business TZ (the actual Tripman opening hour).
+ *
+ * Use this whenever an external caller hands you a calendar date as a
+ * string and you need a timestamp to feed into availability logic.
+ *
+ * WHY NOT businessDayStartUtc? That returns midnight, which sits before
+ * the BUSINESS_DAY_CUTOFF_HOUR (6am). Passing midnight into
+ * `toBusinessSessionDay()` rolls it BACK to the previous day — causing
+ * an off-by-one bug where Jun 16 queries match Jun 15's tour window.
+ *
+ * Round-trip is exact:
+ *   toBusinessSessionDay(sessionAnchorUtc("2026-06-16")) === "2026-06-16"
+ */
+export function sessionAnchorUtc(yyyyMmDd: string): Date {
+  return fromZonedTime(yyyyMmDd + "T20:00:00", BUSINESS_TIMEZONE);
+}
+
+/**
  * Tripman runs an OVERNIGHT shift: 7pm → 3am (next morning). A booking at
  * 1am Jun 16 EDT is part of "Jun 15's session", not Jun 16's. This matters
  * for tour-window comparisons — if Ottawa is bookable Jun 12–15 and

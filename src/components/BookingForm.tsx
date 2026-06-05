@@ -42,7 +42,7 @@ import {
   getTripmanPriceForPeople,
   getTripmanQuoteForBooking,
 } from "@/lib/tripman-packages";
-import { toBusinessCalendarDay } from "@/lib/timezone";
+import { toBusinessSessionDay } from "@/lib/timezone";
 
 interface EventType {
   id: string;
@@ -129,10 +129,11 @@ export function BookingForm({
         setLocationsLoading(true);
         setLocationsError(null);
 
-        // Send the BUSINESS-TZ calendar day, not UTC, so a slot at 11pm EDT
-        // on Jun 11 doesn't get treated as Jun 12 (which would incorrectly
-        // unlock the next day's tour-window cities). See lib/timezone.ts.
-        const dateParam = toBusinessCalendarDay(selectedSlot.startsAt);
+        // Send the BUSINESS SESSION day, not the calendar day. Tripman
+        // runs overnight (7pm–3am), so a slot at 1am Jun 16 is still part
+        // of Jun 15's session and must continue to show Jun 15's tour
+        // city — not flip to Jun 16's tour at midnight. See lib/timezone.ts.
+        const dateParam = toBusinessSessionDay(selectedSlot.startsAt);
         const res = await fetch(`/api/service-locations?date=${dateParam}`, {
           cache: "no-store",
         });

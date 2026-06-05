@@ -1,5 +1,5 @@
 import type { ServiceLocation } from "@prisma/client";
-import { toBusinessCalendarDay } from "./timezone";
+import { toBusinessCalendarDay, toBusinessSessionDay } from "./timezone";
 
 /**
  * Determines whether a given ServiceLocation is bookable for a specific
@@ -7,13 +7,21 @@ import { toBusinessCalendarDay } from "./timezone";
  *
  * A location is bookable when:
  *   1. isActive is true, AND
- *   2. availableFrom is null OR availableFrom-day <= booking-day, AND
- *   3. availableUntil is null OR booking-day <= availableUntil-day
+ *   2. availableFrom is null OR availableFrom-day <= booking-session-day, AND
+ *   3. availableUntil is null OR booking-session-day <= availableUntil-day
  *
  * The bounds are inclusive — admin sets "Ottawa 12-14 July" meaning the
- * entire 14th is still bookable. Comparison happens at calendar-day
- * granularity in the BUSINESS timezone, so a slot starting 11pm EDT on
- * Jul 11 is treated as Jul 11 (not Jul 12, which it would be in UTC).
+ * entire 14th is still bookable.
+ *
+ * IMPORTANT: comparison uses the BUSINESS SESSION day, not the calendar
+ * day. Tripman runs overnight (7pm–3am), so a slot at 1am Jul 15 EDT is
+ * still part of Jul 14's session. Without this, a tour ending Jul 14
+ * would wrongly stop offering Ottawa at midnight Jul 14→15 even though
+ * the night's last slots haven't run yet.
+ *
+ * The availability window itself (admin-entered dates) is interpreted as
+ * a CALENDAR day, because admin entered "Jul 14" thinking of the
+ * calendar — the session-day offset only applies to the booking side.
  */
 export function isLocationAvailableOn(
   location: Pick<
@@ -24,7 +32,7 @@ export function isLocationAvailableOn(
 ): boolean {
   if (!location.isActive) return false;
 
-  const bookingDay = toBusinessCalendarDay(bookingTimestamp);
+  const bookingDay = toBusinessSessionDay(bookingTimestamp);
 
   if (location.availableFrom) {
     const fromDay = toBusinessCalendarDay(location.availableFrom);

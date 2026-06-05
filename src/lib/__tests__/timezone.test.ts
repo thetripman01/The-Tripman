@@ -1,6 +1,8 @@
 import {
   BUSINESS_TIMEZONE,
+  BUSINESS_DAY_CUTOFF_HOUR,
   toBusinessCalendarDay,
+  toBusinessSessionDay,
   businessDayStartUtc,
   businessDayEndUtc,
 } from "../timezone";
@@ -97,5 +99,71 @@ describe("businessDayEndUtc", () => {
     for (const day of ["2026-06-15", "2026-01-15", "2026-11-02"]) {
       expect(toBusinessCalendarDay(businessDayEndUtc(day))).toBe(day);
     }
+  });
+});
+
+describe("toBusinessSessionDay (overnight shift)", () => {
+  it("returns the configured default cutoff", () => {
+    expect(BUSINESS_DAY_CUTOFF_HOUR).toBe(6);
+  });
+
+  it("attributes an early-evening slot to today", () => {
+    // Jun 15 7pm EDT = Jun 15 23:00 UTC
+    expect(toBusinessSessionDay(new Date("2026-06-15T23:00:00Z"))).toBe(
+      "2026-06-15",
+    );
+  });
+
+  it("attributes a late-evening slot to today", () => {
+    // Jun 15 11pm EDT = Jun 16 03:00 UTC
+    expect(toBusinessSessionDay(new Date("2026-06-16T03:00:00Z"))).toBe(
+      "2026-06-15",
+    );
+  });
+
+  it("attributes an after-midnight slot back to PREVIOUS day", () => {
+    // Jun 16 1am EDT = Jun 16 05:00 UTC. Cutoff is 6am, so 1am < 6am
+    // → still part of Jun 15's session.
+    expect(toBusinessSessionDay(new Date("2026-06-16T05:00:00Z"))).toBe(
+      "2026-06-15",
+    );
+  });
+
+  it("attributes a 2:30am slot to PREVIOUS day", () => {
+    // Jun 16 2:30am EDT = Jun 16 06:30 UTC
+    expect(toBusinessSessionDay(new Date("2026-06-16T06:30:00Z"))).toBe(
+      "2026-06-15",
+    );
+  });
+
+  it("attributes a 5:59am slot to PREVIOUS day (cutoff boundary)", () => {
+    // Jun 16 5:59am EDT = Jun 16 09:59 UTC
+    expect(toBusinessSessionDay(new Date("2026-06-16T09:59:00Z"))).toBe(
+      "2026-06-15",
+    );
+  });
+
+  it("attributes a 6am slot to NEW day (at cutoff)", () => {
+    // Jun 16 6am EDT = Jun 16 10:00 UTC — exactly at cutoff
+    expect(toBusinessSessionDay(new Date("2026-06-16T10:00:00Z"))).toBe(
+      "2026-06-16",
+    );
+  });
+
+  it("attributes daytime to today", () => {
+    expect(toBusinessSessionDay(new Date("2026-06-16T18:00:00Z"))).toBe(
+      "2026-06-16",
+    );
+  });
+
+  it("handles DST correctly (winter EST = UTC-5)", () => {
+    // Jan 20 1am EST = Jan 20 06:00 UTC. Still before 6am cutoff.
+    expect(toBusinessSessionDay(new Date("2026-01-20T06:00:00Z"))).toBe(
+      "2026-01-19",
+    );
+    // Jan 20 6am EST = Jan 20 11:00 UTC. At cutoff.
+    expect(toBusinessSessionDay(new Date("2026-01-20T11:00:00Z"))).toBe(
+      "2026-01-20",
+    );
   });
 });

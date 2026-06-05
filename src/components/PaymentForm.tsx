@@ -108,6 +108,7 @@ function PaymentFormContent({
           <>
             <CreditCard className="w-4 h-4 mr-2" />
             Pay ${(amount / 100).toFixed(2)} {currency.toUpperCase()}
+            {currency === "cad" ? " (incl. 13% HST)" : " (incl. 13% tax)"}
           </>
         )}
       </Button>

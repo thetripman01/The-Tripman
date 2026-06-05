@@ -12,6 +12,11 @@ const faqs = [
       "Canada pickups are $99 CAD + 13% HST (total $111.87 CAD). USA pickups are a flat $110 USD + 13% sales tax (total $124.30 USD). One price covers 1–4 people for a full 60-minute ride. No hidden tiers, no upsells.",
   },
   {
+    question: "Is tax included in the price?",
+    answer:
+      "No — the $99 CAD (or $110 USD) is the base ride price. 13% HST (Canada) or 13% sales tax (USA) is added on top at checkout, shown as its own line so you see exactly what you're paying. Your Stripe receipt also itemizes the breakdown.",
+  },
+  {
     question: "Will I be featured in a Tripman video?",
     answer:
       "Being featured is not guaranteed. Whether a moment from your ride ends up posted on our channels depends on the energy of the night and a bit of luck. Some rides become highlights, some stay private — that’s part of the experience.",

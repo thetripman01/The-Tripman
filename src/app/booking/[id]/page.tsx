@@ -286,7 +286,35 @@ export default function BookingDetailsPage() {
                       <span>{booking.eventType.durationMin} minutes</span>
                     </div>
 
-                    {booking.eventType.priceCents && (
+                    {/* Price: prefer the tax-aware snapshot stored when
+                        the payment intent was created. Falls back to the
+                        event's flat price for older bookings. */}
+                    {booking.subtotalCents != null &&
+                    booking.taxCents != null &&
+                    booking.taxRate != null ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-gray-500" />
+                          <span className="font-medium">Total:</span>
+                          <span className="font-semibold">
+                            $
+                            {(
+                              (booking.amountPaid ??
+                                booking.subtotalCents + booking.taxCents) / 100
+                            ).toFixed(2)}{" "}
+                            {(booking.currency ?? "cad").toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="ml-6 text-xs text-gray-600">
+                          Subtotal ${(booking.subtotalCents / 100).toFixed(2)} +{" "}
+                          {(booking.currency ?? "cad") === "usd"
+                            ? "Sales tax"
+                            : "HST"}{" "}
+                          {(booking.taxRate * 100).toFixed(0)}% $
+                          {(booking.taxCents / 100).toFixed(2)}
+                        </div>
+                      </div>
+                    ) : booking.eventType.priceCents ? (
                       <div className="flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-gray-500" />
                         <span className="font-medium">Price:</span>
@@ -294,7 +322,7 @@ export default function BookingDetailsPage() {
                           ${(booking.eventType.priceCents / 100).toFixed(2)}
                         </span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </CardContent>
@@ -397,8 +425,18 @@ export default function BookingDetailsPage() {
                   <div>
                     <span className="font-medium">Amount Paid:</span>
                     <span className="ml-2 font-semibold">
-                      ${(booking.amountPaid / 100).toFixed(2)}
+                      ${(booking.amountPaid / 100).toFixed(2)}{" "}
+                      {(booking.currency ?? "cad").toUpperCase()}
                     </span>
+                    {booking.taxRate != null && (
+                      <span className="ml-1 text-xs text-gray-500">
+                        (incl.{" "}
+                        {(booking.currency ?? "cad") === "usd"
+                          ? "sales tax"
+                          : "HST"}{" "}
+                        {(booking.taxRate * 100).toFixed(0)}%)
+                      </span>
+                    )}
                   </div>
                 )}
               </CardContent>

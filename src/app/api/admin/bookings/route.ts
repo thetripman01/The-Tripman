@@ -100,8 +100,11 @@ export async function GET(request: NextRequest) {
           },
         },
       },
+      // Ascending: nearest upcoming booking first. Past bookings (when
+      // includePast is enabled) tail at the bottom; admin scrolls down for
+      // history rather than up.
       orderBy: {
-        startsAt: "desc",
+        startsAt: "asc",
       },
     });
 

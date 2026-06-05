@@ -19,6 +19,7 @@ import {
   CheckCircle,
   XCircle,
   Mail,
+  MapPin,
   Shield,
   Settings,
 } from "lucide-react";
@@ -114,11 +115,24 @@ export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    status: "all",
-    eventType: "all",
-    dateFrom: "",
-    dateTo: "",
+  // Default the Bookings filter to a rolling 30-day window starting today
+  // so admin sees the next month at a glance without picking dates first.
+  // Admin can still override the inputs manually to look further ahead /
+  // backward.
+  const [filters, setFilters] = useState(() => {
+    const today = new Date();
+    const in30Days = new Date();
+    in30Days.setDate(today.getDate() + 30);
+    const ymd = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate(),
+      ).padStart(2, "0")}`;
+    return {
+      status: "all",
+      eventType: "all",
+      dateFrom: ymd(today),
+      dateTo: ymd(in30Days),
+    };
   });
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [activeTab, setActiveTab] = useState<
@@ -817,8 +831,14 @@ export default function AdminPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+  // Long, scannable format for the booking list & modal: "Jun 6 Monday, 2026".
+  // Month and weekday spelled out so admin doesn't have to think about
+  // locale-specific MM/DD vs DD/MM ordering.
+  const formatDateLong = (dateString: string) => {
+    const d = new Date(dateString);
+    const month = d.toLocaleString("en-US", { month: "short" });
+    const weekday = d.toLocaleString("en-US", { weekday: "long" });
+    return `${month} ${d.getDate()} ${weekday}, ${d.getFullYear()}`;
   };
 
   const formatTime = (dateString: string) => {
@@ -1970,7 +1990,20 @@ export default function AdminPage() {
                     }}
                     eventClick={async (clickInfo) => {
                       const id = clickInfo.event.id;
-                      if (!id.startsWith("blk-")) return;
+                      // Booking event → open the same Booking Details modal
+                      // the Bookings tab uses. We look up the full booking
+                      // from state (which is already loaded) so admin can
+                      // see / cancel / edit without leaving the calendar.
+                      if (!id.startsWith("blk-")) {
+                        const booking = bookings.find((b) => b.id === id);
+                        if (booking) {
+                          setSelectedBooking(booking);
+                          return;
+                        }
+                        // Booking not in current state (e.g. range changed
+                        // since last fetch) — fall through silently.
+                        return;
+                      }
                       const blockId = id.replace("blk-", "");
                       const ok = window.confirm(
                         "Delete this unavailable block?",
@@ -2223,21 +2256,34 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{formatDate(booking.startsAt)}</span>
+                        <Calendar className="w-4 h-4 shrink-0" />
+                        <span>{formatDateLong(booking.startsAt)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
+                        <Clock className="w-4 h-4 shrink-0" />
                         <span>
                           {formatTime(booking.startsAt)} -{" "}
                           {formatTime(booking.endsAt)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        <span>{booking.email}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <MapPin className="w-4 h-4 shrink-0" />
+                        <span className="truncate">
+                          {booking.pickupCity ??
+                            booking.pickupAddress ??
+                            booking.pickup ??
+                            "—"}
+                          {booking.pickupCountry &&
+                          booking.pickupCountry !== "Canada"
+                            ? ` (${booking.pickupCountry})`
+                            : ""}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Mail className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{booking.email}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -2334,7 +2380,7 @@ export default function AdminPage() {
                       )}
                       <div>
                         <label className="font-semibold">Date</label>
-                        <p>{formatDate(selectedBooking.startsAt)}</p>
+                        <p>{formatDateLong(selectedBooking.startsAt)}</p>
                       </div>
                       <div>
                         <label className="font-semibold">Time</label>

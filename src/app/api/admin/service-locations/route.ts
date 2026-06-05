@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-session";
+import { businessDayEndUtc, businessDayStartUtc } from "@/lib/timezone";
 
 // Admin CRUD for ServiceLocation. Behind admin auth.
 //
@@ -66,11 +67,14 @@ export async function POST(request: NextRequest) {
   }
 
   const data = parsed.data;
+  // Store as the BUSINESS-TZ day boundaries (not UTC midnight) — otherwise
+  // "Jun 12" entered in admin gets stored as Jun 11 8pm EDT, which fires
+  // tour windows a day early. See lib/timezone.ts for rationale.
   const availableFrom = data.availableFrom
-    ? new Date(data.availableFrom + "T00:00:00.000Z")
+    ? businessDayStartUtc(data.availableFrom)
     : null;
   const availableUntil = data.availableUntil
-    ? new Date(data.availableUntil + "T23:59:59.999Z")
+    ? businessDayEndUtc(data.availableUntil)
     : null;
 
   if (availableFrom && availableUntil && availableUntil < availableFrom) {

@@ -1,37 +1,40 @@
 import type { ServiceLocation } from "@prisma/client";
+import { toBusinessCalendarDay } from "./timezone";
 
 /**
  * Determines whether a given ServiceLocation is bookable for a specific
- * booking date.
+ * booking timestamp.
  *
  * A location is bookable when:
  *   1. isActive is true, AND
- *   2. availableFrom is null OR availableFrom <= date, AND
- *   3. availableUntil is null OR date <= availableUntil
+ *   2. availableFrom is null OR availableFrom-day <= booking-day, AND
+ *   3. availableUntil is null OR booking-day <= availableUntil-day
  *
  * The bounds are inclusive — admin sets "Ottawa 12-14 July" meaning the
- * entire 14th is still bookable. We compare on calendar dates only,
- * normalizing both sides to UTC midnight to avoid timezone edge cases.
+ * entire 14th is still bookable. Comparison happens at calendar-day
+ * granularity in the BUSINESS timezone, so a slot starting 11pm EDT on
+ * Jul 11 is treated as Jul 11 (not Jul 12, which it would be in UTC).
  */
 export function isLocationAvailableOn(
   location: Pick<
     ServiceLocation,
     "isActive" | "availableFrom" | "availableUntil"
   >,
-  date: Date,
+  bookingTimestamp: Date,
 ): boolean {
   if (!location.isActive) return false;
 
-  const day = startOfUtcDay(date);
+  const bookingDay = toBusinessCalendarDay(bookingTimestamp);
 
   if (location.availableFrom) {
-    const from = startOfUtcDay(location.availableFrom);
-    if (day.getTime() < from.getTime()) return false;
+    const fromDay = toBusinessCalendarDay(location.availableFrom);
+    // Lexicographic compare on YYYY-MM-DD is correct.
+    if (bookingDay < fromDay) return false;
   }
 
   if (location.availableUntil) {
-    const until = endOfUtcDay(location.availableUntil);
-    if (day.getTime() > until.getTime()) return false;
+    const untilDay = toBusinessCalendarDay(location.availableUntil);
+    if (bookingDay > untilDay) return false;
   }
 
   return true;
@@ -137,16 +140,4 @@ export function formatPickupLocation(booking: {
     return `${booking.pickupAddress}, ${booking.pickupCity}, ${booking.pickupCountry}`;
   }
   return booking.pickup ?? null;
-}
-
-function startOfUtcDay(input: Date): Date {
-  const d = new Date(input);
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
-}
-
-function endOfUtcDay(input: Date): Date {
-  const d = new Date(input);
-  d.setUTCHours(23, 59, 59, 999);
-  return d;
 }

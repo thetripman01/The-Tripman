@@ -2,18 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
-import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
+import { getTripmanQuoteForBooking } from "@/lib/tripman-packages";
 
 const createPaymentIntentSchema = z.object({
   bookingId: z.string(),
-  // Currency can be changed later, but Tripman operates in Canada today.
-  currency: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { bookingId, currency } = createPaymentIntentSchema.parse(body);
+    const { bookingId } = createPaymentIntentSchema.parse(body);
 
     // Get booking details
     const booking = await db.booking.findUnique({
@@ -43,14 +41,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Always compute amount server-side to prevent tampering.
-    // For Tripman packages, price depends on peopleCount tiers.
-    const tierPriceCents = getTripmanPriceForPeople(
+    // Always compute amount + currency + tax server-side to prevent
+    // tampering. Currency is derived from the pickup country (USA → USD,
+    // Canada → CAD) and tax is +13% applied automatically. We never trust
+    // a client-supplied currency or amount here.
+    const quote = getTripmanQuoteForBooking(
       booking.eventType.slug,
       booking.peopleCount,
+      booking.pickupCountry,
     );
-    const amountCents = tierPriceCents ?? booking.eventType.priceCents;
-    if (!amountCents || amountCents <= 0) {
+    if (!quote || quote.totalCents <= 0) {
       return NextResponse.json(
         {
           error:
@@ -59,10 +59,30 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    // Total charged to Stripe = subtotal + tax. Breakdown is stored
+    // locally + in Stripe metadata for reconciliation.
+    const amountCents = quote.totalCents;
+    const normalizedCurrency = quote.currency;
 
-    const normalizedCurrency = (currency ?? "cad").toLowerCase();
+    // Persist the breakdown on the booking row. Doing this BEFORE creating
+    // the Stripe intent means our DB is always the source of truth for the
+    // receipt — even if Stripe goes down mid-call. We also persist on
+    // intent-reuse paths below.
+    await db.booking.update({
+      where: { id: booking.id },
+      data: {
+        subtotalCents: quote.subtotalCents,
+        taxCents: quote.taxCents,
+        taxRate: quote.taxRate,
+        currency: quote.currency,
+      },
+    });
 
-    // If we already created an intent for this booking, reuse it (supports page refresh / retry).
+    // If we already created an intent for this booking, reuse it (supports
+    // page refresh / retry). BUT — if the existing intent's amount or
+    // currency no longer matches our authoritative quote (e.g. admin
+    // changed pickupCountry, or tax rate changed), cancel it and create a
+    // fresh one. This keeps tax + currency in lockstep with the booking.
     if (booking.paymentIntentId) {
       const existing = await stripe.paymentIntents.retrieve(
         booking.paymentIntentId,
@@ -75,12 +95,16 @@ export async function POST(request: NextRequest) {
           { status: 409 },
         );
       }
-      // If intent is still usable, return its client secret.
+      const stale =
+        existing.amount !== amountCents ||
+        existing.currency !== normalizedCurrency;
+      // If intent is still usable AND in-sync with our quote, return it.
       if (
-        status === "requires_payment_method" ||
-        status === "requires_confirmation" ||
-        status === "requires_action" ||
-        status === "processing"
+        !stale &&
+        (status === "requires_payment_method" ||
+          status === "requires_confirmation" ||
+          status === "requires_action" ||
+          status === "processing")
       ) {
         if (existing.client_secret) {
           return NextResponse.json({
@@ -88,13 +112,29 @@ export async function POST(request: NextRequest) {
             paymentIntentId: existing.id,
             currency: existing.currency,
             amountCents: existing.amount,
+            subtotalCents: quote.subtotalCents,
+            taxCents: quote.taxCents,
+            taxLabel: quote.taxLabel,
           });
         }
       }
-      // Otherwise, fall through to create a new intent.
+      // Stale or unusable → cancel so the next call below creates fresh.
+      if (stale) {
+        try {
+          await stripe.paymentIntents.cancel(booking.paymentIntentId);
+        } catch (err) {
+          console.warn("Could not cancel stale payment intent:", err);
+        }
+        await db.booking.update({
+          where: { id: booking.id },
+          data: { paymentIntentId: null },
+        });
+      }
     }
 
-    // Create payment intent
+    // Create payment intent. Metadata captures the tax breakdown so any
+    // Stripe-side report or audit can reconstruct the receipt without
+    // hitting our DB.
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountCents,
       currency: normalizedCurrency,
@@ -102,8 +142,14 @@ export async function POST(request: NextRequest) {
       metadata: {
         bookingId: booking.id,
         eventTypeSlug: booking.eventType.slug,
+        subtotalCents: String(quote.subtotalCents),
+        taxCents: String(quote.taxCents),
+        taxRate: String(quote.taxRate),
+        taxLabel: quote.taxLabel,
       },
-      description: `Payment for ${booking.eventType.name} - ${booking.fullName}`,
+      description: `${booking.eventType.name} (incl. ${quote.taxLabel} ${(
+        quote.taxRate * 100
+      ).toFixed(0)}%) - ${booking.fullName}`,
     });
 
     // Store payment intent id early for traceability.
@@ -117,6 +163,9 @@ export async function POST(request: NextRequest) {
       paymentIntentId: paymentIntent.id,
       currency: normalizedCurrency,
       amountCents,
+      subtotalCents: quote.subtotalCents,
+      taxCents: quote.taxCents,
+      taxLabel: quote.taxLabel,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

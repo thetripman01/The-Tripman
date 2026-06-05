@@ -5,6 +5,8 @@ import { sendAdminNotification, sendBookingConfirmation } from "@/lib/email";
 import { checkForFraud, logFraudAttempt } from "@/lib/fraud-detection";
 import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
 import { isLocationBookableOn } from "@/lib/service-locations";
+import { findConflictingBooking } from "@/lib/booking-conflicts";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const bookingSchema = z.object({
   eventTypeId: z.string(),
@@ -24,6 +26,27 @@ const bookingSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Per-IP rate limit: 10 booking attempts per 15min. Generous for
+    // legit users hitting back/refresh but blocks slot-spamming bots.
+    const ip = getClientIp(request);
+    const limited = rateLimit(ip, {
+      key: "booking-create",
+      limit: 10,
+      windowMs: 15 * 60_000,
+      blockDurationMs: 10 * 60_000,
+    });
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: "Too many booking attempts. Please try again later." },
+        {
+          status: 429,
+          headers: limited.retryAfterSeconds
+            ? { "Retry-After": String(limited.retryAfterSeconds) }
+            : undefined,
+        },
+      );
+    }
+
     const body = await request.json();
     const validatedData = bookingSchema.parse(body);
 
@@ -112,26 +135,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for booking conflicts
-    const holdMinutes = parseInt(process.env.PAYMENT_HOLD_MINUTES || "15", 10);
-    const pendingCutoff = new Date(Date.now() - holdMinutes * 60_000);
-    const conflictingBooking = await db.booking.findFirst({
-      where: {
-        startsAt: {
-          lt: new Date(validatedData.endsAt),
-        },
-        endsAt: {
-          gt: new Date(validatedData.startsAt),
-        },
-        OR: [
-          { status: "CONFIRMED" },
-          {
-            status: "PENDING",
-            createdAt: { gte: pendingCutoff },
-          },
-        ],
-      },
-    });
+    // Check for booking conflicts (includes the mandatory cooldown buffer
+    // between any two bookings — see lib/booking-conflicts.ts).
+    const conflictingBooking = await findConflictingBooking(
+      db,
+      new Date(validatedData.startsAt),
+      new Date(validatedData.endsAt),
+    );
 
     if (conflictingBooking) {
       return NextResponse.json(

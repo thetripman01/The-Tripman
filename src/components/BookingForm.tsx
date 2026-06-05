@@ -35,7 +35,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { trackBookingSuccess } from "@/lib/analytics";
-import { formatCad, getTripmanPriceForPeople } from "@/lib/tripman-packages";
+import {
+  formatQuoteSubtotal,
+  formatQuoteTax,
+  formatQuoteTotal,
+  getTripmanPriceForPeople,
+  getTripmanQuoteForBooking,
+} from "@/lib/tripman-packages";
+import { toBusinessCalendarDay } from "@/lib/timezone";
 
 interface EventType {
   id: string;
@@ -122,7 +129,10 @@ export function BookingForm({
         setLocationsLoading(true);
         setLocationsError(null);
 
-        const dateParam = selectedSlot.startsAt.toISOString().slice(0, 10); // YYYY-MM-DD
+        // Send the BUSINESS-TZ calendar day, not UTC, so a slot at 11pm EDT
+        // on Jun 11 doesn't get treated as Jun 12 (which would incorrectly
+        // unlock the next day's tour-window cities). See lib/timezone.ts.
+        const dateParam = toBusinessCalendarDay(selectedSlot.startsAt);
         const res = await fetch(`/api/service-locations?date=${dateParam}`, {
           cache: "no-store",
         });
@@ -301,16 +311,41 @@ export function BookingForm({
             <p>
               <strong>Duration:</strong> {eventType.durationMin} minutes
             </p>
-            <p>
-              <strong>Price:</strong>{" "}
-              {(() => {
-                const people = form.watch("peopleCount")
-                  ? parseInt(form.watch("peopleCount") as string, 10)
-                  : null;
-                const cents = getTripmanPriceForPeople(eventType.slug, people);
-                return cents ? formatCad(cents) : "Select group size";
-              })()}
-            </p>
+            {(() => {
+              const people = form.watch("peopleCount")
+                ? parseInt(form.watch("peopleCount") as string, 10)
+                : null;
+              // Pricing varies by pickup country: Canada = 99 CAD + HST,
+              // USA = 110 USD + sales tax. Both at 13%.
+              const country = form.watch("pickupCountry");
+              const quote = getTripmanQuoteForBooking(
+                eventType.slug,
+                people,
+                country,
+              );
+              if (!quote) {
+                return (
+                  <p>
+                    <strong>Price:</strong> Select group size
+                  </p>
+                );
+              }
+              return (
+                <div className="mt-1 border-t border-gray-200 pt-2 space-y-0.5">
+                  <p>
+                    <span className="text-gray-600">Subtotal:</span>{" "}
+                    {formatQuoteSubtotal(quote)}
+                  </p>
+                  <p>
+                    <span className="text-gray-600">Tax:</span>{" "}
+                    {formatQuoteTax(quote)}
+                  </p>
+                  <p className="font-semibold text-gray-900">
+                    Total: {formatQuoteTotal(quote)}
+                  </p>
+                </div>
+              );
+            })()}
             <p className="text-xs text-gray-500 mt-1">
               Video feature is not guaranteed — based on the energy and a bit of
               luck.

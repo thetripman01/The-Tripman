@@ -40,6 +40,43 @@ function pickupLine(booking: BookingWithEventType): string {
   return `<p><strong>Pickup Location:</strong> ${escapeHtml(display)}</p>`;
 }
 
+/**
+ * Renders the price/tax breakdown for inclusion in transactional emails.
+ * Prefers the structured snapshot fields written at booking-creation time
+ * (subtotalCents/taxCents/taxRate/currency). Falls back to legacy single-
+ * line price for bookings created before tax existed.
+ */
+function priceBreakdownLines(booking: BookingWithEventType): string {
+  const cur = (booking.currency ?? "cad").toLowerCase();
+  const sign = cur === "usd" ? "USD" : "CAD";
+
+  if (
+    booking.subtotalCents != null &&
+    booking.taxCents != null &&
+    booking.taxRate != null
+  ) {
+    const subtotal = (booking.subtotalCents / 100).toFixed(2);
+    const tax = (booking.taxCents / 100).toFixed(2);
+    const total = (
+      (booking.amountPaid ?? booking.subtotalCents + booking.taxCents) / 100
+    ).toFixed(2);
+    const ratePct = (booking.taxRate * 100).toFixed(0);
+    const taxLabel = cur === "usd" ? "Sales tax" : "HST";
+    return `
+      <p><strong>Subtotal:</strong> $${subtotal} ${sign}</p>
+      <p><strong>${escapeHtml(taxLabel)} (${ratePct}%):</strong> $${tax} ${sign}</p>
+      <p><strong>Total:</strong> $${total} ${sign}</p>
+    `;
+  }
+
+  if (booking.eventType.priceCents) {
+    return `<p><strong>Price:</strong> $${(
+      booking.eventType.priceCents / 100
+    ).toFixed(2)}</p>`;
+  }
+  return "";
+}
+
 export interface BookingWithEventType extends Booking {
   eventType: EventType;
 }
@@ -71,7 +108,7 @@ export async function sendBookingConfirmation(booking: BookingWithEventType) {
             ${pickupLine(booking)}
             ${booking.peopleCount ? `<p><strong>Number of People:</strong> ${booking.peopleCount}</p>` : ""}
             ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ""}
-            ${booking.eventType.priceCents ? `<p><strong>Price:</strong> $${(booking.eventType.priceCents / 100).toFixed(2)}</p>` : ""}
+            ${priceBreakdownLines(booking)}
           </div>
           
           <p>Please add this event to your calendar using the attached .ics file.</p>
@@ -125,7 +162,7 @@ export async function sendAdminNotification(booking: BookingWithEventType) {
             ${pickupLine(booking)}
             ${booking.peopleCount ? `<p><strong>Number of People:</strong> ${booking.peopleCount}</p>` : ""}
             ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ""}
-            ${booking.eventType.priceCents ? `<p><strong>Price:</strong> $${(booking.eventType.priceCents / 100).toFixed(2)}</p>` : ""}
+            ${priceBreakdownLines(booking)}
           </div>
           
           <p>Booking ID: ${booking.id}</p>

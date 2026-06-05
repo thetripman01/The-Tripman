@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-session";
+import { businessDayEndUtc, businessDayStartUtc } from "@/lib/timezone";
 
 // PATCH / DELETE /api/admin/service-locations/[id]
 
@@ -75,12 +76,12 @@ export async function PATCH(
 
   if (data.availableFrom !== undefined) {
     updateData.availableFrom = data.availableFrom
-      ? new Date(data.availableFrom + "T00:00:00.000Z")
+      ? businessDayStartUtc(data.availableFrom)
       : null;
   }
   if (data.availableUntil !== undefined) {
     updateData.availableUntil = data.availableUntil
-      ? new Date(data.availableUntil + "T23:59:59.999Z")
+      ? businessDayEndUtc(data.availableUntil)
       : null;
   }
 
@@ -89,13 +90,13 @@ export async function PATCH(
   const finalFrom =
     data.availableFrom !== undefined
       ? data.availableFrom
-        ? new Date(data.availableFrom + "T00:00:00.000Z")
+        ? businessDayStartUtc(data.availableFrom)
         : null
       : existing.availableFrom;
   const finalUntil =
     data.availableUntil !== undefined
       ? data.availableUntil
-        ? new Date(data.availableUntil + "T23:59:59.999Z")
+        ? businessDayEndUtc(data.availableUntil)
         : null
       : existing.availableUntil;
   if (finalFrom && finalUntil && finalUntil < finalFrom) {

@@ -52,6 +52,10 @@ interface Booking {
   status: "PENDING" | "CONFIRMED" | "CANCELED";
   paymentStatus?: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
   amountPaid?: number | null;
+  subtotalCents?: number | null;
+  taxCents?: number | null;
+  taxRate?: number | null;
+  currency?: string | null;
   paymentIntentId?: string | null;
   createdAt: string;
   isExpiredHold?: boolean;
@@ -96,6 +100,14 @@ interface ServiceLocation {
   createdAt: string;
   updatedAt: string;
 }
+
+// Format helpers for <input type="date"> / <input type="time">. Module-scope
+// so they don't need to land in useCallback deps.
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const localTimeValue = (d: Date) =>
+  `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+const localDateValue = (d: Date) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
 export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -158,6 +170,24 @@ export default function AdminPage() {
     note: "",
   });
   const [savingEditLocation, setSavingEditLocation] = useState(false);
+
+  // Booking edit (date/time/location) for an admin user reviewing a booking.
+  // Null = not in edit mode. We track the booking id so the form is bound
+  // to the right row even if the user closes/reopens the modal.
+  const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
+  const [editBookingForm, setEditBookingForm] = useState({
+    dateLocal: "", // YYYY-MM-DD in browser local TZ (we re-interpret as business TZ on save)
+    startTimeLocal: "", // HH:MM
+    endTimeLocal: "", // HH:MM
+    pickupCountry: "",
+    pickupCity: "",
+    pickupAddress: "",
+  });
+  const [savingBookingEdit, setSavingBookingEdit] = useState(false);
+  // Service locations dropdown options for the edit form (date-scoped).
+  const [editBookingLocations, setEditBookingLocations] = useState<
+    { country: string; city: string }[]
+  >([]);
 
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -565,6 +595,183 @@ export default function AdminPage() {
       toast.error("Failed to delete booking");
     }
   };
+
+  // ----- Booking edit (date/time/location) -----
+
+  const fetchLocationsForBookingEdit = useCallback(
+    async (dateLocal: string) => {
+      if (!dateLocal) {
+        setEditBookingLocations([]);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `/api/service-locations?date=${encodeURIComponent(dateLocal)}`,
+          { cache: "no-store" },
+        );
+        if (!res.ok) {
+          setEditBookingLocations([]);
+          return;
+        }
+        const data = (await res.json()) as {
+          country: string;
+          city: string;
+        }[];
+        setEditBookingLocations(data);
+      } catch (e) {
+        console.error("Failed to load service locations for edit:", e);
+        setEditBookingLocations([]);
+      }
+    },
+    [],
+  );
+
+  const startEditBooking = useCallback(
+    (b: Booking) => {
+      setEditingBookingId(b.id);
+      const startDate = new Date(b.startsAt);
+      const endDate = new Date(b.endsAt);
+      const dateLocal = localDateValue(startDate);
+      setEditBookingForm({
+        dateLocal,
+        startTimeLocal: localTimeValue(startDate),
+        endTimeLocal: localTimeValue(endDate),
+        pickupCountry: b.pickupCountry ?? "",
+        pickupCity: b.pickupCity ?? "",
+        pickupAddress: b.pickupAddress ?? b.pickup ?? "",
+      });
+      fetchLocationsForBookingEdit(dateLocal);
+    },
+    [fetchLocationsForBookingEdit],
+  );
+
+  const cancelEditBooking = useCallback(() => {
+    setEditingBookingId(null);
+  }, []);
+
+  const saveEditBooking = useCallback(
+    async (b: Booking) => {
+      const {
+        dateLocal,
+        startTimeLocal,
+        endTimeLocal,
+        pickupCountry,
+        pickupCity,
+        pickupAddress,
+      } = editBookingForm;
+
+      // Did the time change at all?
+      const originalDateLocal = localDateValue(new Date(b.startsAt));
+      const originalStart = localTimeValue(new Date(b.startsAt));
+      const originalEnd = localTimeValue(new Date(b.endsAt));
+      const timeChanged =
+        dateLocal !== originalDateLocal ||
+        startTimeLocal !== originalStart ||
+        endTimeLocal !== originalEnd;
+
+      // Did the location change?
+      const originalCountry = b.pickupCountry ?? "";
+      const originalCity = b.pickupCity ?? "";
+      const originalAddress = b.pickupAddress ?? b.pickup ?? "";
+      const locationChanged =
+        pickupCountry.trim() !== originalCountry.trim() ||
+        pickupCity.trim() !== originalCity.trim() ||
+        pickupAddress.trim() !== originalAddress.trim();
+
+      if (!timeChanged && !locationChanged) {
+        toast("Nothing to update.");
+        return;
+      }
+
+      // Validate basic format of new time before sending.
+      const body: Record<string, string> = {};
+      if (timeChanged) {
+        if (!dateLocal || !startTimeLocal || !endTimeLocal) {
+          toast.error("Date and start/end times are required.");
+          return;
+        }
+        // Construct local Date objects, then send ISO. Server interprets
+        // the ISO timestamp as a UTC instant; comparisons elsewhere use
+        // business-TZ-aware logic.
+        const startDate = new Date(`${dateLocal}T${startTimeLocal}:00`);
+        const endDate = new Date(`${dateLocal}T${endTimeLocal}:00`);
+        if (
+          Number.isNaN(startDate.getTime()) ||
+          Number.isNaN(endDate.getTime())
+        ) {
+          toast.error("Invalid date or time.");
+          return;
+        }
+        if (endDate.getTime() <= startDate.getTime()) {
+          // Probably an overnight slot — treat end as next day.
+          endDate.setDate(endDate.getDate() + 1);
+          if (endDate.getTime() <= startDate.getTime()) {
+            toast.error("End time must be after start time.");
+            return;
+          }
+        }
+        body.startsAt = startDate.toISOString();
+        body.endsAt = endDate.toISOString();
+      }
+      if (locationChanged) {
+        if (
+          !pickupCountry.trim() ||
+          !pickupCity.trim() ||
+          pickupAddress.trim().length < 3
+        ) {
+          toast.error(
+            "Country, city, and a valid street address are all required.",
+          );
+          return;
+        }
+        body.pickupCountry = pickupCountry.trim();
+        body.pickupCity = pickupCity.trim();
+        body.pickupAddress = pickupAddress.trim();
+      }
+
+      setSavingBookingEdit(true);
+      try {
+        const res = await fetch(`/api/admin/bookings/${b.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(body),
+        });
+        if (res.status === 401) {
+          window.location.href = "/admin/login";
+          return;
+        }
+        const payload = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        if (!res.ok) {
+          toast.error(payload.error || "Failed to update booking.");
+          return;
+        }
+        toast.success("Booking updated.");
+        setEditingBookingId(null);
+        setSelectedBooking(null);
+        fetchBookings();
+      } catch (e) {
+        console.error("Failed to update booking:", e);
+        toast.error("Failed to update booking.");
+      } finally {
+        setSavingBookingEdit(false);
+      }
+    },
+    [editBookingForm, fetchBookings],
+  );
+
+  // Reload city list whenever the edit-form date changes.
+  useEffect(() => {
+    if (editingBookingId && editBookingForm.dateLocal) {
+      fetchLocationsForBookingEdit(editBookingForm.dateLocal);
+    }
+  }, [
+    editingBookingId,
+    editBookingForm.dateLocal,
+    fetchLocationsForBookingEdit,
+  ]);
 
   const cancelBookingNoRefund = async (bookingId: string) => {
     try {
@@ -2127,18 +2334,248 @@ export default function AdminPage() {
                         <label className="font-semibold">Duration</label>
                         <p>{selectedBooking.eventType.durationMin} minutes</p>
                       </div>
-                      {selectedBooking.eventType.priceCents && (
-                        <div>
-                          <label className="font-semibold">Price</label>
-                          <p>
-                            $
-                            {(
-                              selectedBooking.eventType.priceCents / 100
-                            ).toFixed(2)}
-                          </p>
+                      {(selectedBooking.subtotalCents != null ||
+                        selectedBooking.amountPaid != null ||
+                        selectedBooking.eventType.priceCents != null) && (
+                        <div className="col-span-2">
+                          <label className="font-semibold">
+                            Price breakdown
+                          </label>
+                          {selectedBooking.subtotalCents != null &&
+                          selectedBooking.taxCents != null &&
+                          selectedBooking.taxRate != null ? (
+                            <div className="mt-1 text-sm text-gray-700 space-y-0.5">
+                              <p>
+                                <span className="text-gray-600">Subtotal:</span>{" "}
+                                $
+                                {(selectedBooking.subtotalCents / 100).toFixed(
+                                  2,
+                                )}{" "}
+                                {(
+                                  selectedBooking.currency ?? "cad"
+                                ).toUpperCase()}
+                              </p>
+                              <p>
+                                <span className="text-gray-600">
+                                  {(selectedBooking.currency ?? "cad") === "usd"
+                                    ? "Sales tax"
+                                    : "HST"}{" "}
+                                  ({(selectedBooking.taxRate * 100).toFixed(0)}
+                                  %):
+                                </span>{" "}
+                                ${(selectedBooking.taxCents / 100).toFixed(
+                                  2,
+                                )}{" "}
+                                {(
+                                  selectedBooking.currency ?? "cad"
+                                ).toUpperCase()}
+                              </p>
+                              <p className="font-semibold text-gray-900">
+                                Total: $
+                                {(
+                                  (selectedBooking.amountPaid ??
+                                    selectedBooking.subtotalCents +
+                                      selectedBooking.taxCents) / 100
+                                ).toFixed(2)}{" "}
+                                {(
+                                  selectedBooking.currency ?? "cad"
+                                ).toUpperCase()}
+                              </p>
+                            </div>
+                          ) : (
+                            <p>
+                              $
+                              {(
+                                (selectedBooking.amountPaid ??
+                                  selectedBooking.eventType.priceCents ??
+                                  0) / 100
+                              ).toFixed(2)}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
+
+                    {/* Edit booking: date/time + pickup location */}
+                    {selectedBooking.status !== "CANCELED" && (
+                      <div className="rounded-lg border border-cyan-200 bg-cyan-50/40 p-4 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="font-semibold text-gray-900">
+                            Edit booking
+                          </div>
+                          {editingBookingId === selectedBooking.id ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={cancelEditBooking}
+                              disabled={savingBookingEdit}
+                            >
+                              Cancel edit
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => startEditBooking(selectedBooking)}
+                            >
+                              Edit date / location
+                            </Button>
+                          )}
+                        </div>
+
+                        {editingBookingId === selectedBooking.id && (
+                          <div className="space-y-3">
+                            <p className="text-xs text-gray-600">
+                              Changing the date frees the old slot automatically
+                              — another customer can book it. The customer is
+                              not auto-notified; let them know separately.
+                            </p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Date
+                                </label>
+                                <Input
+                                  type="date"
+                                  value={editBookingForm.dateLocal}
+                                  onChange={(e) =>
+                                    setEditBookingForm((p) => ({
+                                      ...p,
+                                      dateLocal: e.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Start time
+                                </label>
+                                <Input
+                                  type="time"
+                                  value={editBookingForm.startTimeLocal}
+                                  onChange={(e) =>
+                                    setEditBookingForm((p) => ({
+                                      ...p,
+                                      startTimeLocal: e.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  End time
+                                </label>
+                                <Input
+                                  type="time"
+                                  value={editBookingForm.endTimeLocal}
+                                  onChange={(e) =>
+                                    setEditBookingForm((p) => ({
+                                      ...p,
+                                      endTimeLocal: e.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Pickup country
+                                </label>
+                                <Select
+                                  value={editBookingForm.pickupCountry}
+                                  onValueChange={(v) =>
+                                    setEditBookingForm((p) => ({
+                                      ...p,
+                                      pickupCountry: v,
+                                      pickupCity: "",
+                                    }))
+                                  }
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select country" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Array.from(
+                                      new Set(
+                                        editBookingLocations.map(
+                                          (l) => l.country,
+                                        ),
+                                      ),
+                                    ).map((c) => (
+                                      <SelectItem key={c} value={c}>
+                                        {c}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Pickup city
+                                </label>
+                                <Select
+                                  value={editBookingForm.pickupCity}
+                                  onValueChange={(v) =>
+                                    setEditBookingForm((p) => ({
+                                      ...p,
+                                      pickupCity: v,
+                                    }))
+                                  }
+                                  disabled={!editBookingForm.pickupCountry}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select city" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {editBookingLocations
+                                      .filter(
+                                        (l) =>
+                                          l.country ===
+                                          editBookingForm.pickupCountry,
+                                      )
+                                      .map((l) => (
+                                        <SelectItem key={l.city} value={l.city}>
+                                          {l.city}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Pickup street address
+                              </label>
+                              <Input
+                                value={editBookingForm.pickupAddress}
+                                onChange={(e) =>
+                                  setEditBookingForm((p) => ({
+                                    ...p,
+                                    pickupAddress: e.target.value,
+                                  }))
+                                }
+                                placeholder="e.g. 75 Laurelcrest Street"
+                              />
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 justify-end">
+                              <Button
+                                size="sm"
+                                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                                disabled={savingBookingEdit}
+                                onClick={() => saveEditBooking(selectedBooking)}
+                              >
+                                {savingBookingEdit ? "Saving…" : "Save changes"}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Admin actions: cancel (no refunds) */}
                     {selectedBooking.status !== "CANCELED" && (

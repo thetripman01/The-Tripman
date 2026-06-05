@@ -24,20 +24,21 @@ function getStripePromise(): Promise<Stripe | null> | null {
 
 interface PaymentFormProps {
   bookingId: string;
+  // Displayed amount + currency for the Pay button. These are SERVER-AUTHORITATIVE
+  // upstream (Stripe re-validates), here they only affect what the user sees.
   amount: number;
-  currency?: string;
+  currency: "cad" | "usd";
   onPaymentSuccess: (paymentIntentId: string) => void;
   onPaymentError: (error: string) => void;
 }
 
-type PaymentFormContentProps = Omit<PaymentFormProps, "currency">;
-
 function PaymentFormContent({
   bookingId,
   amount,
+  currency,
   onPaymentSuccess,
   onPaymentError,
-}: PaymentFormContentProps) {
+}: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -106,7 +107,7 @@ function PaymentFormContent({
         ) : (
           <>
             <CreditCard className="w-4 h-4 mr-2" />
-            Pay ${(amount / 100).toFixed(2)}
+            Pay ${(amount / 100).toFixed(2)} {currency.toUpperCase()}
           </>
         )}
       </Button>
@@ -115,7 +116,7 @@ function PaymentFormContent({
 }
 
 export function PaymentForm(props: PaymentFormProps) {
-  const { bookingId, currency, onPaymentError } = props;
+  const { bookingId, onPaymentError } = props;
   const [clientSecret, setClientSecret] = useState<string>("");
   const [initError, setInitError] = useState<string>("");
   const stripePromise = getStripePromise();
@@ -137,10 +138,7 @@ export function PaymentForm(props: PaymentFormProps) {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            bookingId,
-            currency,
-          }),
+          body: JSON.stringify({ bookingId }),
         });
 
         if (!response.ok) {
@@ -168,7 +166,7 @@ export function PaymentForm(props: PaymentFormProps) {
     };
 
     createPaymentIntent();
-  }, [bookingId, currency, onPaymentError, stripePromise]);
+  }, [bookingId, onPaymentError, stripePromise]);
 
   if (initError) {
     return (
@@ -221,6 +219,7 @@ export function PaymentForm(props: PaymentFormProps) {
           <PaymentFormContent
             bookingId={props.bookingId}
             amount={props.amount}
+            currency={props.currency}
             onPaymentSuccess={props.onPaymentSuccess}
             onPaymentError={props.onPaymentError}
           />

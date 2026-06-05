@@ -6,7 +6,7 @@ import { BookingCalendar } from "./BookingCalendar";
 import { BookingForm } from "./BookingForm";
 import { toast } from "sonner";
 import { PaymentForm } from "./PaymentForm";
-import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
+import { getTripmanQuoteForBooking } from "@/lib/tripman-packages";
 
 interface EventType {
   id: string;
@@ -135,18 +135,33 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
                 <div ref={paymentRef} className="text-left">
                   <PaymentForm
                     bookingId={bookingId}
-                    amount={(() => {
+                    {...(() => {
+                      // The Pay button shows TOTAL = subtotal + tax. Server
+                      // re-validates from booking.pickupCountry so this is
+                      // display-only.
                       const people =
                         bookingData.peopleCount != null
                           ? parseInt(String(bookingData.peopleCount), 10)
                           : null;
-                      return (
-                        getTripmanPriceForPeople(selectedEvent.slug, people) ??
-                        selectedEvent.priceCents ??
-                        0
+                      const country =
+                        bookingData.pickupCountry != null
+                          ? String(bookingData.pickupCountry)
+                          : null;
+                      const quote = getTripmanQuoteForBooking(
+                        selectedEvent.slug,
+                        people,
+                        country,
                       );
+                      return quote
+                        ? {
+                            amount: quote.totalCents,
+                            currency: quote.currency,
+                          }
+                        : {
+                            amount: selectedEvent.priceCents ?? 0,
+                            currency: "cad" as const,
+                          };
                     })()}
-                    currency="cad"
                     onPaymentSuccess={(pi) => {
                       setPaymentIntentId(pi);
                       setAwaitingPayment(false);

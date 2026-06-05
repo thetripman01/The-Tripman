@@ -34,6 +34,28 @@ export function generateICS(booking: BookingWithEventType): string {
 
   const pickupDisplay = formatPickupLocation(booking);
   const summary = escapeText(`${booking.eventType.name} with The Tripman`);
+
+  // Price line: prefer the tax-aware snapshot, fall back to legacy event
+  // price for older bookings.
+  const cur = (booking.currency ?? "cad").toUpperCase();
+  let priceLine = "";
+  if (
+    booking.subtotalCents != null &&
+    booking.taxCents != null &&
+    booking.taxRate != null
+  ) {
+    const totalCents =
+      booking.amountPaid ?? booking.subtotalCents + booking.taxCents;
+    const total = (totalCents / 100).toFixed(2);
+    const subtotal = (booking.subtotalCents / 100).toFixed(2);
+    const tax = (booking.taxCents / 100).toFixed(2);
+    const ratePct = (booking.taxRate * 100).toFixed(0);
+    const taxLabel = cur === "USD" ? "Sales tax" : "HST";
+    priceLine = `Total: $${total} ${cur} (Subtotal $${subtotal} + ${taxLabel} ${ratePct}% $${tax})`;
+  } else if (booking.eventType.priceCents) {
+    priceLine = `Price: $${(booking.eventType.priceCents / 100).toFixed(2)}`;
+  }
+
   const description = escapeText(
     `Booking Details:
 Event: ${booking.eventType.name}
@@ -43,7 +65,7 @@ ${booking.phone ? `Phone: ${booking.phone}` : ""}
 ${pickupDisplay ? `Pickup: ${pickupDisplay}` : ""}
 ${booking.peopleCount ? `People: ${booking.peopleCount}` : ""}
 ${booking.notes ? `Notes: ${booking.notes}` : ""}
-${booking.eventType.priceCents ? `Price: $${(booking.eventType.priceCents / 100).toFixed(2)}` : ""}`,
+${priceLine}`,
   );
 
   const location = pickupDisplay ? escapeText(pickupDisplay) : "";

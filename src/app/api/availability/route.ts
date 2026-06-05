@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getFreeBusyTimes, getWorkingHours } from "@/lib/calendar";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+import {
+  getCooldownMinutes,
+  getPendingHoldMinutes,
+  getSlotIntervalMinutes,
+} from "@/lib/booking-conflicts";
 
 type Interval = { start: Date; end: Date };
 
@@ -186,8 +191,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get existing bookings for this date
-    const holdMinutes = parseInt(process.env.PAYMENT_HOLD_MINUTES || "15", 10);
-    const pendingCutoff = new Date(Date.now() - holdMinutes * 60_000);
+    const pendingCutoff = new Date(
+      Date.now() - getPendingHoldMinutes() * 60_000,
+    );
     const existingBookings = await db.booking.findMany({
       where: {
         startsAt: {
@@ -210,14 +216,13 @@ export async function GET(request: NextRequest) {
       orderBy: { startsAt: "asc" },
     });
 
-    // Generate all possible time slots
-    // Slot interval (start-time spacing). For Tripman: hourly starts.
-    const slotIntervalMinutes = parseInt(
-      process.env.SLOT_INTERVAL_MINUTES || "60",
-    );
-    const travelBufferMinutes = parseInt(
-      process.env.TRAVEL_BUFFER_MINUTES || "60",
-    );
+    // Generate all possible time slots.
+    // Slot interval = spacing between possible start times (default 30min,
+    // so customers see 8:00, 8:30, 9:00, ...). Cooldown = mandatory gap
+    // between any two bookings (default 30min, accepts legacy
+    // TRAVEL_BUFFER_MINUTES too).
+    const slotIntervalMinutes = getSlotIntervalMinutes();
+    const travelBufferMinutes = getCooldownMinutes();
     // Recurring availability rules (optional). If any "available" rules exist for the day,
     // we use them. Otherwise we fall back to default working hours.
     const rules = await db.availabilityRule.findMany({

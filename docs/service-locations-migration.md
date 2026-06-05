@@ -109,6 +109,22 @@ ON CONFLICT ("country", "city") DO NOTHING;
 > ALTER TABLE "ServiceLocation" DROP COLUMN IF EXISTS "sortOrder";
 > ```
 
+### Subsequent migration — booking tax breakdown columns
+
+Adds the tax snapshot fields so historical receipts stay correct even if
+the HST rate changes later.
+
+```sql
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "subtotalCents" INTEGER;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "taxCents"      INTEGER;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "taxRate"       DOUBLE PRECISION;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "currency"      TEXT;
+```
+
+All four columns are nullable so existing bookings (pre-tax era) keep
+working. Display code falls back to legacy `amountPaid` / `priceCents`
+when the snapshot is missing.
+
 ### Subsequent migration — `exclusive` flag (tour mode)
 
 If your production DB was migrated before the `exclusive` column existed,

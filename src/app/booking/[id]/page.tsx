@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RideTracking } from "@/components/RideTracking";
 import { PaymentForm } from "@/components/PaymentForm";
-import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
+import { getTripmanQuoteForBooking } from "@/lib/tripman-packages";
 import { toast } from "sonner";
 import {
   Calendar,
@@ -38,6 +38,10 @@ interface BookingDetails {
   status: "PENDING" | "CONFIRMED" | "CANCELED";
   paymentStatus: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
   amountPaid: number | null;
+  subtotalCents: number | null;
+  taxCents: number | null;
+  taxRate: number | null;
+  currency: string | null;
   createdAt: string;
   updatedAt: string;
   eventType: {
@@ -416,15 +420,24 @@ export default function BookingDetailsPage() {
                     ) : (
                       <PaymentForm
                         bookingId={booking.id}
-                        amount={
-                          getTripmanPriceForPeople(
+                        {...(() => {
+                          // Pay button shows TOTAL (subtotal + tax). Server
+                          // is the source of truth — this is display only.
+                          const quote = getTripmanQuoteForBooking(
                             booking.eventType.slug,
                             booking.peopleCount,
-                          ) ??
-                          booking.eventType.priceCents ??
-                          0
-                        }
-                        currency="cad"
+                            booking.pickupCountry,
+                          );
+                          return quote
+                            ? {
+                                amount: quote.totalCents,
+                                currency: quote.currency,
+                              }
+                            : {
+                                amount: booking.eventType.priceCents ?? 0,
+                                currency: "cad" as const,
+                              };
+                        })()}
                         onPaymentSuccess={() => {
                           // Webhook will confirm; refresh to show updated status.
                           window.location.reload();

@@ -17,6 +17,10 @@ describe("ICS Generation", () => {
     pickupCity: null,
     pickupAddress: null,
     peopleCount: 2,
+    subtotalCents: null,
+    taxCents: null,
+    taxRate: null,
+    currency: null,
     eventTypeId: "event-type-id",
     status: "PENDING",
     eventType: {

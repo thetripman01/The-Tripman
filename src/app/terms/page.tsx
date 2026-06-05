@@ -69,16 +69,22 @@ export default function TermsPage() {
             </h2>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                <strong>The Tripman Experience</strong>: a flat rate of{" "}
-                <strong>99 CAD</strong> for a 60-minute ride covering 1–4
-                people.
+                <strong>Canada pickups</strong>: <strong>99 CAD</strong> + 13%
+                HST (total <strong>111.87 CAD</strong>) for a 60-minute ride
+                covering 1–4 people.
+              </li>
+              <li>
+                <strong>USA pickups</strong>: <strong>110 USD</strong> + 13%
+                sales tax (total <strong>124.30 USD</strong>) for the same ride.
               </li>
               <li>
                 The flat rate covers the ride itself: pick-up, drop-off at the
                 same location, music, and the on-board party.
               </li>
               <li>
-                Taxes/fees (if any) will be shown during booking/checkout.
+                Taxes are shown as a separate line on the checkout summary and
+                on your receipt. Currency (CAD vs USD) is determined by the
+                pickup country you select.
               </li>
               <li>
                 Payments are processed securely through Stripe. We do not store

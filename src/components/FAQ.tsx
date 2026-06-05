@@ -9,7 +9,7 @@ const faqs = [
   {
     question: "How much does The Tripman Experience cost?",
     answer:
-      "There is one flat rate: $99 CAD for a 60-minute ride for 1–4 people. No hidden tiers and no upsells.",
+      "Canada pickups are $99 CAD + 13% HST (total $111.87 CAD). USA pickups are a flat $110 USD + 13% sales tax (total $124.30 USD). One price covers 1–4 people for a full 60-minute ride. No hidden tiers, no upsells.",
   },
   {
     question: "Will I be featured in a Tripman video?",

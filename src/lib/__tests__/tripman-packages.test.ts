@@ -1,9 +1,17 @@
 import {
   formatCad,
+  formatUsd,
+  formatQuoteTotal,
+  formatQuoteSubtotal,
+  formatQuoteTax,
+  computeTaxCents,
   getTripmanPriceForPeople,
   getTripmanPackage,
   getTripmanFromPriceLabel,
   getTripmanTierBreakdownLabel,
+  getTripmanQuoteForBooking,
+  TRIPMAN_USD_FLAT_CENTS,
+  TRIPMAN_TAX_RATE,
 } from "../tripman-packages";
 
 describe("tripman-packages", () => {
@@ -71,6 +79,147 @@ describe("tripman-packages", () => {
       expect(getTripmanTierBreakdownLabel("tripman-experience")).toContain(
         "$99 CAD",
       );
+    });
+  });
+
+  describe("formatUsd / format helpers", () => {
+    it("formats whole USD amounts", () => {
+      expect(formatUsd(11000)).toBe("$110 USD");
+      expect(formatUsd(9999)).toBe("$99.99 USD");
+    });
+
+    it("formatQuoteTotal returns total in correct currency", () => {
+      expect(
+        formatQuoteTotal({
+          subtotalCents: 9900,
+          taxCents: 1287,
+          totalCents: 11187,
+          taxRate: 0.13,
+          taxLabel: "HST",
+          currency: "cad",
+        }),
+      ).toBe("$111.87 CAD");
+      expect(
+        formatQuoteTotal({
+          subtotalCents: 11000,
+          taxCents: 1430,
+          totalCents: 12430,
+          taxRate: 0.13,
+          taxLabel: "Sales tax",
+          currency: "usd",
+        }),
+      ).toBe("$124.30 USD");
+    });
+
+    it("formatQuoteSubtotal shows pre-tax amount", () => {
+      expect(
+        formatQuoteSubtotal({
+          subtotalCents: 9900,
+          taxCents: 1287,
+          totalCents: 11187,
+          taxRate: 0.13,
+          taxLabel: "HST",
+          currency: "cad",
+        }),
+      ).toBe("$99 CAD");
+    });
+
+    it("formatQuoteTax shows tax line", () => {
+      expect(
+        formatQuoteTax({
+          subtotalCents: 9900,
+          taxCents: 1287,
+          totalCents: 11187,
+          taxRate: 0.13,
+          taxLabel: "HST",
+          currency: "cad",
+        }),
+      ).toBe("$12.87 CAD HST (13%)");
+    });
+  });
+
+  describe("computeTaxCents", () => {
+    it("computes 13% tax with banker rounding", () => {
+      expect(computeTaxCents(9900, 0.13)).toBe(1287); // 99 * 0.13 = 12.87
+      expect(computeTaxCents(11000, 0.13)).toBe(1430); // 110 * 0.13 = 14.30
+    });
+
+    it("rounds to nearest cent (not floor)", () => {
+      // 1001 * 0.13 = 130.13 → rounds to 130 cents
+      expect(computeTaxCents(1001, 0.13)).toBe(130);
+      // 105 * 0.13 = 13.65 → rounds to 14
+      expect(computeTaxCents(105, 0.13)).toBe(14);
+    });
+
+    it("returns 0 for 0 subtotal", () => {
+      expect(computeTaxCents(0, 0.13)).toBe(0);
+    });
+  });
+
+  describe("getTripmanQuoteForBooking (with tax)", () => {
+    it("returns CAD breakdown for Canada pickups", () => {
+      const q = getTripmanQuoteForBooking("tripman-experience", 2, "Canada");
+      expect(q).toEqual({
+        subtotalCents: 9900,
+        taxCents: 1287, // 99 * 0.13
+        totalCents: 11187,
+        taxRate: TRIPMAN_TAX_RATE,
+        taxLabel: "HST",
+        currency: "cad",
+      });
+    });
+
+    it("returns USD breakdown for USA pickups (Sales tax label)", () => {
+      const q = getTripmanQuoteForBooking("tripman-experience", 2, "USA");
+      expect(q).toEqual({
+        subtotalCents: TRIPMAN_USD_FLAT_CENTS,
+        taxCents: 1430, // 110 * 0.13
+        totalCents: 12430,
+        taxRate: TRIPMAN_TAX_RATE,
+        taxLabel: "Sales tax",
+        currency: "usd",
+      });
+    });
+
+    it("recognizes USA synonyms", () => {
+      expect(
+        getTripmanQuoteForBooking("tripman-experience", 1, "United States")
+          ?.currency,
+      ).toBe("usd");
+      expect(
+        getTripmanQuoteForBooking("tripman-experience", 1, "us")?.currency,
+      ).toBe("usd");
+      expect(
+        getTripmanQuoteForBooking("tripman-experience", 1, "  USA  ")?.currency,
+      ).toBe("usd");
+    });
+
+    it("falls back to CAD when country is null/empty/unknown", () => {
+      expect(
+        getTripmanQuoteForBooking("tripman-experience", 1, null)?.currency,
+      ).toBe("cad");
+      expect(
+        getTripmanQuoteForBooking("tripman-experience", 1, "")?.currency,
+      ).toBe("cad");
+      expect(
+        getTripmanQuoteForBooking("tripman-experience", 1, "Mexico")?.currency,
+      ).toBe("cad");
+    });
+
+    it("returns null for invalid group size", () => {
+      expect(
+        getTripmanQuoteForBooking("tripman-experience", 5, "Canada"),
+      ).toBeNull();
+      expect(
+        getTripmanQuoteForBooking("tripman-experience", 0, "USA"),
+      ).toBeNull();
+      expect(
+        getTripmanQuoteForBooking("tripman-experience", null, "Canada"),
+      ).toBeNull();
+    });
+
+    it("returns null for unknown slug", () => {
+      expect(getTripmanQuoteForBooking("nonexistent", 2, "USA")).toBeNull();
     });
   });
 });

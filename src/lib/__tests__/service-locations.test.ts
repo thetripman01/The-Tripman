@@ -5,6 +5,7 @@ import {
   filterBookableLocations,
   isLocationBookableOn,
 } from "../service-locations";
+import { businessDayStartUtc, businessDayEndUtc } from "../timezone";
 import type { ServiceLocation } from "@prisma/client";
 
 function loc(overrides: Partial<ServiceLocation>): ServiceLocation {
@@ -39,10 +40,11 @@ describe("isLocationAvailableOn", () => {
     expect(
       isLocationAvailableOn(
         loc({
-          availableFrom: new Date("2026-07-12T00:00:00Z"),
-          availableUntil: new Date("2026-07-14T23:59:59Z"),
+          availableFrom: businessDayStartUtc("2026-07-12"),
+          availableUntil: businessDayEndUtc("2026-07-14"),
         }),
-        new Date("2026-07-12T20:00:00Z"),
+        // 8pm EDT on Jul 12 (within window)
+        new Date("2026-07-13T00:00:00Z"),
       ),
     ).toBe(true);
   });
@@ -51,10 +53,11 @@ describe("isLocationAvailableOn", () => {
     expect(
       isLocationAvailableOn(
         loc({
-          availableFrom: new Date("2026-07-12T00:00:00Z"),
-          availableUntil: new Date("2026-07-14T23:59:59Z"),
+          availableFrom: businessDayStartUtc("2026-07-12"),
+          availableUntil: businessDayEndUtc("2026-07-14"),
         }),
-        new Date("2026-07-14T20:00:00Z"),
+        // 11pm EDT on Jul 14 — still Jul 14 in business TZ
+        new Date("2026-07-15T03:00:00Z"),
       ),
     ).toBe(true);
   });
@@ -63,10 +66,11 @@ describe("isLocationAvailableOn", () => {
     expect(
       isLocationAvailableOn(
         loc({
-          availableFrom: new Date("2026-07-12T00:00:00Z"),
-          availableUntil: new Date("2026-07-14T23:59:59Z"),
+          availableFrom: businessDayStartUtc("2026-07-12"),
+          availableUntil: businessDayEndUtc("2026-07-14"),
         }),
-        new Date("2026-07-11T20:00:00Z"),
+        // 8pm EDT on Jul 11
+        new Date("2026-07-12T00:00:00Z"),
       ),
     ).toBe(false);
   });
@@ -75,31 +79,84 @@ describe("isLocationAvailableOn", () => {
     expect(
       isLocationAvailableOn(
         loc({
-          availableFrom: new Date("2026-07-12T00:00:00Z"),
-          availableUntil: new Date("2026-07-14T23:59:59Z"),
+          availableFrom: businessDayStartUtc("2026-07-12"),
+          availableUntil: businessDayEndUtc("2026-07-14"),
         }),
-        new Date("2026-07-15T01:00:00Z"),
+        // 8pm EDT on Jul 15
+        new Date("2026-07-16T00:00:00Z"),
       ),
     ).toBe(false);
   });
 
   it("treats only-from as half-open lower bound", () => {
-    const l = loc({ availableFrom: new Date("2026-07-12T00:00:00Z") });
-    expect(isLocationAvailableOn(l, new Date("2026-07-11"))).toBe(false);
-    expect(isLocationAvailableOn(l, new Date("2026-07-12"))).toBe(true);
-    expect(isLocationAvailableOn(l, new Date("2026-12-31"))).toBe(true);
+    const l = loc({ availableFrom: businessDayStartUtc("2026-07-12") });
+    expect(isLocationAvailableOn(l, businessDayStartUtc("2026-07-11"))).toBe(
+      false,
+    );
+    expect(isLocationAvailableOn(l, businessDayStartUtc("2026-07-12"))).toBe(
+      true,
+    );
+    expect(isLocationAvailableOn(l, businessDayStartUtc("2026-12-31"))).toBe(
+      true,
+    );
   });
 
   it("treats only-until as half-open upper bound", () => {
-    const l = loc({ availableUntil: new Date("2026-07-14T23:59:59Z") });
-    expect(isLocationAvailableOn(l, new Date("2025-01-01"))).toBe(true);
-    expect(isLocationAvailableOn(l, new Date("2026-07-14"))).toBe(true);
-    expect(isLocationAvailableOn(l, new Date("2026-07-15"))).toBe(false);
+    const l = loc({ availableUntil: businessDayEndUtc("2026-07-14") });
+    expect(isLocationAvailableOn(l, businessDayStartUtc("2025-01-01"))).toBe(
+      true,
+    );
+    expect(isLocationAvailableOn(l, businessDayStartUtc("2026-07-14"))).toBe(
+      true,
+    );
+    expect(isLocationAvailableOn(l, businessDayStartUtc("2026-07-15"))).toBe(
+      false,
+    );
+  });
+
+  // The original Tripman bug: a slot starting 11pm EDT on Jun 11 was being
+  // counted as "Jun 12" because UTC had rolled over. That incorrectly
+  // unlocked Jun 12's tour cities a day early. These tests pin the fix.
+  describe("overnight slot edge case (Tripman business hours 7pm–3am)", () => {
+    const ottawaTour = loc({
+      country: "Canada",
+      city: "Ottawa",
+      availableFrom: businessDayStartUtc("2026-06-12"),
+      availableUntil: businessDayEndUtc("2026-06-15"),
+    });
+
+    it("11pm EDT on Jun 11 is treated as Jun 11 (Ottawa NOT available)", () => {
+      // Jun 11 11pm EDT = Jun 12 03:00 UTC
+      expect(
+        isLocationAvailableOn(ottawaTour, new Date("2026-06-12T03:00:00Z")),
+      ).toBe(false);
+    });
+
+    it("2am EDT on Jun 12 is treated as Jun 12 (Ottawa available)", () => {
+      // Jun 12 02:00 EDT = Jun 12 06:00 UTC
+      expect(
+        isLocationAvailableOn(ottawaTour, new Date("2026-06-12T06:00:00Z")),
+      ).toBe(true);
+    });
+
+    it("8pm EDT on Jun 15 is still Jun 15 (Ottawa available)", () => {
+      // Jun 15 20:00 EDT = Jun 16 00:00 UTC
+      expect(
+        isLocationAvailableOn(ottawaTour, new Date("2026-06-16T00:00:00Z")),
+      ).toBe(true);
+    });
+
+    it("midnight EDT on Jun 16 (1am Jun 16 EDT) is Jun 16 (Ottawa NOT available)", () => {
+      // Jun 16 01:00 EDT = Jun 16 05:00 UTC
+      expect(
+        isLocationAvailableOn(ottawaTour, new Date("2026-06-16T05:00:00Z")),
+      ).toBe(false);
+    });
   });
 });
 
 describe("findMatchingActiveLocation", () => {
-  const date = new Date("2026-07-15");
+  const date = businessDayStartUtc("2026-07-15");
   const list = [
     loc({ id: "tor", country: "Canada", city: "Toronto" }),
     loc({ id: "mis", country: "Canada", city: "Mississauga" }),
@@ -107,8 +164,8 @@ describe("findMatchingActiveLocation", () => {
       id: "ott",
       country: "Canada",
       city: "Ottawa",
-      availableFrom: new Date("2026-07-12T00:00:00Z"),
-      availableUntil: new Date("2026-07-14T23:59:59Z"),
+      availableFrom: businessDayStartUtc("2026-07-12"),
+      availableUntil: businessDayEndUtc("2026-07-14"),
     }),
   ];
 
@@ -136,7 +193,7 @@ describe("findMatchingActiveLocation", () => {
         list,
         "Canada",
         "Ottawa",
-        new Date("2026-07-13"),
+        businessDayStartUtc("2026-07-13"),
       )?.id,
     ).toBe("ott");
   });
@@ -209,7 +266,7 @@ describe("filterBookableLocations (exclusive mode)", () => {
   it("returns all available locations when no exclusive is active", () => {
     const result = filterBookableLocations(
       [toronto, mississauga],
-      new Date("2026-07-15"),
+      businessDayStartUtc("2026-07-15"),
     );
     expect(result.map((l) => l.id).sort()).toEqual(["mis", "tor"]);
   });
@@ -220,12 +277,12 @@ describe("filterBookableLocations (exclusive mode)", () => {
       country: "Canada",
       city: "Montreal",
       exclusive: true,
-      availableFrom: new Date("2026-07-18T00:00:00Z"),
-      availableUntil: new Date("2026-07-21T23:59:59Z"),
+      availableFrom: businessDayStartUtc("2026-07-18"),
+      availableUntil: businessDayEndUtc("2026-07-21"),
     });
     const result = filterBookableLocations(
       [toronto, mississauga, montreal],
-      new Date("2026-07-19"),
+      businessDayStartUtc("2026-07-19"),
     );
     expect(result.map((l) => l.id)).toEqual(["mtl"]);
   });
@@ -236,12 +293,12 @@ describe("filterBookableLocations (exclusive mode)", () => {
       country: "Canada",
       city: "Montreal",
       exclusive: true,
-      availableFrom: new Date("2026-07-18T00:00:00Z"),
-      availableUntil: new Date("2026-07-21T23:59:59Z"),
+      availableFrom: businessDayStartUtc("2026-07-18"),
+      availableUntil: businessDayEndUtc("2026-07-21"),
     });
     const result = filterBookableLocations(
       [toronto, mississauga, montreal],
-      new Date("2026-07-22"),
+      businessDayStartUtc("2026-07-22"),
     );
     expect(result.map((l) => l.id).sort()).toEqual(["mis", "tor"]);
   });
@@ -252,20 +309,20 @@ describe("filterBookableLocations (exclusive mode)", () => {
       country: "USA",
       city: "New York",
       exclusive: true,
-      availableFrom: new Date("2026-07-25T00:00:00Z"),
-      availableUntil: new Date("2026-07-27T23:59:59Z"),
+      availableFrom: businessDayStartUtc("2026-07-25"),
+      availableUntil: businessDayEndUtc("2026-07-27"),
     });
     const nj = loc({
       id: "nj",
       country: "USA",
       city: "New Jersey",
       exclusive: true,
-      availableFrom: new Date("2026-07-25T00:00:00Z"),
-      availableUntil: new Date("2026-07-27T23:59:59Z"),
+      availableFrom: businessDayStartUtc("2026-07-25"),
+      availableUntil: businessDayEndUtc("2026-07-27"),
     });
     const result = filterBookableLocations(
       [toronto, mississauga, ny, nj],
-      new Date("2026-07-26"),
+      businessDayStartUtc("2026-07-26"),
     );
     expect(result.map((l) => l.id).sort()).toEqual(["nj", "ny"]);
   });
@@ -277,12 +334,12 @@ describe("filterBookableLocations (exclusive mode)", () => {
       country: "Canada",
       city: "Montreal",
       exclusive: true,
-      availableFrom: new Date("2025-01-01T00:00:00Z"),
-      availableUntil: new Date("2025-01-03T23:59:59Z"),
+      availableFrom: businessDayStartUtc("2025-01-01"),
+      availableUntil: businessDayEndUtc("2025-01-03"),
     });
     const result = filterBookableLocations(
       [toronto, mississauga, pastMontreal],
-      new Date("2026-07-19"),
+      businessDayStartUtc("2026-07-19"),
     );
     expect(result.map((l) => l.id).sort()).toEqual(["mis", "tor"]);
   });
@@ -294,12 +351,12 @@ describe("filterBookableLocations (exclusive mode)", () => {
       city: "Montreal",
       isActive: false,
       exclusive: true,
-      availableFrom: new Date("2026-07-18T00:00:00Z"),
-      availableUntil: new Date("2026-07-21T23:59:59Z"),
+      availableFrom: businessDayStartUtc("2026-07-18"),
+      availableUntil: businessDayEndUtc("2026-07-21"),
     });
     const result = filterBookableLocations(
       [toronto, mississauga, inactiveMontreal],
-      new Date("2026-07-19"),
+      businessDayStartUtc("2026-07-19"),
     );
     expect(result.map((l) => l.id).sort()).toEqual(["mis", "tor"]);
   });
@@ -312,8 +369,8 @@ describe("isLocationBookableOn", () => {
     country: "Canada",
     city: "Montreal",
     exclusive: true,
-    availableFrom: new Date("2026-07-18T00:00:00Z"),
-    availableUntil: new Date("2026-07-21T23:59:59Z"),
+    availableFrom: businessDayStartUtc("2026-07-18"),
+    availableUntil: businessDayEndUtc("2026-07-21"),
   });
 
   it("returns true for an always-on city outside any exclusive window", () => {
@@ -321,7 +378,7 @@ describe("isLocationBookableOn", () => {
       isLocationBookableOn(
         { country: "Canada", city: "Toronto" },
         [toronto, montrealExclusive],
-        new Date("2026-07-22"),
+        businessDayStartUtc("2026-07-22"),
       ),
     ).toBe(true);
   });
@@ -331,7 +388,7 @@ describe("isLocationBookableOn", () => {
       isLocationBookableOn(
         { country: "Canada", city: "Toronto" },
         [toronto, montrealExclusive],
-        new Date("2026-07-19"),
+        businessDayStartUtc("2026-07-19"),
       ),
     ).toBe(false);
   });
@@ -341,7 +398,7 @@ describe("isLocationBookableOn", () => {
       isLocationBookableOn(
         { country: "Canada", city: "Montreal" },
         [toronto, montrealExclusive],
-        new Date("2026-07-19"),
+        businessDayStartUtc("2026-07-19"),
       ),
     ).toBe(true);
   });
@@ -351,7 +408,7 @@ describe("isLocationBookableOn", () => {
       isLocationBookableOn(
         { country: "Canada", city: "Montreal" },
         [toronto, montrealExclusive],
-        new Date("2026-07-22"),
+        businessDayStartUtc("2026-07-22"),
       ),
     ).toBe(false);
   });
@@ -361,7 +418,7 @@ describe("isLocationBookableOn", () => {
       isLocationBookableOn(
         { country: "  CANADA ", city: " toronto " },
         [toronto],
-        new Date("2026-07-22"),
+        businessDayStartUtc("2026-07-22"),
       ),
     ).toBe(true);
   });
@@ -371,7 +428,7 @@ describe("isLocationBookableOn", () => {
       isLocationBookableOn(
         { country: "Canada", city: "Hamilton" },
         [toronto, montrealExclusive],
-        new Date("2026-07-22"),
+        businessDayStartUtc("2026-07-22"),
       ),
     ).toBe(false);
   });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { filterBookableLocations } from "@/lib/service-locations";
+import { businessDayStartUtc } from "@/lib/timezone";
 
 // GET /api/service-locations?date=YYYY-MM-DD
 //
@@ -33,8 +34,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid date" }, { status: 400 });
     }
 
+    // Parse the YYYY-MM-DD as a business-TZ day. Using business TZ end-of-day
+    // would also work since isLocationAvailableOn normalizes both sides via
+    // toBusinessCalendarDay; pick start-of-day for clarity. Today's date in
+    // business TZ is used if no param.
     const bookingDate = parsed.data.date
-      ? new Date(parsed.data.date + "T12:00:00.000Z") // midday UTC to avoid edge-of-day shifts
+      ? businessDayStartUtc(parsed.data.date)
       : new Date();
 
     if (Number.isNaN(bookingDate.getTime())) {

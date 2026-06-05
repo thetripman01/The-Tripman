@@ -52,7 +52,14 @@ model Booking {
   googleEventId   String?       // For custom mode: store Google Calendar event ID
   paymentIntentId String?        // Stripe payment intent ID
   paymentStatus   PaymentStatus @default(PENDING)
-  amountPaid      Int?          // Amount paid in cents
+  amountPaid      Int?          // Total amount Stripe captured, in cents (subtotal + tax)
+  // Tax breakdown captured at booking-creation time so historical receipts
+  // stay correct even if rates change later. All nullable for back-compat
+  // with bookings made before this column existed.
+  subtotalCents   Int?          // Pre-tax amount in cents
+  taxCents        Int?          // Tax amount in cents (= subtotal * taxRate, rounded)
+  taxRate         Float?        // Rate applied (e.g. 0.13 for HST 13%)
+  currency        String?       // Lowercase ISO 4217 ("cad" / "usd")
   ride            Ride?         // Real-time tracking
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

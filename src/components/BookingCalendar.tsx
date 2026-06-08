@@ -7,6 +7,7 @@ import FullCalendar from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/interaction";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import { trackCalendarView } from "@/lib/analytics";
+import { toBusinessCalendarDay } from "@/lib/timezone";
 
 interface EventType {
   id: string;
@@ -22,6 +23,30 @@ interface BookingCalendarProps {
   eventType: EventType;
   onSlotSelect: (slot: { startsAt: Date; endsAt: Date }) => void;
 }
+
+interface ScheduleEntry {
+  id: string;
+  country: string;
+  city: string;
+  availableFrom: string | null;
+  availableUntil: string | null;
+}
+
+/**
+ * Visually-distinct palette assigned to tour cities in the order they
+ * appear in the schedule. Five tours visible at once is more than we'll
+ * ever realistically run — if we exceed it the assignment wraps.
+ *
+ * Picked from Tailwind's 300/500/700 lines so background + text contrast
+ * pass WCAG AA without manual tweaking per color.
+ */
+const TOUR_COLORS = [
+  { bg: "#fdba74", border: "#f97316", dot: "#f97316", text: "#7c2d12" }, // orange
+  { bg: "#86efac", border: "#22c55e", dot: "#22c55e", text: "#14532d" }, // green
+  { bg: "#f0abfc", border: "#d946ef", dot: "#d946ef", text: "#701a75" }, // fuchsia
+  { bg: "#93c5fd", border: "#3b82f6", dot: "#3b82f6", text: "#1e3a8a" }, // blue
+  { bg: "#fde047", border: "#eab308", dot: "#eab308", text: "#713f12" }, // yellow
+];
 
 export function BookingCalendar({
   eventType,
@@ -41,6 +66,64 @@ export function BookingCalendar({
   useEffect(() => {
     trackCalendarView();
   }, []);
+
+  // ---- Tour-city schedule (for color-coding the calendar) ----
+  const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+
+  useEffect(() => {
+    // Fire once on mount. Endpoint is cached 2 minutes at the edge so
+    // hitting it on every booking flow has negligible cost.
+    let cancelled = false;
+    fetch("/api/service-locations/schedule")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: ScheduleEntry[]) => {
+        if (!cancelled) setSchedule(data);
+      })
+      .catch(() => {
+        /* Calendar still works without colors; swallow. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Build a map from YYYY-MM-DD → { city, color } so the day cell renderer
+  // is O(1) instead of scanning the whole schedule per cell.
+  const dayColorMap = useMemo(() => {
+    const map = new Map<
+      string,
+      { city: string; color: (typeof TOUR_COLORS)[number] }
+    >();
+    schedule.forEach((entry, idx) => {
+      const color = TOUR_COLORS[idx % TOUR_COLORS.length];
+      const from = entry.availableFrom
+        ? toBusinessCalendarDay(entry.availableFrom)
+        : null;
+      const until = entry.availableUntil
+        ? toBusinessCalendarDay(entry.availableUntil)
+        : null;
+      if (!from || !until) return; // half-open windows aren't paintable on a finite month grid
+      // Walk every day in the range (inclusive) and assign the color.
+      // Ranges are typically 3–7 days so this is cheap.
+      const cur = new Date(from + "T12:00:00Z"); // midday UTC anchor
+      const last = new Date(until + "T12:00:00Z");
+      while (cur.getTime() <= last.getTime()) {
+        const key = cur.toISOString().slice(0, 10);
+        map.set(key, { city: entry.city, color });
+        cur.setUTCDate(cur.getUTCDate() + 1);
+      }
+    });
+    return map;
+  }, [schedule]);
+
+  // Legend entries, deduped, in calendar-display order.
+  const legend = useMemo(() => {
+    return schedule.map((entry, idx) => ({
+      city: entry.city,
+      country: entry.country,
+      color: TOUR_COLORS[idx % TOUR_COLORS.length],
+    }));
+  }, [schedule]);
 
   useEffect(() => {
     if (selectedDate && timesRef.current) {
@@ -171,8 +254,62 @@ export function BookingCalendar({
                 selectConstraint={{
                   start: new Date().toISOString().split("T")[0],
                 }}
+                // Paint the day cell with the tour city's color when the
+                // date falls inside an active tour window. Toronto/GTA
+                // days stay white — they're the visual baseline.
+                dayCellDidMount={(arg) => {
+                  const ymd = arg.date.toISOString().slice(0, 10);
+                  const hit = dayColorMap.get(ymd);
+                  if (!hit) return;
+                  // Color the FullCalendar "frame" element so the entire
+                  // cell — including the date-number row — gets the bg.
+                  const frame =
+                    (arg.el.querySelector(
+                      ".fc-daygrid-day-frame",
+                    ) as HTMLElement) ?? arg.el;
+                  frame.style.backgroundColor = hit.color.bg;
+                  frame.style.color = hit.color.text;
+                  // Inline title for hover discoverability.
+                  arg.el.setAttribute("title", hit.city);
+                }}
               />
             </div>
+
+            {/* Legend: which color = which tour city. Only renders when
+                there are upcoming tours; for a plain GTA-only month it
+                stays hidden so we don't waste vertical space. */}
+            {legend.length > 0 && (
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                {legend.map((entry) => (
+                  <div
+                    key={`${entry.country}-${entry.city}`}
+                    className="flex items-center gap-2"
+                  >
+                    <span
+                      className="inline-block w-3.5 h-3.5 rounded-full border"
+                      style={{
+                        backgroundColor: entry.color.dot,
+                        borderColor: entry.color.border,
+                      }}
+                      aria-hidden
+                    />
+                    <span className="text-gray-700">
+                      {entry.city}
+                      {entry.country && entry.country.toLowerCase() !== "canada"
+                        ? ` (${entry.country})`
+                        : ""}
+                    </span>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block w-3.5 h-3.5 rounded-full border border-gray-300 bg-white"
+                    aria-hidden
+                  />
+                  <span className="text-gray-700">Toronto / GTA</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right: time list - scroll target when date selected */}
@@ -241,7 +378,6 @@ export function BookingCalendar({
                         <div className="font-semibold text-gray-900">
                           {formatRange(slot.datetime)}
                         </div>
-                        <div className="text-xs text-gray-500">{timeZone}</div>
                       </button>
                     );
                   })}

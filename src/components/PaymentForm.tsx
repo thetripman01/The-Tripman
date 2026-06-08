@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CreditCard } from "lucide-react";
+import { trackPixel } from "@/lib/meta-pixel";
 
 // Lazy-init Stripe so a missing publishable key doesn't crash module load.
 let stripePromiseCache: Promise<Stripe | null> | null = null;
@@ -65,6 +66,15 @@ function PaymentFormContent({
       if (error) {
         onPaymentError(error.message || "Payment failed");
       } else if (paymentIntent && paymentIntent.status === "succeeded") {
+        // Meta Pixel: payment succeeded — fire the Purchase conversion
+        // with the actual amount + currency Stripe captured (NOT a value
+        // we trust the client to assemble — we read it off the intent
+        // Stripe just confirmed).
+        trackPixel("Purchase", {
+          value: (paymentIntent.amount ?? amount) / 100,
+          currency: (paymentIntent.currency ?? currency).toUpperCase(),
+          content_category: "tripman-ride",
+        });
         onPaymentSuccess(paymentIntent.id);
       }
     } catch (error) {

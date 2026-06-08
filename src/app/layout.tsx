@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "@/components/ui/sonner";
+import { META_PIXEL_ID } from "@/lib/meta-pixel";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -83,6 +85,42 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/*
+          Meta Pixel base code. Loads after interactive so it never blocks
+          first paint / LCP. The pixel handles its own `PageView` event on
+          init; custom events are fired from client components via
+          src/lib/meta-pixel.ts → trackPixel().
+        */}
+        <Script id="meta-pixel-base" strategy="afterInteractive">
+          {`
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window,document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '${META_PIXEL_ID}');
+            fbq('track', 'PageView');
+          `}
+        </Script>
+        <noscript>
+          {/* Server-rendered fallback for browsers with JS disabled. The
+              <img> tag is required by Meta's snippet — it's a 1×1
+              tracking pixel, NOT a content image, so next/image's
+              optimization pipeline doesn't apply. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            alt=""
+            src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
+          />
+        </noscript>
+      </head>
       <body className={inter.className}>
         {children}
         <Toaster richColors position="top-center" />

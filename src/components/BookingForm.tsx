@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { trackBookingSuccess } from "@/lib/analytics";
+import { trackPixel } from "@/lib/meta-pixel";
 import {
   formatQuoteSubtotal,
   formatQuoteTax,
@@ -252,6 +253,21 @@ export function BookingForm({
       if (response.ok) {
         const result = await response.json();
         trackBookingSuccess(eventType.slug, result.id);
+        // Meta Pixel: customer has filled the booking form and reserved a
+        // slot — the equivalent of "added to cart" in e-commerce terms.
+        // The Purchase event is fired later from the payment success path.
+        const quote = getTripmanQuoteForBooking(
+          eventType.slug,
+          peopleCountNum,
+          data.pickupCountry,
+        );
+        trackPixel("InitiateCheckout", {
+          value: quote ? quote.totalCents / 100 : undefined,
+          currency: quote ? quote.currency.toUpperCase() : undefined,
+          content_name: eventType.name,
+          content_category: "tripman-ride",
+          num_items: peopleCountNum ?? undefined,
+        });
         onBookingComplete({
           ...data,
           startsAt: selectedSlot.startsAt.toISOString(),

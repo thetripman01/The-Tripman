@@ -62,6 +62,10 @@ export function BookingCalendar({
   const [timeFormat, setTimeFormat] = useState<"12h" | "24h">("12h");
   const [timeZone] = useState<string>(torontoTz);
   const timesRef = useRef<HTMLDivElement>(null);
+  // Wraps the FullCalendar so the recolor effect below can scope DOM
+  // queries to *our* calendar instance only (no risk of bleeding into
+  // any other calendar on the page).
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     trackCalendarView();
@@ -124,6 +128,48 @@ export function BookingCalendar({
       color: TOUR_COLORS[idx % TOUR_COLORS.length],
     }));
   }, [schedule]);
+
+  // Bumped by FullCalendar's `datesSet` callback (mount + month nav) so
+  // the recolor effect below re-runs even when the dayColorMap reference
+  // is unchanged. Without this, navigating months would clear colors on
+  // the next render.
+  const [repaintTick, setRepaintTick] = useState(0);
+
+  // Paint day cells from `dayColorMap`. Runs on:
+  //   - dayColorMap change (schedule fetch resolves, admin updates a tour)
+  //   - repaintTick bump (FullCalendar re-renders cells for a new month)
+  // We read FullCalendar's native `data-date` attribute (always YYYY-MM-DD
+  // in the calendar's own timezone semantics) instead of building a key
+  // from `arg.date.toISOString()` — that approach broke for users east
+  // of UTC where the ISO slice fell on the wrong calendar day.
+  useEffect(() => {
+    const root = calendarRef.current;
+    if (!root) return;
+    const cells = root.querySelectorAll<HTMLElement>(".fc-daygrid-day");
+    cells.forEach((cell) => {
+      const ymd = cell.getAttribute("data-date");
+      const frame =
+        cell.querySelector<HTMLElement>(".fc-daygrid-day-frame") ?? cell;
+      if (!ymd) {
+        frame.style.backgroundColor = "";
+        frame.style.color = "";
+        cell.removeAttribute("title");
+        return;
+      }
+      const hit = dayColorMap.get(ymd);
+      if (!hit) {
+        // Clear any stale paint (in case schedule changed and this day
+        // is no longer in a tour window).
+        frame.style.backgroundColor = "";
+        frame.style.color = "";
+        cell.removeAttribute("title");
+        return;
+      }
+      frame.style.backgroundColor = hit.color.bg;
+      frame.style.color = hit.color.text;
+      cell.setAttribute("title", hit.city);
+    });
+  }, [dayColorMap, repaintTick]);
 
   useEffect(() => {
     if (selectedDate && timesRef.current) {
@@ -236,7 +282,10 @@ export function BookingCalendar({
               <Calendar className="w-4 h-4 text-cyan-700" />
               <span className="font-semibold text-gray-900">Select a date</span>
             </div>
-            <div className="border border-cyan-100 rounded-xl overflow-hidden shadow-sm">
+            <div
+              ref={calendarRef}
+              className="border border-cyan-100 rounded-xl overflow-hidden shadow-sm"
+            >
               <FullCalendar
                 plugins={[dayGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
@@ -254,23 +303,15 @@ export function BookingCalendar({
                 selectConstraint={{
                   start: new Date().toISOString().split("T")[0],
                 }}
-                // Paint the day cell with the tour city's color when the
-                // date falls inside an active tour window. Toronto/GTA
-                // days stay white — they're the visual baseline.
-                dayCellDidMount={(arg) => {
-                  const ymd = arg.date.toISOString().slice(0, 10);
-                  const hit = dayColorMap.get(ymd);
-                  if (!hit) return;
-                  // Color the FullCalendar "frame" element so the entire
-                  // cell — including the date-number row — gets the bg.
-                  const frame =
-                    (arg.el.querySelector(
-                      ".fc-daygrid-day-frame",
-                    ) as HTMLElement) ?? arg.el;
-                  frame.style.backgroundColor = hit.color.bg;
-                  frame.style.color = hit.color.text;
-                  // Inline title for hover discoverability.
-                  arg.el.setAttribute("title", hit.city);
+                // datesSet fires whenever the visible range changes (month
+                // nav, initial mount, view changes). We use it as a signal
+                // to (re)paint cells via the useEffect below, since
+                // dayCellDidMount captures the closure once and won't fire
+                // again when `dayColorMap` populates after async fetch.
+                datesSet={() => {
+                  // Bump the repaint version so the effect re-runs even if
+                  // dayColorMap reference is stable.
+                  setRepaintTick((t) => t + 1);
                 }}
               />
             </div>

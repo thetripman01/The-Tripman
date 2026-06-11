@@ -12,24 +12,41 @@ export function Hero() {
 
   return (
     <section
-      className="relative min-h-screen flex flex-col md:flex-row items-stretch overflow-hidden pt-20"
+      className="relative min-h-screen flex flex-col lg:flex-row items-stretch overflow-hidden pt-20"
       aria-label="Hero section"
     >
-      {/* Left: Image */}
-      <div className="relative w-full md:w-1/2 min-h-[50vh] md:min-h-0 shrink-0">
+      {/* Left: Tour poster. The poster is a 1:1 square with text near the
+          edges, so it must never be cropped: below lg the container is an
+          exact square (poster covers it fully), on lg+ the column
+          stretches to the section height (ratio varies ~0.75–1.15 by
+          screen) and the poster is object-contained over a blurred,
+          zoomed copy of itself — gaps fill with matching imagery
+          instead of black bars. Same src/sizes/quality on both images
+          so the browser downloads the optimized file only once. */}
+      <div className="relative w-full lg:w-1/2 aspect-square lg:aspect-auto lg:min-h-0 shrink-0 overflow-hidden">
         <Image
-          src="/tripman-background.jpg"
-          alt="The Tripman Experience"
+          src="/tripman-tour-poster.jpg"
+          alt=""
+          aria-hidden
           fill
-          className="object-cover object-center"
+          className="object-cover object-center scale-110 blur-lg brightness-75"
           priority
-          sizes="(max-width: 768px) 100vw, 50vw"
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          quality={90}
+        />
+        <Image
+          src="/tripman-tour-poster.jpg"
+          alt="The Tripman comes to your city — tour dates and booking at trvoo.com"
+          fill
+          className="object-contain object-center"
+          priority
+          sizes="(max-width: 1024px) 100vw, 50vw"
           quality={90}
         />
       </div>
 
       {/* Right: Text panel with solid background */}
-      <div className="relative w-full md:w-1/2 flex items-center justify-center bg-gradient-to-br from-cyan-50 to-white px-6 py-12 md:px-12 md:py-16">
+      <div className="relative w-full lg:w-1/2 flex items-center justify-center bg-gradient-to-br from-cyan-50 to-white px-6 py-12 md:px-12 md:py-16">
         <div className="text-left max-w-xl w-full">
           {/* Logo/Brand */}
           <div className="mb-8 md:mb-10 animate-fade-in">

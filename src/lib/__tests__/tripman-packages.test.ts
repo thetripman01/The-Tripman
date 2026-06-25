@@ -1,6 +1,7 @@
 import {
   formatCad,
   formatUsd,
+  formatEur,
   formatQuoteTotal,
   formatQuoteSubtotal,
   formatQuoteTax,
@@ -11,6 +12,7 @@ import {
   getTripmanTierBreakdownLabel,
   getTripmanQuoteForBooking,
   TRIPMAN_USD_FLAT_CENTS,
+  TRIPMAN_EUR_FLAT_CENTS,
   TRIPMAN_TAX_RATE,
 } from "../tripman-packages";
 
@@ -111,6 +113,24 @@ describe("tripman-packages", () => {
       ).toBe("$124.30 USD");
     });
 
+    it("formats whole EUR amounts with the euro sign", () => {
+      expect(formatEur(8000)).toBe("€80 EUR");
+      expect(formatEur(9040)).toBe("€90.40 EUR");
+    });
+
+    it("formatQuoteTotal returns EUR total for European pickups", () => {
+      expect(
+        formatQuoteTotal({
+          subtotalCents: 8000,
+          taxCents: 1040,
+          totalCents: 9040,
+          taxRate: 0.13,
+          taxLabel: "VAT",
+          currency: "eur",
+        }),
+      ).toBe("€90.40 EUR");
+    });
+
     it("formatQuoteSubtotal shows pre-tax amount", () => {
       expect(
         formatQuoteSubtotal({
@@ -179,6 +199,33 @@ describe("tripman-packages", () => {
         taxLabel: "Sales tax",
         currency: "usd",
       });
+    });
+
+    it("returns EUR breakdown for European tour pickups (VAT label, 80€ + 13%)", () => {
+      const q = getTripmanQuoteForBooking("tripman-experience", 2, "France");
+      expect(q).toEqual({
+        subtotalCents: TRIPMAN_EUR_FLAT_CENTS, // 8000 (80 EUR)
+        taxCents: 1040, // 80 * 0.13 = 10.40
+        totalCents: 9040, // 90.40 EUR
+        taxRate: TRIPMAN_TAX_RATE,
+        taxLabel: "VAT",
+        currency: "eur",
+      });
+    });
+
+    it("bills every European tour country in EUR (incl. the Belguim typo)", () => {
+      for (const country of [
+        "Belguim",
+        "Switzerland",
+        "Italy",
+        "Germany",
+        "Czechia",
+        "Netherlands",
+      ]) {
+        expect(
+          getTripmanQuoteForBooking("tripman-experience", 1, country)?.currency,
+        ).toBe("eur");
+      }
     });
 
     it("recognizes USA synonyms", () => {

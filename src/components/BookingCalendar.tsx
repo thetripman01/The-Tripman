@@ -21,7 +21,13 @@ interface EventType {
 
 interface BookingCalendarProps {
   eventType: EventType;
-  onSlotSelect: (slot: { startsAt: Date; endsAt: Date }) => void;
+  onSlotSelect: (slot: {
+    startsAt: Date;
+    endsAt: Date;
+    // Operating timezone the slot was displayed in (tour city or Toronto).
+    // Stored on the booking so confirmations/ICS show the right local time.
+    timezone: string;
+  }) => void;
 }
 
 interface ScheduleEntry {
@@ -52,7 +58,6 @@ export function BookingCalendar({
   eventType,
   onSlotSelect,
 }: BookingCalendarProps) {
-  const torontoTz = "America/Toronto";
   const [availableSlots, setAvailableSlots] = useState<
     Array<{ time: string; datetime: string }>
   >([]);
@@ -60,7 +65,12 @@ export function BookingCalendar({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDatetime, setSelectedDatetime] = useState<string | null>(null);
   const [timeFormat, setTimeFormat] = useState<"12h" | "24h">("12h");
-  const [timeZone] = useState<string>(torontoTz);
+  // Operating timezone for the slots currently shown. Defaults to Toronto and
+  // is updated from each /api/availability response — on a tour date the
+  // server returns the tour city's timezone (e.g. Europe/Brussels) so the
+  // times below render in the correct local time instead of Toronto's.
+  const [timeZone, setTimeZone] = useState<string>("America/Toronto");
+  const [tzLabel, setTzLabel] = useState<string>("Toronto (ET) — Canada");
   const timesRef = useRef<HTMLDivElement>(null);
   // Wraps the FullCalendar so the recolor effect below can scope DOM
   // queries to *our* calendar instance only (no risk of bleeding into
@@ -177,8 +187,6 @@ export function BookingCalendar({
     }
   }, [selectedDate]);
 
-  const tzLabel = useMemo(() => "Toronto (ET) — Canada", []);
-
   const fetchAvailableSlots = async (date: Date) => {
     setLoading(true);
     try {
@@ -186,8 +194,16 @@ export function BookingCalendar({
         `/api/availability?date=${date.toISOString().split("T")[0]}&eventType=${eventType.slug}`,
       );
       if (response.ok) {
-        const slots = await response.json();
-        setAvailableSlots(slots);
+        const data = await response.json();
+        // New response shape: { timezone, timezoneLabel, slots }. Tolerate the
+        // legacy bare-array shape (e.g. a stale edge cache right after deploy).
+        if (Array.isArray(data)) {
+          setAvailableSlots(data);
+        } else {
+          setAvailableSlots(data.slots ?? []);
+          if (data.timezone) setTimeZone(data.timezone);
+          if (data.timezoneLabel) setTzLabel(data.timezoneLabel);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch available slots:", error);
@@ -216,7 +232,7 @@ export function BookingCalendar({
     const startsAt = new Date(datetime);
     const endsAt = new Date(startsAt);
     endsAt.setMinutes(endsAt.getMinutes() + eventType.durationMin);
-    onSlotSelect({ startsAt, endsAt });
+    onSlotSelect({ startsAt, endsAt, timezone: timeZone });
   };
 
   const formatRange = (datetime: string) => {
@@ -271,7 +287,9 @@ export function BookingCalendar({
                 {tzLabel}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Times below are shown in Toronto time.
+                Times below are shown in this city&apos;s local time. On tour
+                dates this automatically switches to the tour city&apos;s time
+                zone.
               </p>
             </div>
           </div>

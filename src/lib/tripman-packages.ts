@@ -1,3 +1,5 @@
+import { inferCurrency, type SupportedCurrency } from "./geo";
+
 export const TRIPMAN_PACKAGES = [
   {
     slug: "tripman-experience",
@@ -12,37 +14,47 @@ export const TRIPMAN_PACKAGES = [
 
 export type TripmanPackageSlug = (typeof TRIPMAN_PACKAGES)[number]["slug"];
 
-// USD flat rate for USA pickups. Currency is automatically chosen based on
-// the pickup country — customers don't see a currency picker.
+// Flat rate for USA pickups. Currency is automatically chosen based on the
+// pickup country (see lib/geo.ts) — customers don't see a currency picker.
 export const TRIPMAN_USD_FLAT_CENTS = 11000; // 110 USD
 
+// Flat rate for European tour pickups. Charged in EUR for every European
+// tour city (see EUR_COUNTRIES in lib/geo.ts). Tax (below) is applied on top.
+export const TRIPMAN_EUR_FLAT_CENTS = 8000; // 80 EUR
+
 // HST (Ontario) for CAD bookings is 13%. We apply the same 13% rate to USD
-// bookings — labelled differently in display ("HST" vs "Sales tax") since
-// HST is Canada-specific. Stored on each booking so historical rates are
-// preserved even if HST changes in future.
+// and EUR bookings — labelled differently in display ("HST" / "Sales tax" /
+// "VAT") since HST is Canada-specific. Stored on each booking so historical
+// rates are preserved even if the rate changes in future.
 export const TRIPMAN_TAX_RATE = 0.13;
 
-export type SupportedCurrency = "cad" | "usd";
+// Re-exported for callers that still import the currency union from here.
+export type { SupportedCurrency };
 
 export interface TripmanQuote {
   subtotalCents: number;
   taxCents: number;
   totalCents: number;
   taxRate: number;
-  taxLabel: string; // "HST" for CAD, "Sales tax" for USD
+  taxLabel: string; // "HST" (CAD), "Sales tax" (USD), "VAT" (EUR)
   currency: SupportedCurrency;
 }
 
-/**
- * Normalizes a country string to the currency we charge it in.
- * Trim + case-insensitive. Accepts a handful of "USA" synonyms.
- */
-function resolveCurrencyForCountry(
-  country: string | null | undefined,
-): SupportedCurrency {
-  const c = (country ?? "").trim().toLowerCase();
-  if (c === "usa" || c === "united states" || c === "us") return "usd";
-  return "cad";
+/** Tax label shown to the customer for a given currency. */
+function taxLabelForCurrency(currency: SupportedCurrency): string {
+  if (currency === "usd") return "Sales tax";
+  if (currency === "eur") return "VAT";
+  return "HST";
+}
+
+/** Subtotal (pre-tax) flat rate for a given currency, in cents. */
+function flatSubtotalForCurrency(
+  currency: SupportedCurrency,
+  baseCadCents: number,
+): number {
+  if (currency === "usd") return TRIPMAN_USD_FLAT_CENTS;
+  if (currency === "eur") return TRIPMAN_EUR_FLAT_CENTS;
+  return baseCadCents;
 }
 
 /**
@@ -73,12 +85,11 @@ export function getTripmanQuoteForBooking(
   const baseCadCents = getTripmanPriceForPeople(slug, peopleCount);
   if (baseCadCents == null) return null;
 
-  const currency = resolveCurrencyForCountry(country);
-  const subtotalCents =
-    currency === "usd" ? TRIPMAN_USD_FLAT_CENTS : baseCadCents;
+  const currency = inferCurrency(country);
+  const subtotalCents = flatSubtotalForCurrency(currency, baseCadCents);
   const taxCents = computeTaxCents(subtotalCents, TRIPMAN_TAX_RATE);
   const totalCents = subtotalCents + taxCents;
-  const taxLabel = currency === "usd" ? "Sales tax" : "HST";
+  const taxLabel = taxLabelForCurrency(currency);
 
   return {
     subtotalCents,
@@ -107,9 +118,37 @@ export function formatUsd(cents: number) {
   return `$${formatted} USD`;
 }
 
-/** Format cents in the quote's currency, e.g. "$99 CAD" / "$110.50 USD". */
+export function formatEur(cents: number) {
+  const euros = cents / 100;
+  const formatted = Number.isInteger(euros)
+    ? euros.toFixed(0)
+    : euros.toFixed(2);
+  return `€${formatted} EUR`;
+}
+
+/**
+ * Format cents in the quote's currency, e.g. "$99 CAD" / "$110.50 USD" /
+ * "€80 EUR".
+ */
 export function formatMoney(cents: number, currency: SupportedCurrency) {
-  return currency === "usd" ? formatUsd(cents) : formatCad(cents);
+  if (currency === "usd") return formatUsd(cents);
+  if (currency === "eur") return formatEur(cents);
+  return formatCad(cents);
+}
+
+/** Currency symbol for ad-hoc displays (EUR → €, CAD/USD → $). */
+export function currencySymbol(currency: string | null | undefined): string {
+  return (currency ?? "").toLowerCase() === "eur" ? "€" : "$";
+}
+
+/** Tax label for a stored currency string (used by emails/ICS/receipts). */
+export function taxLabelForStoredCurrency(
+  currency: string | null | undefined,
+): string {
+  const c = (currency ?? "cad").toLowerCase();
+  if (c === "usd") return "Sales tax";
+  if (c === "eur") return "VAT";
+  return "HST";
 }
 
 /**

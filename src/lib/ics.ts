@@ -1,5 +1,6 @@
 import { Booking, EventType } from "@prisma/client";
 import { formatPickupLocation } from "./service-locations";
+import { currencySymbol, taxLabelForStoredCurrency } from "./tripman-packages";
 
 export interface BookingWithEventType extends Booking {
   eventType: EventType;
@@ -38,6 +39,7 @@ export function generateICS(booking: BookingWithEventType): string {
   // Price line: prefer the tax-aware snapshot, fall back to legacy event
   // price for older bookings.
   const cur = (booking.currency ?? "cad").toUpperCase();
+  const sym = currencySymbol(booking.currency);
   let priceLine = "";
   if (
     booking.subtotalCents != null &&
@@ -50,8 +52,8 @@ export function generateICS(booking: BookingWithEventType): string {
     const subtotal = (booking.subtotalCents / 100).toFixed(2);
     const tax = (booking.taxCents / 100).toFixed(2);
     const ratePct = (booking.taxRate * 100).toFixed(0);
-    const taxLabel = cur === "USD" ? "Sales tax" : "HST";
-    priceLine = `Total: $${total} ${cur} (Subtotal $${subtotal} + ${taxLabel} ${ratePct}% $${tax})`;
+    const taxLabel = taxLabelForStoredCurrency(booking.currency);
+    priceLine = `Total: ${sym}${total} ${cur} (Subtotal ${sym}${subtotal} + ${taxLabel} ${ratePct}% ${sym}${tax})`;
   } else if (booking.eventType.priceCents) {
     priceLine = `Price: $${(booking.eventType.priceCents / 100).toFixed(2)}`;
   }

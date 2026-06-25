@@ -42,9 +42,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Always compute amount + currency + tax server-side to prevent
-    // tampering. Currency is derived from the pickup country (USA → USD,
-    // Canada → CAD) and tax is +13% applied automatically. We never trust
-    // a client-supplied currency or amount here.
+    // tampering. Currency is derived from the pickup country (European tour
+    // cities → EUR, USA → USD, Canada/other → CAD; see lib/geo.ts) and tax
+    // is +13% applied automatically. We never trust a client-supplied
+    // currency or amount here.
     const quote = getTripmanQuoteForBooking(
       booking.eventType.slug,
       booking.peopleCount,

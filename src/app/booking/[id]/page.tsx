@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RideTracking } from "@/components/RideTracking";
 import { PaymentForm } from "@/components/PaymentForm";
-import { getTripmanQuoteForBooking } from "@/lib/tripman-packages";
+import {
+  getTripmanQuoteForBooking,
+  currencySymbol,
+  taxLabelForStoredCurrency,
+} from "@/lib/tripman-packages";
 import { toast } from "sonner";
 import {
   Calendar,
@@ -297,7 +301,7 @@ export default function BookingDetailsPage() {
                           <CreditCard className="w-4 h-4 text-gray-500" />
                           <span className="font-medium">Total:</span>
                           <span className="font-semibold">
-                            $
+                            {currencySymbol(booking.currency)}
                             {(
                               (booking.amountPaid ??
                                 booking.subtotalCents + booking.taxCents) / 100
@@ -306,11 +310,11 @@ export default function BookingDetailsPage() {
                           </span>
                         </div>
                         <div className="ml-6 text-xs text-gray-600">
-                          Subtotal ${(booking.subtotalCents / 100).toFixed(2)} +{" "}
-                          {(booking.currency ?? "cad") === "usd"
-                            ? "Sales tax"
-                            : "HST"}{" "}
-                          {(booking.taxRate * 100).toFixed(0)}% $
+                          Subtotal {currencySymbol(booking.currency)}
+                          {(booking.subtotalCents / 100).toFixed(2)} +{" "}
+                          {taxLabelForStoredCurrency(booking.currency)}{" "}
+                          {(booking.taxRate * 100).toFixed(0)}%{" "}
+                          {currencySymbol(booking.currency)}
                           {(booking.taxCents / 100).toFixed(2)}
                         </div>
                       </div>
@@ -425,15 +429,13 @@ export default function BookingDetailsPage() {
                   <div>
                     <span className="font-medium">Amount Paid:</span>
                     <span className="ml-2 font-semibold">
-                      ${(booking.amountPaid / 100).toFixed(2)}{" "}
+                      {currencySymbol(booking.currency)}
+                      {(booking.amountPaid / 100).toFixed(2)}{" "}
                       {(booking.currency ?? "cad").toUpperCase()}
                     </span>
                     {booking.taxRate != null && (
                       <span className="ml-1 text-xs text-gray-500">
-                        (incl.{" "}
-                        {(booking.currency ?? "cad") === "usd"
-                          ? "sales tax"
-                          : "HST"}{" "}
+                        (incl. {taxLabelForStoredCurrency(booking.currency)}{" "}
                         {(booking.taxRate * 100).toFixed(0)}%)
                       </span>
                     )}

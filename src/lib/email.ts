@@ -3,6 +3,7 @@ import { Booking, EventType } from "@prisma/client";
 import { formatInTimeZone } from "date-fns-tz";
 import { generateICS } from "./ics";
 import { formatPickupLocation } from "./service-locations";
+import { currencySymbol, taxLabelForStoredCurrency } from "./tripman-packages";
 import type Stripe from "stripe";
 
 const resend = process.env.RESEND_API_KEY
@@ -11,12 +12,22 @@ const resend = process.env.RESEND_API_KEY
 
 const TZ = process.env.BUSINESS_TIMEZONE || "America/Toronto";
 
-function fmtDate(d: Date | string) {
-  return formatInTimeZone(new Date(d), TZ, "MMMM d, yyyy");
+// Each booking stores the operating timezone it was made in (tour city or
+// Toronto). Format every date/time in THAT zone so a Brussels-tour customer
+// sees Brussels time, not Toronto's. Falls back to the home base for legacy
+// rows missing the field.
+function bookingTz(booking: { timezone?: string | null }) {
+  return booking.timezone || TZ;
 }
 
-function fmtTime(d: Date | string) {
-  return formatInTimeZone(new Date(d), TZ, "h:mm a");
+function fmtDate(d: Date | string, tz: string = TZ) {
+  return formatInTimeZone(new Date(d), tz, "MMMM d, yyyy");
+}
+
+function fmtTime(d: Date | string, tz: string = TZ) {
+  // Include the zone abbreviation (e.g. "EDT" / "CEST") so the local time is
+  // unambiguous — important on tour where it isn't Toronto time.
+  return formatInTimeZone(new Date(d), tz, "h:mm a zzz");
 }
 
 /**
@@ -48,7 +59,8 @@ function pickupLine(booking: BookingWithEventType): string {
  */
 function priceBreakdownLines(booking: BookingWithEventType): string {
   const cur = (booking.currency ?? "cad").toLowerCase();
-  const sign = cur === "usd" ? "USD" : "CAD";
+  const code = cur.toUpperCase();
+  const sym = currencySymbol(cur);
 
   if (
     booking.subtotalCents != null &&
@@ -61,11 +73,11 @@ function priceBreakdownLines(booking: BookingWithEventType): string {
       (booking.amountPaid ?? booking.subtotalCents + booking.taxCents) / 100
     ).toFixed(2);
     const ratePct = (booking.taxRate * 100).toFixed(0);
-    const taxLabel = cur === "usd" ? "Sales tax" : "HST";
+    const taxLabel = taxLabelForStoredCurrency(cur);
     return `
-      <p><strong>Subtotal:</strong> $${subtotal} ${sign}</p>
-      <p><strong>${escapeHtml(taxLabel)} (${ratePct}%):</strong> $${tax} ${sign}</p>
-      <p><strong>Total:</strong> $${total} ${sign}</p>
+      <p><strong>Subtotal:</strong> ${sym}${subtotal} ${code}</p>
+      <p><strong>${escapeHtml(taxLabel)} (${ratePct}%):</strong> ${sym}${tax} ${code}</p>
+      <p><strong>Total:</strong> ${sym}${total} ${code}</p>
     `;
   }
 
@@ -88,6 +100,7 @@ export async function sendBookingConfirmation(booking: BookingWithEventType) {
   }
 
   const icsContent = generateICS(booking);
+  const tz = bookingTz(booking);
 
   try {
     await resend.emails.send({
@@ -102,8 +115,8 @@ export async function sendBookingConfirmation(booking: BookingWithEventType) {
           
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>${booking.eventType.name}</h3>
-            <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
-            <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
+            <p><strong>Date:</strong> ${fmtDate(booking.startsAt, tz)}</p>
+            <p><strong>Time:</strong> ${fmtTime(booking.startsAt, tz)} - ${fmtTime(booking.endsAt, tz)}</p>
             <p><strong>Duration:</strong> ${booking.eventType.durationMin} minutes</p>
             ${pickupLine(booking)}
             ${booking.peopleCount ? `<p><strong>Number of People:</strong> ${booking.peopleCount}</p>` : ""}
@@ -141,6 +154,8 @@ export async function sendAdminNotification(booking: BookingWithEventType) {
     return;
   }
 
+  const tz = bookingTz(booking);
+
   try {
     await resend.emails.send({
       from: "The Tripman <notifications@thetripman.com>",
@@ -156,8 +171,8 @@ export async function sendAdminNotification(booking: BookingWithEventType) {
             <p><strong>Customer:</strong> ${booking.fullName}</p>
             <p><strong>Email:</strong> ${booking.email}</p>
             <p><strong>Phone:</strong> ${booking.phone || "Not provided"}</p>
-            <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
-            <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
+            <p><strong>Date:</strong> ${fmtDate(booking.startsAt, tz)}</p>
+            <p><strong>Time:</strong> ${fmtTime(booking.startsAt, tz)} - ${fmtTime(booking.endsAt, tz)}</p>
             <p><strong>Duration:</strong> ${booking.eventType.durationMin} minutes</p>
             ${pickupLine(booking)}
             ${booking.peopleCount ? `<p><strong>Number of People:</strong> ${booking.peopleCount}</p>` : ""}
@@ -186,6 +201,8 @@ export async function sendCancellationNotification(
     return;
   }
 
+  const tz = bookingTz(booking);
+
   try {
     await resend.emails.send({
       from: "The Tripman <notifications@thetripman.com>",
@@ -199,8 +216,8 @@ export async function sendCancellationNotification(
           
           <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>${booking.eventType.name}</h3>
-            <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
-            <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
+            <p><strong>Date:</strong> ${fmtDate(booking.startsAt, tz)}</p>
+            <p><strong>Time:</strong> ${fmtTime(booking.startsAt, tz)} - ${fmtTime(booking.endsAt, tz)}</p>
           </div>
           
           <p>If you have any questions, please contact us.</p>
@@ -226,6 +243,13 @@ export async function sendPaymentConfirmation(
     return;
   }
 
+  const tz = bookingTz(booking);
+  const payCur = (
+    paymentIntent.currency ??
+    booking.currency ??
+    "cad"
+  ).toLowerCase();
+
   try {
     await resend.emails.send({
       from: "The Tripman <payments@thetripman.com>",
@@ -239,7 +263,7 @@ export async function sendPaymentConfirmation(
           
           <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>Payment Details</h3>
-            <p><strong>Amount:</strong> $${(paymentIntent.amount / 100).toFixed(2)}</p>
+            <p><strong>Amount:</strong> ${currencySymbol(payCur)}${(paymentIntent.amount / 100).toFixed(2)} ${payCur.toUpperCase()}</p>
             <p><strong>Payment Method:</strong> ${paymentIntent.payment_method_types?.[0] || "Card"}</p>
             <p><strong>Transaction ID:</strong> ${paymentIntent.id}</p>
             <p><strong>Status:</strong> ${paymentIntent.status}</p>
@@ -248,8 +272,8 @@ export async function sendPaymentConfirmation(
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>Booking Details</h3>
             <p><strong>Service:</strong> ${booking.eventType.name}</p>
-            <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
-            <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
+            <p><strong>Date:</strong> ${fmtDate(booking.startsAt, tz)}</p>
+            <p><strong>Time:</strong> ${fmtTime(booking.startsAt, tz)} - ${fmtTime(booking.endsAt, tz)}</p>
             ${pickupLine(booking)}
           </div>
           
@@ -283,6 +307,8 @@ export async function sendRideStatusUpdate(
     return;
   }
 
+  const tz = bookingTz(booking);
+
   const statusMessages = {
     ASSIGNED: "Your driver has been assigned and will contact you soon.",
     DRIVER_EN_ROUTE: "Your driver is on the way to your pickup location.",
@@ -310,8 +336,8 @@ export async function sendRideStatusUpdate(
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>Ride Details</h3>
             <p><strong>Service:</strong> ${booking.eventType.name}</p>
-            <p><strong>Date:</strong> ${fmtDate(booking.startsAt)}</p>
-            <p><strong>Time:</strong> ${fmtTime(booking.startsAt)} - ${fmtTime(booking.endsAt)}</p>
+            <p><strong>Date:</strong> ${fmtDate(booking.startsAt, tz)}</p>
+            <p><strong>Time:</strong> ${fmtTime(booking.startsAt, tz)} - ${fmtTime(booking.endsAt, tz)}</p>
             ${pickupLine(booking)}
             <p><strong>Status:</strong> ${status.replace("_", " ")}</p>
           </div>

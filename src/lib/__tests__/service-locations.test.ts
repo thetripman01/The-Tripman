@@ -4,6 +4,8 @@ import {
   formatPickupLocation,
   filterBookableLocations,
   isLocationBookableOn,
+  resolveLocationTimezone,
+  getOperatingTimezoneForDate,
 } from "../service-locations";
 import {
   businessDayStartUtc,
@@ -35,6 +37,7 @@ function loc(overrides: Partial<ServiceLocation>): ServiceLocation {
     availableUntil: null,
     isDefault: false,
     exclusive: false,
+    timezone: null,
     note: null,
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-01T00:00:00Z"),
@@ -216,6 +219,82 @@ describe("isLocationAvailableOn", () => {
         isLocationAvailableOn(montrealTour, new Date("2026-06-16T23:00:00Z")),
       ).toBe(true);
     });
+  });
+});
+
+describe("resolveLocationTimezone", () => {
+  it("auto-derives from country/city when no override is set", () => {
+    expect(resolveLocationTimezone(loc({ timezone: null }))).toBe(
+      "America/Toronto",
+    );
+    expect(
+      resolveLocationTimezone(
+        loc({ country: "Belguim", city: "Brussels", timezone: null }),
+      ),
+    ).toBe("Europe/Brussels");
+  });
+
+  it("uses an explicit valid override", () => {
+    expect(
+      resolveLocationTimezone(
+        loc({ country: "Germany", city: "Munich", timezone: "Europe/Vienna" }),
+      ),
+    ).toBe("Europe/Vienna");
+  });
+
+  it("ignores a malformed override and falls back to auto", () => {
+    expect(
+      resolveLocationTimezone(
+        loc({ country: "France", city: "Paris", timezone: "Not/AZone" }),
+      ),
+    ).toBe("Europe/Paris");
+  });
+});
+
+describe("getOperatingTimezoneForDate", () => {
+  const toronto = loc({ id: "tor", country: "Canada", city: "Toronto" });
+  const brusselsTour = loc({
+    id: "bru",
+    country: "Belguim",
+    city: "Brussels",
+    exclusive: true,
+    availableFrom: businessDayStartUtc("2026-07-13"),
+    availableUntil: businessDayEndUtc("2026-07-14"),
+  });
+
+  it("returns the tour city's timezone during its exclusive window", () => {
+    const result = getOperatingTimezoneForDate(
+      [toronto, brusselsTour],
+      sessionAnchorUtc("2026-07-13"),
+    );
+    expect(result.timezone).toBe("Europe/Brussels");
+    expect(result.location?.city).toBe("Brussels");
+  });
+
+  it("falls back to Toronto outside any exclusive tour window", () => {
+    const result = getOperatingTimezoneForDate(
+      [toronto, brusselsTour],
+      sessionAnchorUtc("2026-07-20"),
+    );
+    expect(result.timezone).toBe("America/Toronto");
+    expect(result.location).toBeNull();
+  });
+
+  it("honours an explicit timezone override on the tour city", () => {
+    const overridden = loc({
+      id: "bru",
+      country: "Belguim",
+      city: "Brussels",
+      timezone: "Europe/Amsterdam",
+      exclusive: true,
+      availableFrom: businessDayStartUtc("2026-07-13"),
+      availableUntil: businessDayEndUtc("2026-07-14"),
+    });
+    const result = getOperatingTimezoneForDate(
+      [toronto, overridden],
+      sessionAnchorUtc("2026-07-13"),
+    );
+    expect(result.timezone).toBe("Europe/Amsterdam");
   });
 });
 

@@ -29,6 +29,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { toast } from "sonner";
 import { toBusinessCalendarDay } from "@/lib/timezone";
+import { inferTimezone } from "@/lib/geo";
 
 interface EventType {
   id: string;
@@ -98,6 +99,8 @@ interface ServiceLocation {
   availableUntil: string | null;
   isDefault: boolean;
   exclusive: boolean;
+  // Explicit IANA timezone override; null => auto-derived from country/city.
+  timezone: string | null;
   note: string | null;
   createdAt: string;
   updatedAt: string;
@@ -167,6 +170,8 @@ export default function AdminPage() {
     availableUntil: "",
     isDefault: false,
     exclusive: false,
+    // Blank => auto-derive timezone from country/city (lib/geo.ts).
+    timezone: "",
     note: "",
   });
   const [savingLocation, setSavingLocation] = useState(false);
@@ -182,6 +187,7 @@ export default function AdminPage() {
     availableUntil: "",
     isDefault: false,
     exclusive: false,
+    timezone: "",
     note: "",
   });
   const [savingEditLocation, setSavingEditLocation] = useState(false);
@@ -362,6 +368,7 @@ export default function AdminPage() {
           availableUntil: locationForm.availableUntil || undefined,
           isDefault: locationForm.isDefault,
           exclusive: locationForm.exclusive,
+          timezone: locationForm.timezone.trim() || undefined,
           note: locationForm.note.trim() || undefined,
         }),
       });
@@ -385,6 +392,7 @@ export default function AdminPage() {
         availableUntil: "",
         isDefault: false,
         exclusive: false,
+        timezone: "",
         note: "",
       });
       fetchServiceLocations();
@@ -441,6 +449,7 @@ export default function AdminPage() {
         : "",
       isDefault: loc.isDefault,
       exclusive: loc.exclusive,
+      timezone: loc.timezone ?? "",
       note: loc.note ?? "",
     });
   }, []);
@@ -471,6 +480,7 @@ export default function AdminPage() {
             availableUntil: editLocationForm.availableUntil || null,
             isDefault: editLocationForm.isDefault,
             exclusive: editLocationForm.exclusive,
+            timezone: editLocationForm.timezone.trim() || null,
             note: editLocationForm.note.trim() || null,
           }),
         });
@@ -1494,6 +1504,34 @@ export default function AdminPage() {
                       placeholder="Internal note (optional)"
                     />
                   </div>
+
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Timezone (optional)
+                    </label>
+                    <Input
+                      value={locationForm.timezone}
+                      onChange={(e) =>
+                        setLocationForm((p) => ({
+                          ...p,
+                          timezone: e.target.value,
+                        }))
+                      }
+                      placeholder={`Auto: ${inferTimezone(
+                        locationForm.country,
+                        locationForm.city,
+                      )}`}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Leave blank to auto-detect from country/city (
+                      <strong>
+                        {inferTimezone(locationForm.country, locationForm.city)}
+                      </strong>
+                      ). On exclusive tour dates, the booking calendar shows
+                      slot times in this city&apos;s timezone. Override with an
+                      IANA name like <code>Europe/Brussels</code>.
+                    </p>
+                  </div>
                   {locationForm.exclusive && (
                     <p className="mt-2 text-xs text-purple-800 bg-purple-50 border border-purple-200 rounded-md p-2">
                       <strong>Tour mode:</strong> While this city&apos;s date
@@ -1563,6 +1601,14 @@ export default function AdminPage() {
                                 </div>
                                 <div className="font-semibold text-gray-900">
                                   {loc.country} — {loc.city}
+                                </div>
+                                <div className="mt-0.5 text-xs text-gray-500">
+                                  Timezone:{" "}
+                                  <span className="text-gray-700">
+                                    {loc.timezone ??
+                                      inferTimezone(loc.country, loc.city)}
+                                  </span>
+                                  {!loc.timezone && " (auto)"}
                                 </div>
                                 {(loc.availableFrom ||
                                   loc.availableUntil ||
@@ -1728,6 +1774,31 @@ export default function AdminPage() {
                                     }
                                     placeholder="Internal note (optional)"
                                   />
+                                </div>
+
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Timezone (optional)
+                                  </label>
+                                  <Input
+                                    value={editLocationForm.timezone}
+                                    onChange={(e) =>
+                                      setEditLocationForm((p) => ({
+                                        ...p,
+                                        timezone: e.target.value,
+                                      }))
+                                    }
+                                    placeholder={`Auto: ${inferTimezone(
+                                      loc.country,
+                                      loc.city,
+                                    )}`}
+                                  />
+                                  <p className="mt-1 text-xs text-gray-500">
+                                    Blank = auto (
+                                    {inferTimezone(loc.country, loc.city)}).
+                                    Override with an IANA name like{" "}
+                                    <code>Europe/Brussels</code>.
+                                  </p>
                                 </div>
                                 {editLocationForm.exclusive && (
                                   <p className="text-xs text-purple-800 bg-purple-50 border border-purple-200 rounded-md p-2">

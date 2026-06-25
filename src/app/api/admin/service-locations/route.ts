@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-session";
 import { businessDayEndUtc, businessDayStartUtc } from "@/lib/timezone";
+import { isValidTimezone } from "@/lib/geo";
 
 // Admin CRUD for ServiceLocation. Behind admin auth.
 //
@@ -32,6 +33,9 @@ const createSchema = z.object({
     .optional(),
   isDefault: z.boolean().default(false),
   exclusive: z.boolean().default(false),
+  // Optional IANA timezone override. Empty/omitted => auto-derive from
+  // country/city at runtime (see lib/geo.ts).
+  timezone: z.string().trim().max(64).optional(),
   note: z.string().trim().max(MAX_NOTE_LENGTH).optional(),
 });
 
@@ -84,6 +88,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Normalize timezone: blank => null (auto). Reject an invalid IANA zone so
+  // a typo can never break availability/slot generation later.
+  const timezone = data.timezone && data.timezone.length ? data.timezone : null;
+  if (timezone && !isValidTimezone(timezone)) {
+    return NextResponse.json(
+      {
+        error: `Invalid timezone "${timezone}". Use an IANA name like Europe/Brussels.`,
+      },
+      { status: 400 },
+    );
+  }
+
   try {
     const created = await db.$transaction(async (tx) => {
       if (data.isDefault) {
@@ -103,6 +119,7 @@ export async function POST(request: NextRequest) {
           availableUntil,
           isDefault: data.isDefault,
           exclusive: data.exclusive,
+          timezone,
           note: data.note,
         },
       });

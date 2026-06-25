@@ -57,7 +57,7 @@ interface EventType {
 
 interface BookingFormProps {
   eventType: EventType;
-  selectedSlot: { startsAt: Date; endsAt: Date };
+  selectedSlot: { startsAt: Date; endsAt: Date; timezone?: string };
   onBookingComplete: (data: Record<string, string | number | boolean>) => void;
 }
 
@@ -239,7 +239,10 @@ export function BookingForm({
         eventTypeId: eventType.id,
         startsAt: selectedSlot.startsAt.toISOString(),
         endsAt: selectedSlot.endsAt.toISOString(),
-        timezone,
+        // Prefer the operating timezone the slot was shown in (tour city or
+        // Toronto) so confirmation emails / calendar invites reflect the time
+        // the customer actually saw. Fall back to the browser's timezone.
+        timezone: selectedSlot.timezone || timezone,
       };
 
       const response = await fetch("/api/booking", {

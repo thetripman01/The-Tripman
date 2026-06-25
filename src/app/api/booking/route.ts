@@ -3,7 +3,10 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { sendAdminNotification, sendBookingConfirmation } from "@/lib/email";
 import { checkForFraud, logFraudAttempt } from "@/lib/fraud-detection";
-import { getTripmanPriceForPeople } from "@/lib/tripman-packages";
+import {
+  getTripmanPriceForPeople,
+  getTripmanQuoteForBooking,
+} from "@/lib/tripman-packages";
 import { isLocationBookableOn } from "@/lib/service-locations";
 import { findConflictingBooking } from "@/lib/booking-conflicts";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
@@ -213,11 +216,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Quote drives the amount/currency we echo back (USA → USD, European
+    // tour → EUR, else CAD). Display-only — the authoritative charge is
+    // recomputed server-side in /api/payment/create-intent.
+    const responseQuote = getTripmanQuoteForBooking(
+      eventType.slug,
+      peopleCountNum,
+      validatedData.pickupCountry,
+    );
+
     return NextResponse.json({
       id: booking.id,
       requiresPayment,
-      amountCents: fixedPriceCents,
-      currency: "cad",
+      amountCents: responseQuote ? responseQuote.totalCents : fixedPriceCents,
+      currency: responseQuote ? responseQuote.currency : "cad",
       message: requiresPayment
         ? "Booking created. Payment required to confirm."
         : "Booking created successfully",

@@ -25,7 +25,7 @@ export function Hero() {
           so the browser downloads the optimized file only once. */}
       <div className="relative w-full lg:w-1/2 aspect-square lg:aspect-auto lg:min-h-0 shrink-0 overflow-hidden">
         <Image
-          src="/tripman-tour-poster.jpg"
+          src="/tripman-europe-tour.jpg"
           alt=""
           aria-hidden
           fill
@@ -35,8 +35,8 @@ export function Hero() {
           quality={90}
         />
         <Image
-          src="/tripman-tour-poster.jpg"
-          alt="The Tripman comes to your city — tour dates and booking at trvoo.com"
+          src="/tripman-europe-tour.jpg"
+          alt="The Tripman Europe Tour — Brussels, Strasbourg, Zürich, Milano, Munich, Prague, Berlin, Cologne & Amsterdam. Tour dates and booking at trvoo.com"
           fill
           className="object-contain object-center"
           priority
@@ -142,16 +142,6 @@ export function Hero() {
               <div className="font-semibold text-gray-900">Hop in & vibe</div>
             </li>
           </ol>
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div
-        className="absolute bottom-6 left-1/2 transform -translate-x-1/2 animate-bounce hidden md:block"
-        aria-hidden
-      >
-        <div className="w-5 h-8 border-2 border-cyan-300 rounded-full flex justify-center">
-          <div className="w-1 h-2 bg-cyan-500 rounded-full mt-1.5 animate-pulse" />
         </div>
       </div>
     </section>

@@ -35,20 +35,16 @@ export function Header() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-        isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg" : "bg-transparent"
+        isScrolled
+          ? "bg-white/95 backdrop-blur-md shadow-lg"
+          : "bg-white/80 backdrop-blur-md"
       }`}
     >
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden ${
-                isScrolled
-                  ? "bg-cyan-600 shadow-lg"
-                  : "bg-white/10 backdrop-blur-sm border border-white/20"
-              }`}
-            >
+            <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-cyan-600 shadow-lg">
               <Image
                 src="/tripman-main.jpg"
                 alt="The Tripman"
@@ -57,9 +53,7 @@ export function Header() {
                 className="w-full h-full object-cover rounded-full"
               />
             </div>
-            <span
-              className={`text-lg md:text-xl font-bold transition-colors duration-300 ${isScrolled ? "text-gray-900" : "text-white"}`}
-            >
+            <span className="text-lg md:text-xl font-bold text-gray-900">
               The Tripman
             </span>
           </div>
@@ -68,51 +62,31 @@ export function Header() {
           <nav className="hidden md:flex items-center space-x-8">
             <button
               onClick={() => scrollToSection("about")}
-              className={`font-medium transition-colors duration-200 ${
-                isScrolled
-                  ? "text-gray-700 hover:text-cyan-600"
-                  : "text-white/90 hover:text-white"
-              }`}
+              className="font-medium text-gray-700 hover:text-cyan-600 transition-colors duration-200"
             >
               About
             </button>
             <button
               onClick={() => scrollToSection("become-passenger")}
-              className={`font-medium transition-colors duration-200 ${
-                isScrolled
-                  ? "text-gray-700 hover:text-cyan-600"
-                  : "text-white/90 hover:text-white"
-              }`}
+              className="font-medium text-gray-700 hover:text-cyan-600 transition-colors duration-200"
             >
               Become a Passenger
             </button>
             <button
               onClick={() => scrollToSection("faq")}
-              className={`font-medium transition-colors duration-200 ${
-                isScrolled
-                  ? "text-gray-700 hover:text-cyan-600"
-                  : "text-white/90 hover:text-white"
-              }`}
+              className="font-medium text-gray-700 hover:text-cyan-600 transition-colors duration-200"
             >
               FAQ
             </button>
             <button
               onClick={() => scrollToSection("contact")}
-              className={`font-medium transition-colors duration-200 ${
-                isScrolled
-                  ? "text-gray-700 hover:text-cyan-600"
-                  : "text-white/90 hover:text-white"
-              }`}
+              className="font-medium text-gray-700 hover:text-cyan-600 transition-colors duration-200"
             >
               Contact
             </button>
             <Button
               onClick={scrollToPackages}
-              className={`${
-                isScrolled
-                  ? "bg-cyan-600 text-white hover:bg-cyan-700 shadow-lg rounded-xl"
-                  : "bg-white text-cyan-700 hover:bg-cyan-50 shadow-lg rounded-xl"
-              } font-semibold transition-all duration-300 hover:scale-[1.02]`}
+              className="bg-cyan-600 text-white hover:bg-cyan-700 shadow-lg rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02]"
             >
               Book Now
             </Button>
@@ -121,9 +95,7 @@ export function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`md:hidden p-2 rounded-lg ${
-              isScrolled ? "text-gray-700" : "text-white"
-            }`}
+            className="md:hidden p-2 rounded-lg text-gray-700"
           >
             {isMenuOpen ? (
               <X className="w-6 h-6" />

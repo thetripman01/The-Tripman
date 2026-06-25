@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-session";
 import { businessDayEndUtc, businessDayStartUtc } from "@/lib/timezone";
+import { isValidTimezone } from "@/lib/geo";
 
 // PATCH / DELETE /api/admin/service-locations/[id]
 
@@ -23,6 +24,9 @@ const patchSchema = z
       .optional(),
     isDefault: z.boolean().optional(),
     exclusive: z.boolean().optional(),
+    // null or "" clears the override (back to auto). A non-empty string sets
+    // an explicit IANA timezone (validated below).
+    timezone: z.union([z.string().trim().max(64), z.null()]).optional(),
     note: z
       .union([z.string().trim().max(MAX_NOTE_LENGTH), z.null()])
       .optional(),
@@ -73,6 +77,20 @@ export async function PATCH(
   if (data.isDefault !== undefined) updateData.isDefault = data.isDefault;
   if (data.exclusive !== undefined) updateData.exclusive = data.exclusive;
   if (data.note !== undefined) updateData.note = data.note;
+
+  if (data.timezone !== undefined) {
+    // Blank/null => clear override (auto). Otherwise must be a valid IANA zone.
+    const tz = data.timezone && data.timezone.length ? data.timezone : null;
+    if (tz && !isValidTimezone(tz)) {
+      return NextResponse.json(
+        {
+          error: `Invalid timezone "${tz}". Use an IANA name like Europe/Brussels.`,
+        },
+        { status: 400 },
+      );
+    }
+    updateData.timezone = tz;
+  }
 
   if (data.availableFrom !== undefined) {
     updateData.availableFrom = data.availableFrom

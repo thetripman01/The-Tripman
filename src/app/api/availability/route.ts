@@ -7,6 +7,8 @@ import {
   getPendingHoldMinutes,
   getSlotIntervalMinutes,
 } from "@/lib/booking-conflicts";
+import { getOperatingTimezoneForDate } from "@/lib/service-locations";
+import { sessionAnchorUtc } from "@/lib/timezone";
 
 type Interval = { start: Date; end: Date };
 
@@ -171,8 +173,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse date and create time range
-    const timeZone = process.env.BUSINESS_TIMEZONE || "America/Toronto";
     const dateYmd = date; // request is YYYY-MM-DD
+
+    // Determine the OPERATING timezone for this calendar day. During an
+    // exclusive tour window (e.g. the Europe tour) the day's slots are
+    // generated and displayed in the tour city's timezone; on a normal day
+    // we stay on the home base (America/Toronto). We anchor the lookup at
+    // the session anchor (8pm business-TZ) — the same anchor the public
+    // /api/service-locations endpoint uses — so tour-day detection lines up
+    // exactly with which city the booking form will offer.
+    const activeLocations = await db.serviceLocation.findMany({
+      where: { isActive: true },
+    });
+    const operating = getOperatingTimezoneForDate(
+      activeLocations,
+      sessionAnchorUtc(dateYmd),
+    );
+    const timeZone = operating.timezone;
     const startOfDay = startOfDayUtc(dateYmd, timeZone);
     // window end: we may need into next day for overnight schedules
     const endOfWindow = endOfDayUtc(addDaysYmd(dateYmd, 1), timeZone);
@@ -353,7 +370,24 @@ export async function GET(request: NextRequest) {
       datetime: slot.toISOString(),
     }));
 
-    return NextResponse.json(formattedSlots);
+    // Friendly label for the calendar's timezone notice, e.g.
+    // "Brussels — Belguim (GMT+2)" on tour days, "Toronto / GTA — Canada (EDT)"
+    // otherwise. The abbreviation is computed for the requested day so it
+    // reflects the correct DST offset.
+    const tzAbbrev = formatInTimeZone(
+      sessionAnchorUtc(dateYmd),
+      timeZone,
+      "zzz",
+    );
+    const timezoneLabel = operating.location
+      ? `${operating.location.city} — ${operating.location.country} (${tzAbbrev})`
+      : `Toronto / GTA — Canada (${tzAbbrev})`;
+
+    return NextResponse.json({
+      timezone: timeZone,
+      timezoneLabel,
+      slots: formattedSlots,
+    });
   } catch (error) {
     console.error("Error checking availability:", error);
     return NextResponse.json(

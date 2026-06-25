@@ -1,5 +1,10 @@
 import type { ServiceLocation } from "@prisma/client";
-import { toBusinessCalendarDay, toBusinessSessionDay } from "./timezone";
+import {
+  BUSINESS_TIMEZONE,
+  toBusinessCalendarDay,
+  toBusinessSessionDay,
+} from "./timezone";
+import { inferTimezone, isValidTimezone } from "./geo";
 
 /**
  * Determines whether a given ServiceLocation is bookable for a specific
@@ -129,6 +134,51 @@ export function isLocationBookableOn(
       loc.country.trim().toLowerCase() === normalizedCountry &&
       loc.city.trim().toLowerCase() === normalizedCity,
   );
+}
+
+/**
+ * Resolve the operating IANA timezone for a single location. Uses the
+ * admin-set `timezone` column when present, otherwise auto-derives it from
+ * country/city (see lib/geo.ts). NULL/blank → auto, so legacy rows and GTA
+ * cities resolve to America/Toronto without any backfill.
+ */
+export function resolveLocationTimezone(
+  location: Pick<ServiceLocation, "timezone" | "country" | "city">,
+): string {
+  const explicit = location.timezone?.trim();
+  // Guard against a malformed stored value reaching date formatting.
+  if (explicit && isValidTimezone(explicit)) return explicit;
+  return inferTimezone(location.country, location.city);
+}
+
+/**
+ * Determine the OPERATING timezone for a given booking date.
+ *
+ * When an exclusive (tour-takeover) city is active on that date, the whole
+ * day's availability is computed and displayed in THAT city's timezone —
+ * this is what fixes the "Europe tour still shows Toronto time" bug. On a
+ * normal day (no exclusive tour) we stay on the home base, America/Toronto.
+ *
+ * Returns the timezone plus the location that drove the choice (null for
+ * the home base) so callers can build a friendly label like "Brussels — Belgium".
+ *
+ * Note: tour windows are sequential, so at most one exclusive city is
+ * active on any given date. If several ever overlap, the first bookable
+ * exclusive wins (they'd share a region/timezone in practice).
+ */
+export function getOperatingTimezoneForDate(
+  allLocations: ServiceLocation[],
+  bookingDate: Date,
+): { timezone: string; location: ServiceLocation | null } {
+  const bookable = filterBookableLocations(allLocations, bookingDate);
+  const exclusive = bookable.find((loc) => loc.exclusive);
+  if (exclusive) {
+    return {
+      timezone: resolveLocationTimezone(exclusive),
+      location: exclusive,
+    };
+  }
+  return { timezone: BUSINESS_TIMEZONE, location: null };
 }
 
 /**

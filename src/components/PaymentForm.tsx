@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CreditCard } from "lucide-react";
 import { trackPixel } from "@/lib/meta-pixel";
+import { currencySymbol, type SupportedCurrency } from "@/lib/tripman-packages";
 
 // Lazy-init Stripe so a missing publishable key doesn't crash module load.
 let stripePromiseCache: Promise<Stripe | null> | null = null;
@@ -28,7 +29,7 @@ interface PaymentFormProps {
   // Displayed amount + currency for the Pay button. These are SERVER-AUTHORITATIVE
   // upstream (Stripe re-validates), here they only affect what the user sees.
   amount: number;
-  currency: "cad" | "usd";
+  currency: SupportedCurrency;
   onPaymentSuccess: (paymentIntentId: string) => void;
   onPaymentError: (error: string) => void;
 }
@@ -117,8 +118,13 @@ function PaymentFormContent({
         ) : (
           <>
             <CreditCard className="w-4 h-4 mr-2" />
-            Pay ${(amount / 100).toFixed(2)} {currency.toUpperCase()}
-            {currency === "cad" ? " (incl. 13% HST)" : " (incl. 13% tax)"}
+            Pay {currencySymbol(currency)}
+            {(amount / 100).toFixed(2)} {currency.toUpperCase()}
+            {currency === "cad"
+              ? " (incl. 13% HST)"
+              : currency === "eur"
+                ? " (incl. 13% VAT)"
+                : " (incl. 13% tax)"}
           </>
         )}
       </Button>

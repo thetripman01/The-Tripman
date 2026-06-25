@@ -26,6 +26,8 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
   const [selectedSlot, setSelectedSlot] = useState<{
     startsAt: Date;
     endsAt: Date;
+    // Operating timezone the slot was shown in (tour city or Toronto).
+    timezone: string;
   } | null>(null);
   const [bookingComplete, setBookingComplete] = useState(false);
   const [awaitingPayment, setAwaitingPayment] = useState(false);

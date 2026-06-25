@@ -96,6 +96,14 @@ model ServiceLocation {
   // window Jul 18–21 hides every GTA city on those dates without manually
   // disabling them. Multiple exclusive rows can coexist (e.g. NY + NJ).
   exclusive      Boolean   @default(false)
+  // Operating IANA timezone for this city (e.g. "Europe/Brussels"). When
+  // NULL the timezone is auto-derived from country/city at runtime (see
+  // lib/geo.ts inferTimezone) — so legacy rows and GTA cities "just work"
+  // without a backfill. Admin can set an explicit value here to override
+  // the auto-derived one. The booking/availability flow uses the timezone
+  // of the active exclusive (tour) city for a given date; on normal days it
+  // stays America/Toronto.
+  timezone       String?
   // Internal admin note (e.g. "Tour window – Bekir announced 2026-05-31").
   note           String?
   createdAt      DateTime  @default(now())

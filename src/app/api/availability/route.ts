@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getFreeBusyTimes, getWorkingHours } from "@/lib/calendar";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import {
+  classifySlotStatus,
   getCooldownMinutes,
   getPendingHoldMinutes,
   getSlotIntervalMinutes,
@@ -298,77 +299,54 @@ export async function GET(request: NextRequest) {
       slotIntervalMinutes,
     );
 
-    // Filter out unavailable slots
-    const availableSlots = allSlots.filter((slot) => {
-      const slotEnd = new Date(slot.getTime() + eventType.durationMin * 60000);
+    // Classify every candidate slot so the calendar can SHOW booked / on-hold
+    // times (greyed, non-selectable) for transparency, instead of silently
+    // hiding them. The "available" set is identical to the old filter — only
+    // the relabelled (formerly hidden) slots are newly surfaced.
+    const now = new Date();
+    const minNoticeMs =
+      parseInt(process.env.BOOKING_MIN_NOTICE_HOURS || "24", 10) * 3_600_000;
+    const cooldownMs = travelBufferMinutes * 60_000;
 
-      // Check if slot is in the past
-      if (slot < new Date()) {
-        return false;
-      }
-
-      // Check minimum notice hours
-      const minNoticeHours = parseInt(
-        process.env.BOOKING_MIN_NOTICE_HOURS || "24",
-      );
-      const minNoticeTime = new Date();
-      minNoticeTime.setHours(minNoticeTime.getHours() + minNoticeHours);
-      if (slot < minNoticeTime) {
-        return false;
-      }
-
-      // Check Google Calendar conflicts
-      const hasGoogleConflict = busyTimes.some((busy) => {
-        const busyStart = new Date(
-          busy.start.getTime() - travelBufferMinutes * 60000,
-        );
-        const busyEnd = new Date(
-          busy.end.getTime() + travelBufferMinutes * 60000,
-        );
-        return slot < busyEnd && slotEnd > busyStart;
-      });
-
-      if (hasGoogleConflict) {
-        return false;
-      }
-
-      // Check existing booking conflicts
-      const hasBookingConflict = existingBookings.some(
-        (booking: { startsAt: Date | string; endsAt: Date | string }) => {
-          const bookingStart = new Date(
-            new Date(booking.startsAt).getTime() - travelBufferMinutes * 60000,
-          );
-          const bookingEnd = new Date(
-            new Date(booking.endsAt).getTime() + travelBufferMinutes * 60000,
-          );
-          return slot < bookingEnd && slotEnd > bookingStart;
-        },
-      );
-
-      if (hasBookingConflict) {
-        return false;
-      }
-
-      // Check admin availability blocks
-      const hasBlockConflict = blocks.some((b) => {
-        const bStart = new Date(b.startsAt);
-        const bEnd = new Date(b.endsAt);
-        return slot < bEnd && slotEnd > bStart;
-      });
-
-      if (hasBlockConflict) {
-        return false;
-      }
-
-      return true;
-    });
-
-    // Format slots for response
-    const formattedSlots = availableSlots.map((slot) => ({
-      // For debugging/UI convenience only; datetime is the true source of truth.
-      time: formatInTimeZone(slot, timeZone, "HH:mm"),
-      datetime: slot.toISOString(),
+    const confirmedIntervals = existingBookings
+      .filter((b) => b.status === "CONFIRMED")
+      .map((b) => ({ start: new Date(b.startsAt), end: new Date(b.endsAt) }));
+    const pendingIntervals = existingBookings
+      .filter((b) => b.status === "PENDING")
+      .map((b) => ({ start: new Date(b.startsAt), end: new Date(b.endsAt) }));
+    const blockIntervals = blocks.map((b) => ({
+      start: new Date(b.startsAt),
+      end: new Date(b.endsAt),
     }));
+    const busyIntervals = busyTimes.map((b) => ({
+      start: new Date(b.start),
+      end: new Date(b.end),
+    }));
+
+    // Format slots for response (skipping past / min-notice slots → null).
+    const formattedSlots = allSlots.flatMap((slot) => {
+      const slotEnd = new Date(slot.getTime() + eventType.durationMin * 60000);
+      const status = classifySlotStatus({
+        slotStart: slot,
+        slotEnd,
+        now,
+        minNoticeMs,
+        cooldownMs,
+        confirmed: confirmedIntervals,
+        pending: pendingIntervals,
+        blocks: blockIntervals,
+        busy: busyIntervals,
+      });
+      if (!status) return [];
+      return [
+        {
+          // datetime is the true source of truth; time is for display.
+          time: formatInTimeZone(slot, timeZone, "HH:mm"),
+          datetime: slot.toISOString(),
+          status,
+        },
+      ];
+    });
 
     // Friendly label for the calendar's timezone notice, e.g.
     // "Brussels — Belguim (GMT+2)" on tour days, "Toronto / GTA — Canada (EDT)"
@@ -386,6 +364,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       timezone: timeZone,
       timezoneLabel,
+      // Surfaced so the UI can explain the gap it keeps between rides.
+      cooldownMinutes: travelBufferMinutes,
       slots: formattedSlots,
     });
   } catch (error) {

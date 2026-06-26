@@ -54,13 +54,64 @@ const TOUR_COLORS = [
   { bg: "#fde047", border: "#eab308", dot: "#eab308", text: "#713f12" }, // yellow
 ];
 
+type SlotStatus = "available" | "booked" | "pending" | "unavailable";
+
+interface Slot {
+  time: string;
+  datetime: string;
+  status: SlotStatus;
+}
+
+// Visual treatment for the non-bookable (informational) slot states. Shown
+// greyed so customers can SEE why a time is closed instead of it vanishing.
+const STATUS_STYLES: Record<
+  Exclude<SlotStatus, "available">,
+  { wrap: string; text: string; badge: string; label: string; title: string }
+> = {
+  booked: {
+    wrap: "border-rose-200 bg-rose-50",
+    text: "text-rose-400",
+    badge: "bg-rose-100 text-rose-700",
+    label: "Booked",
+    title: "This time is already booked.",
+  },
+  pending: {
+    wrap: "border-amber-200 bg-amber-50",
+    text: "text-amber-500",
+    badge: "bg-amber-100 text-amber-700",
+    label: "On hold",
+    title:
+      "Someone is completing payment for this time. It may free up shortly.",
+  },
+  unavailable: {
+    wrap: "border-gray-200 bg-gray-50",
+    text: "text-gray-400",
+    badge: "bg-gray-100 text-gray-500",
+    label: "Unavailable",
+    title: "Not available for booking.",
+  },
+};
+
+/**
+ * Format a Date as YYYY-MM-DD from its LOCAL calendar components. Never use
+ * `toISOString()` for a calendar day — that's UTC and rolls the day BACK for
+ * users east of UTC (a customer in Amsterdam, UTC+2, picking Aug 2 at local
+ * midnight becomes Aug 1 in UTC). The booking calendar uses FullCalendar's
+ * own TZ-safe `arg.dateStr` for clicks; this helper covers the few places we
+ * still derive a day from a Date object.
+ */
+function localYmd(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 export function BookingCalendar({
   eventType,
   onSlotSelect,
 }: BookingCalendarProps) {
-  const [availableSlots, setAvailableSlots] = useState<
-    Array<{ time: string; datetime: string }>
-  >([]);
+  const [slots, setSlots] = useState<Slot[]>([]);
+  // Cooldown gap (minutes) the server keeps between rides — shown as a note.
+  const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDatetime, setSelectedDatetime] = useState<string | null>(null);
@@ -187,22 +238,30 @@ export function BookingCalendar({
     }
   }, [selectedDate]);
 
-  const fetchAvailableSlots = async (date: Date) => {
+  const fetchAvailableSlots = async (dateStr: string) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/availability?date=${date.toISOString().split("T")[0]}&eventType=${eventType.slug}`,
+        `/api/availability?date=${dateStr}&eventType=${eventType.slug}`,
       );
       if (response.ok) {
         const data = await response.json();
-        // New response shape: { timezone, timezoneLabel, slots }. Tolerate the
-        // legacy bare-array shape (e.g. a stale edge cache right after deploy).
+        // Response shape: { timezone, timezoneLabel, cooldownMinutes, slots }.
+        // Tolerate a legacy bare-array shape (stale edge cache after deploy) by
+        // treating every entry as available.
         if (Array.isArray(data)) {
-          setAvailableSlots(data);
+          setSlots(
+            data.map((s: { time: string; datetime: string }) => ({
+              ...s,
+              status: "available" as const,
+            })),
+          );
         } else {
-          setAvailableSlots(data.slots ?? []);
+          setSlots(data.slots ?? []);
           if (data.timezone) setTimeZone(data.timezone);
           if (data.timezoneLabel) setTzLabel(data.timezoneLabel);
+          if (typeof data.cooldownMinutes === "number")
+            setCooldownMinutes(data.cooldownMinutes);
         }
       }
     } catch (error) {
@@ -212,10 +271,14 @@ export function BookingCalendar({
     }
   };
 
-  const handleDatePick = (date: Date) => {
-    setSelectedDate(date);
+  const handleDatePick = (dateStr: string) => {
+    // dateStr is FullCalendar's timezone-safe "YYYY-MM-DD" (arg.dateStr).
+    // Build the display Date at LOCAL noon — never UTC midnight, which rolls
+    // the day back for users east of UTC (the bug where a customer in
+    // Amsterdam picking Aug 2 was sent to Aug 1 / the wrong tour city).
+    setSelectedDate(new Date(`${dateStr}T12:00:00`));
     setSelectedDatetime(null);
-    fetchAvailableSlots(date);
+    fetchAvailableSlots(dateStr);
     // Scroll to times section after a short delay (for layout to update)
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -308,7 +371,7 @@ export function BookingCalendar({
                 plugins={[dayGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
                 selectable={false}
-                dateClick={(arg) => handleDatePick(new Date(arg.date))}
+                dateClick={(arg) => handleDatePick(arg.dateStr)}
                 headerToolbar={{
                   left: "",
                   center: "title",
@@ -319,7 +382,7 @@ export function BookingCalendar({
                 showNonCurrentDates={false}
                 dayMaxEvents={true}
                 selectConstraint={{
-                  start: new Date().toISOString().split("T")[0],
+                  start: localYmd(new Date()),
                 }}
                 // datesSet fires whenever the visible range changes (month
                 // nav, initial mount, view changes). We use it as a signal
@@ -421,32 +484,96 @@ export function BookingCalendar({
                   {selectedDateLabel}
                 </div>
                 <div className="max-h-[420px] overflow-y-auto pr-1 space-y-2">
-                  {availableSlots.map((slot) => {
-                    const isSelected = selectedDatetime === slot.datetime;
+                  {slots.map((slot) => {
+                    if (slot.status === "available") {
+                      const isSelected = selectedDatetime === slot.datetime;
+                      return (
+                        <button
+                          key={slot.datetime}
+                          type="button"
+                          onClick={() => handleDatetimeSelect(slot.datetime)}
+                          className={`w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 ${
+                            isSelected
+                              ? "border-cyan-600 bg-cyan-50 shadow-md ring-2 ring-cyan-200"
+                              : "border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/50"
+                          }`}
+                        >
+                          <div className="font-semibold text-gray-900">
+                            {formatRange(slot.datetime)}
+                          </div>
+                        </button>
+                      );
+                    }
+                    // Booked / on-hold / unavailable: shown for transparency but
+                    // not selectable.
+                    const s = STATUS_STYLES[slot.status];
                     return (
-                      <button
+                      <div
                         key={slot.datetime}
-                        type="button"
-                        onClick={() => handleDatetimeSelect(slot.datetime)}
-                        className={`w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 ${
-                          isSelected
-                            ? "border-cyan-600 bg-cyan-50 shadow-md ring-2 ring-cyan-200"
-                            : "border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/50"
-                        }`}
+                        aria-disabled="true"
+                        title={s.title}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border cursor-not-allowed select-none ${s.wrap}`}
                       >
-                        <div className="font-semibold text-gray-900">
+                        <span className={`font-medium ${s.text}`}>
                           {formatRange(slot.datetime)}
-                        </div>
-                      </button>
+                        </span>
+                        <span
+                          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.badge}`}
+                        >
+                          {s.label}
+                        </span>
+                      </div>
                     );
                   })}
 
-                  {availableSlots.length === 0 && (
+                  {slots.length === 0 && (
                     <div className="text-sm text-gray-500 rounded-xl border border-dashed p-6 text-center">
-                      No available times for this date.
+                      No times available for this date.
                     </div>
                   )}
+                  {slots.length > 0 &&
+                    !slots.some((s) => s.status === "available") && (
+                      <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
+                        Every time is taken for this date — please try another
+                        day.
+                      </div>
+                    )}
                 </div>
+
+                {/* Legend: explains the greyed, non-selectable states so
+                    customers know WHY a time is closed. */}
+                {slots.length > 0 && (
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
+                      Available
+                    </span>
+                    {slots.some((s) => s.status === "booked") && (
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
+                        Booked
+                      </span>
+                    )}
+                    {slots.some((s) => s.status === "pending") && (
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                        On hold
+                      </span>
+                    )}
+                    {slots.some((s) => s.status === "unavailable") && (
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
+                        Unavailable
+                      </span>
+                    )}
+                    {cooldownMinutes > 0 && (
+                      <span className="w-full text-gray-400">
+                        We keep a {cooldownMinutes}-minute gap between rides so
+                        every guest gets the full experience.
+                      </span>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>

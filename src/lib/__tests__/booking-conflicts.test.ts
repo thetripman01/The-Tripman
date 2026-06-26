@@ -3,6 +3,8 @@ import {
   getSlotIntervalMinutes,
   getPendingHoldMinutes,
   findConflictingBooking,
+  classifySlotStatus,
+  type TimeInterval,
 } from "../booking-conflicts";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
@@ -71,6 +73,133 @@ describe("getPendingHoldMinutes", () => {
   it("defaults to 15", () => {
     delete process.env.PAYMENT_HOLD_MINUTES;
     expect(getPendingHoldMinutes()).toBe(15);
+  });
+});
+
+describe("classifySlotStatus", () => {
+  const now = new Date("2026-08-01T00:00:00Z");
+  const HOUR = 60 * 60_000;
+  // Reproduces the real Aug 2 case: a CONFIRMED Amsterdam booking
+  // 17:00–18:00 UTC (19:00–20:00 CEST) with a 30-minute cooldown.
+  const base = {
+    now,
+    minNoticeMs: 0,
+    cooldownMs: 30 * 60_000,
+    confirmed: [] as TimeInterval[],
+    pending: [] as TimeInterval[],
+    blocks: [] as TimeInterval[],
+    busy: [] as TimeInterval[],
+  };
+  const slot = (startISO: string) => ({
+    slotStart: new Date(startISO),
+    slotEnd: new Date(new Date(startISO).getTime() + HOUR),
+  });
+  const confirmed = [
+    {
+      start: new Date("2026-08-02T17:00:00Z"),
+      end: new Date("2026-08-02T18:00:00Z"),
+    },
+  ];
+
+  it("hides past slots (returns null)", () => {
+    expect(
+      classifySlotStatus({ ...base, ...slot("2026-07-31T20:00:00Z") }),
+    ).toBeNull();
+  });
+
+  it("hides slots inside the minimum-notice window", () => {
+    expect(
+      classifySlotStatus({
+        ...base,
+        minNoticeMs: 24 * HOUR,
+        ...slot("2026-08-01T12:00:00Z"), // 12h away < 24h notice
+      }),
+    ).toBeNull();
+  });
+
+  it("labels a slot overlapping a CONFIRMED booking as booked", () => {
+    expect(
+      classifySlotStatus({
+        ...base,
+        confirmed,
+        ...slot("2026-08-02T17:00:00Z"),
+      }),
+    ).toBe("booked");
+    expect(
+      classifySlotStatus({
+        ...base,
+        confirmed,
+        ...slot("2026-08-02T17:30:00Z"),
+      }),
+    ).toBe("booked");
+  });
+
+  it("labels a slot overlapping a recent PENDING booking as pending", () => {
+    const pending = [
+      {
+        start: new Date("2026-08-02T20:00:00Z"),
+        end: new Date("2026-08-02T21:00:00Z"),
+      },
+    ];
+    expect(
+      classifySlotStatus({ ...base, pending, ...slot("2026-08-02T20:00:00Z") }),
+    ).toBe("pending");
+  });
+
+  it("labels a slot inside the cooldown buffer (not overlapping) as unavailable", () => {
+    // Booking ends 18:00; with 30m cooldown the 18:00 slot is buffered.
+    expect(
+      classifySlotStatus({
+        ...base,
+        confirmed,
+        ...slot("2026-08-02T18:00:00Z"),
+      }),
+    ).toBe("unavailable");
+  });
+
+  it("opens the slot exactly one cooldown after the booking ends", () => {
+    // 18:30 UTC = 20:30 CEST — the first bookable time on Aug 2, matching prod.
+    expect(
+      classifySlotStatus({
+        ...base,
+        confirmed,
+        ...slot("2026-08-02T18:30:00Z"),
+      }),
+    ).toBe("available");
+  });
+
+  it("labels admin blocks as unavailable", () => {
+    const blocks = [
+      {
+        start: new Date("2026-08-02T10:00:00Z"),
+        end: new Date("2026-08-02T11:00:00Z"),
+      },
+    ];
+    expect(
+      classifySlotStatus({ ...base, blocks, ...slot("2026-08-02T10:00:00Z") }),
+    ).toBe("unavailable");
+  });
+
+  it("returns available for a clear future slot", () => {
+    expect(
+      classifySlotStatus({
+        ...base,
+        confirmed,
+        ...slot("2026-08-02T22:00:00Z"),
+      }),
+    ).toBe("available");
+  });
+
+  it("prefers the 'booked' label over the cooldown buffer", () => {
+    // Direct overlap with a confirmed booking that is ALSO inside cooldown
+    // range still reads as 'booked', never 'unavailable'.
+    expect(
+      classifySlotStatus({
+        ...base,
+        confirmed,
+        ...slot("2026-08-02T17:15:00Z"),
+      }),
+    ).toBe("booked");
   });
 });
 

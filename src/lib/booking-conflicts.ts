@@ -39,6 +39,95 @@ interface ConflictCheckOptions {
 }
 
 /**
+ * Display status for a single time slot in the public calendar.
+ *   - available   : bookable now
+ *   - booked      : directly overlaps a CONFIRMED booking
+ *   - pending     : directly overlaps a held (recent) PENDING booking
+ *   - unavailable : admin block / external busy time, or sits inside the
+ *                   cooldown buffer around another booking
+ */
+export type SlotStatus = "available" | "booked" | "pending" | "unavailable";
+
+export interface TimeInterval {
+  start: Date;
+  end: Date;
+}
+
+function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
+  return aStart.getTime() < bEnd.getTime() && aEnd.getTime() > bStart.getTime();
+}
+
+/**
+ * Classify a slot for display. Returns `null` for slots that should NOT be
+ * shown at all (in the past, or inside the minimum-notice window) — there's
+ * nothing useful about showing a time nobody could ever pick.
+ *
+ * IMPORTANT: the "available" result is byte-for-byte the same set the old
+ * boolean filter produced — a slot is available iff it doesn't collide
+ * (cooldown-extended) with any booking or busy time and isn't inside an admin
+ * block. The new "booked"/"pending"/"unavailable" labels only RELABEL slots
+ * that were already being hidden, so making them visible can't accidentally
+ * let someone book a taken slot. (The booking POST re-validates regardless.)
+ */
+export function classifySlotStatus(params: {
+  slotStart: Date;
+  slotEnd: Date;
+  now: Date;
+  minNoticeMs: number;
+  cooldownMs: number;
+  confirmed: TimeInterval[];
+  pending: TimeInterval[];
+  blocks: TimeInterval[];
+  busy: TimeInterval[];
+}): SlotStatus | null {
+  const {
+    slotStart,
+    slotEnd,
+    now,
+    minNoticeMs,
+    cooldownMs,
+    confirmed,
+    pending,
+    blocks,
+    busy,
+  } = params;
+
+  // Hidden entirely: already in the past, or sooner than the booking
+  // minimum-notice window allows.
+  if (slotStart.getTime() < now.getTime()) return null;
+  if (slotStart.getTime() < now.getTime() + minNoticeMs) return null;
+
+  // Direct overlaps (no cooldown) get an informative label.
+  if (confirmed.some((b) => overlaps(slotStart, slotEnd, b.start, b.end))) {
+    return "booked";
+  }
+  if (pending.some((b) => overlaps(slotStart, slotEnd, b.start, b.end))) {
+    return "pending";
+  }
+  // Admin blocks are deliberate closures (vacation, private events).
+  if (blocks.some((b) => overlaps(slotStart, slotEnd, b.start, b.end))) {
+    return "unavailable";
+  }
+
+  // Inside the cooldown buffer around a booking, or overlapping an external
+  // (Google) busy time → not bookable, but not "booked" either.
+  const cooldownHit = (list: TimeInterval[]) =>
+    list.some((b) =>
+      overlaps(
+        slotStart,
+        slotEnd,
+        new Date(b.start.getTime() - cooldownMs),
+        new Date(b.end.getTime() + cooldownMs),
+      ),
+    );
+  if (cooldownHit(confirmed) || cooldownHit(pending) || cooldownHit(busy)) {
+    return "unavailable";
+  }
+
+  return "available";
+}
+
+/**
  * Returns the first existing booking that conflicts with the proposed
  * [newStartsAt, newEndsAt] window, considering the cooldown buffer that
  * must separate any two bookings.

@@ -44,6 +44,10 @@ import {
   getTripmanQuoteForBooking,
 } from "@/lib/tripman-packages";
 import { toBusinessSessionDay } from "@/lib/timezone";
+import {
+  formatBookingDate,
+  formatBookingTimeRange,
+} from "@/lib/format-datetime";
 
 interface EventType {
   id: string;
@@ -296,14 +300,6 @@ export function BookingForm({
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -322,11 +318,15 @@ export function BookingForm({
             </p>
             <p>
               <strong>Date:</strong>{" "}
-              {selectedSlot.startsAt.toLocaleDateString()}
+              {formatBookingDate(selectedSlot.startsAt, selectedSlot.timezone)}
             </p>
             <p>
-              <strong>Time:</strong> {formatTime(selectedSlot.startsAt)} -{" "}
-              {formatTime(selectedSlot.endsAt)}
+              <strong>Time:</strong>{" "}
+              {formatBookingTimeRange(
+                selectedSlot.startsAt,
+                selectedSlot.endsAt,
+                selectedSlot.timezone,
+              )}
             </p>
             <p>
               <strong>Duration:</strong> {eventType.durationMin} minutes

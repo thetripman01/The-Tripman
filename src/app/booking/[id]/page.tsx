@@ -12,6 +12,10 @@ import {
   currencySymbol,
   taxLabelForStoredCurrency,
 } from "@/lib/tripman-packages";
+import {
+  formatBookingDate,
+  formatBookingTimeRange,
+} from "@/lib/format-datetime";
 import { toast } from "sonner";
 import {
   Calendar,
@@ -111,23 +115,6 @@ export default function BookingDetailsPage() {
 
     fetchBooking();
   }, [bookingId, emailVerified, accessEmail]);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -272,15 +259,20 @@ export default function BookingDetailsPage() {
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-gray-500" />
                       <span className="font-medium">Date:</span>
-                      <span>{formatDate(booking.startsAt)}</span>
+                      <span>
+                        {formatBookingDate(booking.startsAt, booking.timezone)}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-gray-500" />
                       <span className="font-medium">Time:</span>
                       <span>
-                        {formatTime(booking.startsAt)} -{" "}
-                        {formatTime(booking.endsAt)}
+                        {formatBookingTimeRange(
+                          booking.startsAt,
+                          booking.endsAt,
+                          booking.timezone,
+                        )}
                       </span>
                     </div>
 

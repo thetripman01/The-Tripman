@@ -30,6 +30,10 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { toast } from "sonner";
 import { toBusinessCalendarDay } from "@/lib/timezone";
 import { inferTimezone } from "@/lib/geo";
+import {
+  formatBookingDate,
+  formatBookingTimeRange,
+} from "@/lib/format-datetime";
 
 interface EventType {
   id: string;
@@ -841,19 +845,13 @@ export default function AdminPage() {
     }
   };
 
-  // Long, scannable format for the booking list & modal: "Jun 6 Monday, 2026".
-  // Month and weekday spelled out so admin doesn't have to think about
-  // locale-specific MM/DD vs DD/MM ordering.
-  const formatDateLong = (dateString: string) => {
-    const d = new Date(dateString);
-    const month = d.toLocaleString("en-US", { month: "short" });
-    const weekday = d.toLocaleString("en-US", { weekday: "long" });
-    return `${month} ${d.getDate()} ${weekday}, ${d.getFullYear()}`;
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString();
-  };
+  // Booking date/time are rendered in the BOOKING's own timezone (tour city or
+  // Toronto) — not the admin's device — so a tour booking shows e.g. Amsterdam
+  // time with its zone label, matching what the customer booked. Time ranges
+  // use formatBookingTimeRange directly at the call sites. See
+  // lib/format-datetime.ts.
+  const formatDateLong = (dateString: string, zone?: string | null) =>
+    formatBookingDate(dateString, zone);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -2330,13 +2328,18 @@ export default function AdminPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 shrink-0" />
-                        <span>{formatDateLong(booking.startsAt)}</span>
+                        <span>
+                          {formatDateLong(booking.startsAt, booking.timezone)}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 shrink-0" />
                         <span>
-                          {formatTime(booking.startsAt)} -{" "}
-                          {formatTime(booking.endsAt)}
+                          {formatBookingTimeRange(
+                            booking.startsAt,
+                            booking.endsAt,
+                            booking.timezone,
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 min-w-0">
@@ -2451,13 +2454,21 @@ export default function AdminPage() {
                       )}
                       <div>
                         <label className="font-semibold">Date</label>
-                        <p>{formatDateLong(selectedBooking.startsAt)}</p>
+                        <p>
+                          {formatDateLong(
+                            selectedBooking.startsAt,
+                            selectedBooking.timezone,
+                          )}
+                        </p>
                       </div>
                       <div>
                         <label className="font-semibold">Time</label>
                         <p>
-                          {formatTime(selectedBooking.startsAt)} -{" "}
-                          {formatTime(selectedBooking.endsAt)}
+                          {formatBookingTimeRange(
+                            selectedBooking.startsAt,
+                            selectedBooking.endsAt,
+                            selectedBooking.timezone,
+                          )}
                         </p>
                       </div>
                       <div>

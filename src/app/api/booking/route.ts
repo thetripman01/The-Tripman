@@ -11,6 +11,10 @@ import { isLocationBookableOn } from "@/lib/service-locations";
 import { findConflictingBooking } from "@/lib/booking-conflicts";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
+// Shared advisory-lock key for ALL booking writes. Any constant works — it
+// just has to be identical across concurrent requests so they serialize.
+const BOOKING_LOCK_KEY = 902_431;
+
 const bookingSchema = z.object({
   eventTypeId: z.string(),
   fullName: z.string().min(2).max(120),
@@ -138,21 +142,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for booking conflicts (includes the mandatory cooldown buffer
-    // between any two bookings — see lib/booking-conflicts.ts).
-    const conflictingBooking = await findConflictingBooking(
-      db,
-      new Date(validatedData.startsAt),
-      new Date(validatedData.endsAt),
-    );
-
-    if (conflictingBooking) {
-      return NextResponse.json(
-        { error: "This time slot is no longer available" },
-        { status: 409 },
-      );
-    }
-
     const peopleCountNum = validatedData.peopleCount
       ? parseInt(validatedData.peopleCount, 10)
       : null;
@@ -180,29 +169,54 @@ export async function POST(request: NextRequest) {
     // The structured fields remain the source of truth.
     const combinedPickup = `${validatedData.pickupAddress}, ${validatedData.pickupCity}, ${validatedData.pickupCountry}`;
 
-    // Create booking (IMPORTANT: do NOT confirm until payment succeeds for paid packages)
-    const booking = await db.booking.create({
-      data: {
-        eventTypeId: validatedData.eventTypeId,
-        fullName: validatedData.fullName,
-        email: validatedData.email,
-        phone: validatedData.phone,
-        pickup: combinedPickup,
-        pickupCountry: validatedData.pickupCountry,
-        pickupCity: validatedData.pickupCity,
-        pickupAddress: validatedData.pickupAddress,
-        peopleCount: peopleCountNum,
-        notes: validatedData.notes,
-        startsAt: new Date(validatedData.startsAt),
-        endsAt: new Date(validatedData.endsAt),
-        timezone: validatedData.timezone,
-        status: requiresPayment ? "PENDING" : "CONFIRMED",
-        paymentStatus: requiresPayment ? "PENDING" : "PENDING",
-      },
-      include: {
-        eventType: true,
-      },
+    // Re-check conflicts AND create the booking inside ONE transaction, guarded
+    // by a global Postgres advisory lock. Without this, two people grabbing the
+    // same slot in the same instant (very possible during an ad-driven traffic
+    // burst) could both pass a standalone conflict check and both insert —
+    // double-booking the ride. The transaction-scoped lock serializes every
+    // booking write (bookings are infrequent, so the cost is negligible) and is
+    // auto-released on commit/rollback — safe with Neon's transaction pooler.
+    // IMPORTANT: do NOT confirm until payment succeeds for paid packages.
+    const booking = await db.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BOOKING_LOCK_KEY}::bigint)`;
+
+      const conflict = await findConflictingBooking(
+        tx,
+        new Date(validatedData.startsAt),
+        new Date(validatedData.endsAt),
+      );
+      if (conflict) return null;
+
+      return tx.booking.create({
+        data: {
+          eventTypeId: validatedData.eventTypeId,
+          fullName: validatedData.fullName,
+          email: validatedData.email,
+          phone: validatedData.phone,
+          pickup: combinedPickup,
+          pickupCountry: validatedData.pickupCountry,
+          pickupCity: validatedData.pickupCity,
+          pickupAddress: validatedData.pickupAddress,
+          peopleCount: peopleCountNum,
+          notes: validatedData.notes,
+          startsAt: new Date(validatedData.startsAt),
+          endsAt: new Date(validatedData.endsAt),
+          timezone: validatedData.timezone,
+          status: requiresPayment ? "PENDING" : "CONFIRMED",
+          paymentStatus: requiresPayment ? "PENDING" : "PENDING",
+        },
+        include: {
+          eventType: true,
+        },
+      });
     });
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: "This time slot is no longer available" },
+        { status: 409 },
+      );
+    }
 
     // Emails:
     // - Paid bookings: send confirmation only AFTER Stripe webhook succeeds (prevents "free confirmed bookings").

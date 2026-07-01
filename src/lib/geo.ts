@@ -200,3 +200,75 @@ export function inferCurrency(
   if (USA_SYNONYMS.has(c)) return "usd";
   return "cad";
 }
+
+// ---------------------------------------------------------------------------
+// URL-slug matching for the per-region tour landing pages (/Belgium, /Berlin…)
+// ---------------------------------------------------------------------------
+
+/**
+ * Collapse a country/city string to a match key: strip accents (Zürich →
+ * zurich), lowercase, drop non-alphanumerics. So "/Zurich", "/zürich" and a
+ * stored "Zürich" all match, and "/New York" matches "New York".
+ */
+export function slugKey(value: string | null | undefined): string {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // strip combining accents
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+// Fold known country typos/synonyms so a clean URL (/Belgium) matches the
+// admin's stored spelling — production stores the Brussels stop as "Belguim".
+const COUNTRY_SLUG_ALIASES: Record<string, string> = {
+  belguim: "belgium",
+  holland: "netherlands",
+  thenetherlands: "netherlands",
+  czechrepublic: "czechia",
+  czech: "czechia",
+  deutschland: "germany",
+  italia: "italy",
+  espana: "spain",
+  swiss: "switzerland",
+  unitedstates: "usa",
+  us: "usa",
+};
+
+/** Canonical country key for slug matching (folds typos/synonyms). */
+export function canonicalCountryKey(
+  country: string | null | undefined,
+): string {
+  const k = slugKey(country);
+  return COUNTRY_SLUG_ALIASES[k] ?? k;
+}
+
+// Nice display spelling for a country, keyed by canonical key — so the
+// "Belguim" typo never reaches customers on the landing pages.
+const COUNTRY_DISPLAY_NAMES: Record<string, string> = {
+  belgium: "Belgium",
+  france: "France",
+  switzerland: "Switzerland",
+  italy: "Italy",
+  germany: "Germany",
+  czechia: "Czechia",
+  netherlands: "Netherlands",
+  austria: "Austria",
+  spain: "Spain",
+  portugal: "Portugal",
+  ireland: "Ireland",
+  greece: "Greece",
+  canada: "Canada",
+  usa: "USA",
+};
+
+/** Human-friendly country name (fixes the stored typo where possible). */
+export function countryDisplayName(country: string | null | undefined): string {
+  const k = canonicalCountryKey(country);
+  if (COUNTRY_DISPLAY_NAMES[k]) return COUNTRY_DISPLAY_NAMES[k];
+  return (country ?? "")
+    .trim()
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+    .join(" ");
+}

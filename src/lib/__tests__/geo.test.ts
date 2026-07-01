@@ -1,4 +1,11 @@
-import { inferTimezone, inferCurrency, HOME_TIMEZONE } from "../geo";
+import {
+  inferTimezone,
+  inferCurrency,
+  HOME_TIMEZONE,
+  slugKey,
+  canonicalCountryKey,
+  countryDisplayName,
+} from "../geo";
 
 describe("inferTimezone", () => {
   it("maps the home base to Toronto", () => {
@@ -75,5 +82,40 @@ describe("inferCurrency", () => {
     expect(inferCurrency("United Kingdom")).toBe("cad");
     expect(inferCurrency("Poland")).toBe("cad");
     expect(inferCurrency("Sweden")).toBe("cad");
+  });
+});
+
+describe("slugKey", () => {
+  it("strips accents, case and punctuation", () => {
+    expect(slugKey("Zürich")).toBe("zurich");
+    expect(slugKey("  Strasbourg ")).toBe("strasbourg");
+    expect(slugKey("New York")).toBe("newyork");
+    expect(slugKey("Milano")).toBe("milano");
+  });
+});
+
+describe("canonicalCountryKey", () => {
+  it("folds the production Belguim typo and synonyms to a canonical key", () => {
+    expect(canonicalCountryKey("Belguim")).toBe("belgium");
+    expect(canonicalCountryKey("Belgium")).toBe("belgium");
+    expect(canonicalCountryKey("Holland")).toBe("netherlands");
+    expect(canonicalCountryKey("Czech Republic")).toBe("czechia");
+    expect(canonicalCountryKey("Germany")).toBe("germany");
+  });
+
+  it("lets a clean /Belgium URL match the stored Belguim row", () => {
+    expect(canonicalCountryKey("Belgium")).toBe(canonicalCountryKey("Belguim"));
+  });
+});
+
+describe("countryDisplayName", () => {
+  it("shows the corrected spelling even for the typo'd row", () => {
+    expect(countryDisplayName("Belguim")).toBe("Belgium");
+    expect(countryDisplayName("Germany")).toBe("Germany");
+    expect(countryDisplayName("czechia")).toBe("Czechia");
+  });
+
+  it("title-cases unknown countries as a fallback", () => {
+    expect(countryDisplayName("narnia")).toBe("Narnia");
   });
 });

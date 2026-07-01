@@ -139,7 +139,10 @@ export function classifySlotStatus(params: {
  * count. Older PENDING (abandoned) holds don't block.
  */
 export async function findConflictingBooking(
-  db: PrismaClient,
+  // Accepts a transaction client too, so callers can run this + the create
+  // inside one atomic transaction (see the advisory-lock guard in
+  // /api/booking) to prevent double-booking races.
+  db: PrismaClient | Prisma.TransactionClient,
   newStartsAt: Date,
   newEndsAt: Date,
   opts: ConflictCheckOptions = {},

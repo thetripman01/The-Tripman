@@ -10,6 +10,7 @@ import {
 } from "@/lib/booking-conflicts";
 import { getOperatingTimezoneForDate } from "@/lib/service-locations";
 import { sessionAnchorUtc } from "@/lib/timezone";
+import { countryDisplayName } from "@/lib/geo";
 
 type Interval = { start: Date; end: Date };
 
@@ -358,7 +359,7 @@ export async function GET(request: NextRequest) {
       "zzz",
     );
     const timezoneLabel = operating.location
-      ? `${operating.location.city} — ${operating.location.country} (${tzAbbrev})`
+      ? `${operating.location.city} — ${countryDisplayName(operating.location.country)} (${tzAbbrev})`
       : `Toronto / GTA — Canada (${tzAbbrev})`;
 
     return NextResponse.json({

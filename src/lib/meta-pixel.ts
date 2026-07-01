@@ -12,7 +12,7 @@
 // and currency. If we ever add advanced matching, route it through a
 // separate function and a Resend / consent banner check first.
 
-export const META_PIXEL_ID = "2435141220326453";
+export const META_PIXEL_ID = "1715856046395857";
 
 type FbqMethod = "init" | "track" | "trackCustom" | "trackSingle";
 

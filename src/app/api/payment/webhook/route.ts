@@ -8,6 +8,7 @@ import {
   sendPaymentConfirmation,
 } from "@/lib/email";
 import { createGoogleCalendarEvent } from "@/lib/calendar";
+import { getCooldownMinutes } from "@/lib/booking-conflicts";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -46,10 +47,12 @@ export async function POST(request: NextRequest) {
         });
         if (!booking) break;
 
-        // Idempotency: ignore if already confirmed/paid.
+        // Idempotency: ignore if already settled (confirmed+paid, or already
+        // refunded by the double-book guard below on a redelivered event).
         if (
-          booking.status === "CONFIRMED" &&
-          booking.paymentStatus === "COMPLETED"
+          (booking.status === "CONFIRMED" &&
+            booking.paymentStatus === "COMPLETED") ||
+          booking.paymentStatus === "REFUNDED"
         ) {
           return NextResponse.json({ received: true });
         }
@@ -64,6 +67,48 @@ export async function POST(request: NextRequest) {
             bookingId,
             expected: booking.paymentIntentId,
             got: paymentIntent.id,
+          });
+          return NextResponse.json({ received: true });
+        }
+
+        // Double-booking safety net: if another CONFIRMED booking already holds
+        // this slot (e.g. this hold expired, someone else re-booked + paid, and
+        // THIS customer then paid a stale intent), don't confirm a second ride
+        // on the same slot — auto-refund and cancel instead. The creation-time
+        // advisory lock (/api/booking) stops concurrent races; this covers the
+        // rarer pay-after-expiry edge. Only a CONFIRMED conflict triggers it, so
+        // a normal booking is never wrongly refunded.
+        const cooldownMs = getCooldownMinutes() * 60_000;
+        const confirmedConflict = await db.booking.findFirst({
+          where: {
+            id: { not: booking.id },
+            status: "CONFIRMED",
+            startsAt: { lt: new Date(booking.endsAt.getTime() + cooldownMs) },
+            endsAt: { gt: new Date(booking.startsAt.getTime() - cooldownMs) },
+          },
+        });
+        if (confirmedConflict) {
+          console.error(
+            "DOUBLE-BOOKING averted: paid intent for an already-taken slot; auto-refunding",
+            {
+              bookingId,
+              conflictBookingId: confirmedConflict.id,
+              startsAt: booking.startsAt.toISOString(),
+            },
+          );
+          try {
+            await stripe.refunds.create({ payment_intent: paymentIntent.id });
+          } catch (e) {
+            console.error("Failed to auto-refund double-booked payment:", e);
+          }
+          await db.booking.update({
+            where: { id: bookingId },
+            data: {
+              status: "CANCELED",
+              paymentStatus: "REFUNDED",
+              paymentIntentId: paymentIntent.id,
+              amountPaid: paymentIntent.amount_received ?? paymentIntent.amount,
+            },
           });
           return NextResponse.json({ received: true });
         }

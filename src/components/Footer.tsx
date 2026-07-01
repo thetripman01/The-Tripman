@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Car,
   Mail,
@@ -144,18 +145,18 @@ export function Footer() {
               © {currentYear} The Tripman. All rights reserved.
             </p>
             <nav className="flex space-x-6" aria-label="Legal links">
-              <a
+              <Link
                 href="/privacy"
                 className="text-gray-400 hover:text-white text-sm transition-colors duration-200 hover:underline"
               >
                 Privacy Policy
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/terms"
                 className="text-gray-400 hover:text-white text-sm transition-colors duration-200 hover:underline"
               >
                 Terms of Service
-              </a>
+              </Link>
             </nav>
           </div>
         </div>

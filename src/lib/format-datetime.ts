@@ -57,3 +57,24 @@ export function formatBookingTimeRange(
   const endStr = formatInTimeZone(new Date(end), z, "h:mm a zzz");
   return `${startStr} – ${endStr}`;
 }
+
+/**
+ * Floating (offset-less) wall-clock datetime in the booking's timezone,
+ * e.g. "2026-07-24T20:00:00" for a ride booked at 8pm Amsterdam time.
+ *
+ * FullCalendar treats an offset-less ISO string as "local", so feeding it
+ * these pins the event to the hour the customer actually booked — a 20:00
+ * Amsterdam ride sits on the 20:00 row of the admin grid no matter what
+ * timezone the admin's device is in. Display-only: never send these back
+ * to the server (they're not instants).
+ */
+export function toBookingWallClock(
+  input: Date | string,
+  zone?: string | null,
+): string {
+  return formatInTimeZone(
+    new Date(input),
+    resolveZone(zone),
+    "yyyy-MM-dd'T'HH:mm:ss",
+  );
+}

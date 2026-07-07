@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const ALLOWED_AREAS = [
   "Toronto",
@@ -9,6 +10,17 @@ const ALLOWED_AREAS = [
 ] as const;
 
 export async function GET(request: NextRequest) {
+  // This proxies to Nominatim under OUR IP/User-Agent — throttle it so a
+  // scraper can't burn their usage policy (1 req/s) on our behalf.
+  const limited = rateLimit(getClientIp(request), {
+    key: "places-autocomplete",
+    limit: 30,
+    windowMs: 5 * 60_000,
+  });
+  if (!limited.ok) {
+    return NextResponse.json([], { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get("q") || "").trim();
 

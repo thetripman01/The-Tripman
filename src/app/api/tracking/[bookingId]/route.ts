@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAdminUserFromRequest } from "@/lib/admin-session";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function GET(
   request: NextRequest,
@@ -12,6 +13,26 @@ export async function GET(
 
     // Customer access requires matching email via query param.
     if (!adminUser) {
+      // Same email-knowledge guard as /api/booking/[id] — rate limit it so
+      // the email can't be brute-forced. The tracking page polls every 30s
+      // (~20 hits / 10 min), so 120 leaves plenty of headroom for a family
+      // sharing one IP.
+      const limited = rateLimit(getClientIp(request), {
+        key: "tracking-lookup",
+        limit: 120,
+        windowMs: 10 * 60_000,
+      });
+      if (!limited.ok) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          {
+            status: 429,
+            headers: limited.retryAfterSeconds
+              ? { "Retry-After": String(limited.retryAfterSeconds) }
+              : undefined,
+          },
+        );
+      }
       const { searchParams } = new URL(request.url);
       const email = searchParams.get("email")?.trim().toLowerCase();
       if (!email) {

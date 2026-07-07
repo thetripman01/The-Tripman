@@ -158,7 +158,7 @@
 
 /* FullCalendar polish (Tripman theme) */
 .fc {
-  --fc-border-color: #e5e7eb;
+  --fc-border-color: #eef1f5;
   --fc-today-bg-color: rgba(6, 182, 212, 0.06);
 }
 
@@ -166,30 +166,61 @@
   font-weight: 700;
   letter-spacing: -0.01em;
   font-size: 1.125rem;
+  color: #111827;
 }
 
+/* Toolbar buttons: quiet outline style, cyan only when active/hovered.
+   The old solid-cyan buttons fought the page's primary CTAs for attention. */
 .fc .fc-button {
   border-radius: 0.75rem;
   font-weight: 500;
+  text-transform: capitalize;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .fc .fc-button-primary {
-  background: #06b6d4;
-  border-color: #06b6d4;
+  background: #fff;
+  border-color: #e5e7eb;
+  color: #374151;
 }
 
 .fc .fc-button-primary:hover {
-  background: #0891b2;
-  border-color: #0891b2;
+  background: #ecfeff;
+  border-color: #67e8f9;
+  color: #0e7490;
 }
 
 .fc .fc-button-primary:disabled {
-  background: rgba(6, 182, 212, 0.5);
-  border-color: rgba(6, 182, 212, 0.5);
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  color: #9ca3af;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background: #06b6d4;
+  border-color: #06b6d4;
+  color: #fff;
+}
+
+.fc .fc-button-primary:focus,
+.fc .fc-button-primary:not(:disabled).fc-button-active:focus,
+.fc .fc-button-primary:not(:disabled):active:focus {
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.25);
 }
 
 .fc .fc-daygrid-day {
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+/* Hover feedback on pickable days (tour-painted cells keep their color —
+   their background lives on the inner frame, not the cell). */
+.fc .fc-daygrid-day:not(.fc-day-disabled):not(.fc-day-past):hover {
+  background-color: rgba(6, 182, 212, 0.1);
 }
 
 .fc .fc-daygrid-day.fc-day-today {
@@ -200,11 +231,25 @@
   background: #06b6d4;
   color: white;
   border-radius: 9999px;
-  padding: 0.25rem 0.5rem;
+  min-width: 1.75rem;
+  text-align: center;
+  font-weight: 600;
+  margin: 0.15rem;
+  padding: 0.25rem 0.45rem;
 }
 
+/* Past days aren't bookable: dimmed, and no pointer cursor inviting a
+   click (the click handler ignores them anyway). */
 .fc .fc-daygrid-day.fc-day-past {
   opacity: 0.5;
+  cursor: default;
+}
+
+/* Days outside validRange (past dates on the booking calendar). */
+.fc .fc-day-disabled {
+  cursor: default;
+  background: #f9fafb;
+  opacity: 0.55;
 }
 
 .fc .fc-daygrid-day-number {
@@ -222,6 +267,46 @@
 
 .fc .fc-highlight {
   background: rgba(6, 182, 212, 0.18);
+}
+
+/* Admin week/day grid: softer slot labels, rounded event chips. */
+.fc .fc-timegrid-slot-label-cushion {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.fc .fc-timegrid-event {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/* Stacked booking card rendered by the admin calendar's eventContent
+   (admin/page.tsx): time on top, then customer, then ride. white-space
+   normal + overflow-wrap let long names wrap instead of clipping. */
+.fc .tm-cal-event {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px 4px;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.fc .tm-cal-event-time {
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+.fc .tm-cal-event-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.fc .tm-cal-event-ride {
+  opacity: 0.85;
+  overflow-wrap: anywhere;
 }
 
 @keyframes fadeIn {

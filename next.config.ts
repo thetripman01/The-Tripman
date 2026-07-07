@@ -20,6 +20,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  images: {
+    // next/image is used with quality 75 and 90 across the site. Next 16
+    // rejects qualities that aren't allowlisted here.
+    qualities: [75, 90],
+  },
   async headers() {
     return [
       {

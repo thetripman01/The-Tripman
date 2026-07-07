@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAdminUserFromRequest } from "@/lib/admin-session";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,28 @@ export async function GET(
 
     // Admins can access full booking details without extra verification.
     const adminUser = await getAdminUserFromRequest(request);
+
+    // Customer path is guarded only by "do you know the booking's email" —
+    // rate limit so that guard can't be brute-forced for a leaked booking
+    // id. 60 lookups / 10 min is far above what the booking page needs.
+    if (!adminUser) {
+      const limited = rateLimit(getClientIp(request), {
+        key: "booking-lookup",
+        limit: 60,
+        windowMs: 10 * 60_000,
+      });
+      if (!limited.ok) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          {
+            status: 429,
+            headers: limited.retryAfterSeconds
+              ? { "Retry-After": String(limited.retryAfterSeconds) }
+              : undefined,
+          },
+        );
+      }
+    }
 
     const booking = await db.booking.findUnique({
       where: { id },

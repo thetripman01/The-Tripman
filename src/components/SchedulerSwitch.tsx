@@ -185,15 +185,29 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={() => {
-                    const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-  SUMMARY:${selectedEvent.name} with The Tripman
-DTSTART:${bookingData.startsAt}
-DTEND:${bookingData.endsAt}
-  DESCRIPTION:Your booking with The Tripman
-END:VEVENT
-END:VCALENDAR`;
+                    // ICS wants UTC "basic" date-times (20260724T180000Z) —
+                    // raw ISO strings with dashes/colons are ignored by
+                    // calendar apps. Same format lib/ics.ts uses for the
+                    // email attachment.
+                    const icsUtc = (value: string | number | boolean) =>
+                      new Date(String(value))
+                        .toISOString()
+                        .replace(/[-:]/g, "")
+                        .split(".")[0] + "Z";
+                    const icsContent = [
+                      "BEGIN:VCALENDAR",
+                      "VERSION:2.0",
+                      "PRODID:-//The Tripman//Booking System//EN",
+                      "BEGIN:VEVENT",
+                      `UID:${bookingId || Date.now()}@thetripman`,
+                      `DTSTAMP:${icsUtc(Date.now())}`,
+                      `DTSTART:${icsUtc(bookingData.startsAt)}`,
+                      `DTEND:${icsUtc(bookingData.endsAt)}`,
+                      `SUMMARY:${selectedEvent.name} with The Tripman`,
+                      "DESCRIPTION:Your booking with The Tripman",
+                      "END:VEVENT",
+                      "END:VCALENDAR",
+                    ].join("\r\n");
 
                     const blob = new Blob([icsContent], {
                       type: "text/calendar",
@@ -235,8 +249,10 @@ END:VCALENDAR`;
     >
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
+          {/* Event names start with "The" ("The Tripman Experience"), so a
+              "Schedule Your X" template would read "Schedule Your The …". */}
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Schedule Your {selectedEvent.name}
+            Schedule {selectedEvent.name}
           </h2>
           <p className="text-lg text-gray-600">
             Choose a date & time — we’ll show only what’s actually available.

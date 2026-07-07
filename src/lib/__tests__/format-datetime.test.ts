@@ -2,6 +2,7 @@ import {
   formatBookingDate,
   formatBookingTime,
   formatBookingTimeRange,
+  toBookingWallClock,
 } from "../format-datetime";
 
 // A single absolute instant: 2026-08-02 17:00:00 UTC.
@@ -57,5 +58,27 @@ describe("formatBookingTimeRange", () => {
       "Europe/Amsterdam",
     );
     expect(out).toMatch(/^7:00 PM – 8:00 PM/);
+  });
+});
+
+describe("toBookingWallClock", () => {
+  it("produces the booked wall-clock time with no offset", () => {
+    expect(toBookingWallClock(INSTANT, "Europe/Amsterdam")).toBe(
+      "2026-08-02T19:00:00",
+    );
+    expect(toBookingWallClock(INSTANT, "America/Toronto")).toBe(
+      "2026-08-02T13:00:00",
+    );
+  });
+
+  it("can shift the calendar day relative to UTC", () => {
+    // 02:00 UTC Aug 2 = 10pm Aug 1 in Toronto.
+    expect(toBookingWallClock("2026-08-02T02:00:00Z", "America/Toronto")).toBe(
+      "2026-08-01T22:00:00",
+    );
+  });
+
+  it("defaults to Toronto when no zone is given", () => {
+    expect(toBookingWallClock(INSTANT)).toBe("2026-08-02T13:00:00");
   });
 });

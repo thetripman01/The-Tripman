@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getAdminUserFromRequest } from "@/lib/admin-session";
+import { secureCompare } from "@/lib/secure-compare";
 
 const updateLocationSchema = z.object({
   rideId: z.string(),
@@ -18,7 +19,9 @@ export async function POST(request: NextRequest) {
     const adminUser = await getAdminUserFromRequest(request);
     const secret = request.headers.get("x-tripman-tracking-secret");
     const expected = process.env.TRACKING_API_SECRET;
-    const authedBySecret = expected && secret && secret === expected;
+    const authedBySecret = Boolean(
+      expected && secret && secureCompare(secret, expected),
+    );
 
     if (!adminUser && !authedBySecret) {
       return NextResponse.json(

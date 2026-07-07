@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
+  CalendarPlus,
   Clock,
   Eye,
   CheckCircle,
@@ -32,8 +33,11 @@ import { toBusinessCalendarDay } from "@/lib/timezone";
 import { inferTimezone } from "@/lib/geo";
 import {
   formatBookingDate,
+  formatBookingTime,
   formatBookingTimeRange,
+  toBookingWallClock,
 } from "@/lib/format-datetime";
+import { googleCalendarEventUrl } from "@/lib/google-calendar";
 
 interface EventType {
   id: string;
@@ -215,6 +219,34 @@ export default function AdminPage() {
   >([]);
 
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
+
+  // Headline counts for the dashboard header (confirmed bookings only).
+  const [stats, setStats] = useState<{
+    total: number;
+    thisMonth: number;
+    upcoming: number;
+  } | null>(null);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/stats", { credentials: "include" });
+      if (res.ok) {
+        setStats(
+          (await res.json()) as {
+            total: number;
+            thisMonth: number;
+            upcoming: number;
+          },
+        );
+      }
+    } catch (e) {
+      console.error("Failed to fetch booking stats:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -598,6 +630,7 @@ export default function AdminPage() {
 
       if (response.ok) {
         fetchBookings();
+        fetchStats();
         setSelectedBooking(null);
       }
     } catch (error) {
@@ -627,6 +660,7 @@ export default function AdminPage() {
       toast.success(payload.message || "Booking deleted");
       setSelectedBooking(null);
       fetchBookings();
+      fetchStats();
     } catch (e) {
       console.error("Failed to delete booking:", e);
       toast.error("Failed to delete booking");
@@ -840,6 +874,7 @@ export default function AdminPage() {
       setSelectedBooking(null);
       setCancelReason("");
       fetchBookings();
+      fetchStats();
     } catch {
       toast.error("Failed to cancel booking");
     }
@@ -852,6 +887,40 @@ export default function AdminPage() {
   // lib/format-datetime.ts.
   const formatDateLong = (dateString: string, zone?: string | null) =>
     formatBookingDate(dateString, zone);
+
+  // One-click "add to my Google Calendar": opens Google's pre-filled event
+  // screen in a new tab (template URL — no OAuth involved). The event lands
+  // in whatever Google account the admin is signed into.
+  const openInGoogleCalendar = (b: Booking) => {
+    const location = [
+      b.pickupAddress ?? b.pickup,
+      b.pickupCity,
+      b.pickupCountry,
+    ]
+      .filter(Boolean)
+      .join(", ");
+    const details = [
+      `Customer: ${b.fullName}`,
+      `Email: ${b.email}`,
+      b.phone ? `Phone: ${b.phone}` : "",
+      b.peopleCount ? `People: ${b.peopleCount}` : "",
+      b.notes ? `Notes: ${b.notes}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    window.open(
+      googleCalendarEventUrl({
+        title: `${b.eventType.name} — ${b.fullName}`,
+        start: b.startsAt,
+        end: b.endsAt,
+        timezone: b.timezone,
+        details,
+        location,
+      }),
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -880,11 +949,35 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-600">Manage bookings and view analytics</p>
+        <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Admin Dashboard
+            </h1>
+            <p className="text-gray-600">Manage bookings and view analytics</p>
+          </div>
+          {stats && (
+            <div
+              className="grid grid-cols-3 gap-3"
+              title="Confirmed bookings only — pending holds and cancellations excluded."
+            >
+              {[
+                { label: "Total bookings", value: stats.total },
+                { label: "This month", value: stats.thisMonth },
+                { label: "Upcoming", value: stats.upcoming },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className="min-w-[104px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-center shadow-sm"
+                >
+                  <div className="text-2xl font-bold text-gray-900">
+                    {s.value}
+                  </div>
+                  <div className="mt-0.5 text-xs text-gray-500">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Tab Navigation */}
@@ -1864,6 +1957,20 @@ export default function AdminPage() {
                     }}
                     eventDidMount={(info) => {
                       // Show full details on hover (useful when the event is small).
+                      const p = info.event.extendedProps as {
+                        kind?: string;
+                        customer?: string;
+                        ride?: string;
+                        dateLabel?: string;
+                        timeRange?: string;
+                      };
+                      if (p.kind === "booking") {
+                        info.el.setAttribute(
+                          "title",
+                          `${p.customer} — ${p.ride}\n${p.dateLabel}\n${p.timeRange}`,
+                        );
+                        return;
+                      }
                       const start = info.event.start
                         ? info.event.start.toLocaleString()
                         : "";
@@ -1873,6 +1980,36 @@ export default function AdminPage() {
                       info.el.setAttribute(
                         "title",
                         `${info.event.title}\n${start}${end ? " → " + end : ""}`,
+                      );
+                    }}
+                    eventContent={(arg) => {
+                      const p = arg.event.extendedProps as {
+                        kind?: string;
+                        customer?: string;
+                        ride?: string;
+                        timeShort?: string;
+                      };
+                      if (p.kind === "booking") {
+                        return (
+                          <div className="tm-cal-event">
+                            <div className="tm-cal-event-time">
+                              {p.timeShort}
+                            </div>
+                            <div className="tm-cal-event-name">
+                              {p.customer}
+                            </div>
+                            <div className="tm-cal-event-ride">{p.ride}</div>
+                          </div>
+                        );
+                      }
+                      // Blocks: same wrapper so long reasons wrap instead of
+                      // getting clipped mid-word.
+                      return (
+                        <div className="tm-cal-event">
+                          <div className="tm-cal-event-name">
+                            {arg.event.title}
+                          </div>
+                        </div>
                       );
                     }}
                     editable
@@ -1944,24 +2081,34 @@ export default function AdminPage() {
                       }
                     }}
                     datesSet={(arg) => {
-                      const from = arg.startStr.slice(0, 10);
-                      const to = arg.endStr.slice(0, 10);
+                      // Fetch one extra day on each side of the visible
+                      // range: events render at their own-timezone
+                      // wall-clock position, which can fall on a different
+                      // calendar day than the UTC instant the API filters
+                      // on (e.g. 1am Sunday in Amsterdam is still Saturday
+                      // evening in UTC).
+                      const from = new Date(arg.start);
+                      from.setDate(from.getDate() - 1);
+                      const to = new Date(arg.end);
+                      to.setDate(to.getDate() + 1);
                       setFilters((prev) => ({
                         ...prev,
-                        dateFrom: from,
-                        dateTo: to,
+                        dateFrom: localDateValue(from),
+                        dateTo: localDateValue(to),
                       }));
-                      fetchBlocks(
-                        arg.start.toISOString(),
-                        arg.end.toISOString(),
-                      );
+                      fetchBlocks(from.toISOString(), to.toISOString());
                     }}
                     events={[
                       ...bookings.map((b) => ({
                         id: b.id,
                         title: `${b.eventType.name} • ${b.fullName}`,
-                        start: b.startsAt,
-                        end: b.endsAt,
+                        // Wall-clock in the BOOKING's timezone, not an
+                        // instant: an 8pm Amsterdam ride sits on the 8pm
+                        // row of the grid regardless of the admin's device
+                        // timezone. Matches what the customer booked and
+                        // what the Bookings tab shows.
+                        start: toBookingWallClock(b.startsAt, b.timezone),
+                        end: toBookingWallClock(b.endsAt, b.timezone),
                         editable: false,
                         backgroundColor:
                           b.status === "CANCELED"
@@ -1975,6 +2122,19 @@ export default function AdminPage() {
                             : b.status === "CONFIRMED"
                               ? "#16a34a"
                               : "#f59e0b",
+                        extendedProps: {
+                          kind: "booking",
+                          customer: b.fullName,
+                          ride: b.eventType.name,
+                          city: b.pickupCity ?? "",
+                          timeShort: formatBookingTime(b.startsAt, b.timezone),
+                          timeRange: formatBookingTimeRange(
+                            b.startsAt,
+                            b.endsAt,
+                            b.timezone,
+                          ),
+                          dateLabel: formatBookingDate(b.startsAt, b.timezone),
+                        },
                       })),
                       ...blocks.map((blk) => ({
                         id: `blk-${blk.id}`,
@@ -1987,6 +2147,7 @@ export default function AdminPage() {
                         backgroundColor: "rgba(239, 68, 68, 0.18)",
                         borderColor: "rgba(239, 68, 68, 0.35)",
                         textColor: "#991b1b",
+                        extendedProps: { kind: "block" },
                       })),
                     ]}
                     eventDrop={async (arg) => {
@@ -2299,6 +2460,14 @@ export default function AdminPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          title="Add to Google Calendar"
+                          onClick={() => openInGoogleCalendar(booking)}
+                        >
+                          <CalendarPlus className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => setSelectedBooking(booking)}
                         >
                           <Eye className="w-4 h-4 mr-2" />
@@ -2374,427 +2543,414 @@ export default function AdminPage() {
                 </Card>
               )}
             </div>
+          </>
+        )}
 
-            {/* Booking Details Modal */}
-            {selectedBooking && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle>Booking Details</CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedBooking(null)}
-                      >
-                        ×
-                      </Button>
+        {/* Booking Details Modal — rendered outside the tab conditionals so
+            clicking a booking on the Calendar tab opens it too, not just the
+            Bookings list. */}
+        {selectedBooking && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Booking Details</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedBooking(null)}
+                  >
+                    ×
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-semibold">Event Type</label>
+                    <p>{selectedBooking.eventType.name}</p>
+                  </div>
+                  <div>
+                    <label className="font-semibold">Status</label>
+                    <div className="mt-1">
+                      {getStatusBadge(selectedBooking.status)}
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="font-semibold">Event Type</label>
-                        <p>{selectedBooking.eventType.name}</p>
-                      </div>
-                      <div>
-                        <label className="font-semibold">Status</label>
-                        <div className="mt-1">
-                          {getStatusBadge(selectedBooking.status)}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="font-semibold">Customer Name</label>
-                        <p>{selectedBooking.fullName}</p>
-                      </div>
-                      <div>
-                        <label className="font-semibold">Email</label>
-                        <p>{selectedBooking.email}</p>
-                      </div>
-                      {selectedBooking.phone && (
-                        <div>
-                          <label className="font-semibold">Phone</label>
-                          <p>{selectedBooking.phone}</p>
-                        </div>
-                      )}
-                      {selectedBooking.peopleCount && (
-                        <div>
-                          <label className="font-semibold">
-                            Number of People
-                          </label>
-                          <p>{selectedBooking.peopleCount}</p>
-                        </div>
-                      )}
-                      {(selectedBooking.pickupAddress ||
-                        selectedBooking.pickup) && (
-                        <div className="col-span-2">
-                          <label className="font-semibold">
-                            Pickup Location
-                          </label>
-                          {selectedBooking.pickupAddress ? (
-                            <p>
-                              {selectedBooking.pickupAddress}
-                              {selectedBooking.pickupCity
-                                ? `, ${selectedBooking.pickupCity}`
-                                : ""}
-                              {selectedBooking.pickupCountry
-                                ? `, ${selectedBooking.pickupCountry}`
-                                : ""}
-                            </p>
-                          ) : (
-                            <p>{selectedBooking.pickup}</p>
-                          )}
-                        </div>
-                      )}
-                      {selectedBooking.notes && (
-                        <div className="col-span-2">
-                          <label className="font-semibold">Notes</label>
-                          <p>{selectedBooking.notes}</p>
-                        </div>
-                      )}
-                      <div>
-                        <label className="font-semibold">Date</label>
+                  </div>
+                  <div>
+                    <label className="font-semibold">Customer Name</label>
+                    <p>{selectedBooking.fullName}</p>
+                  </div>
+                  <div>
+                    <label className="font-semibold">Email</label>
+                    <p>{selectedBooking.email}</p>
+                  </div>
+                  {selectedBooking.phone && (
+                    <div>
+                      <label className="font-semibold">Phone</label>
+                      <p>{selectedBooking.phone}</p>
+                    </div>
+                  )}
+                  {selectedBooking.peopleCount && (
+                    <div>
+                      <label className="font-semibold">Number of People</label>
+                      <p>{selectedBooking.peopleCount}</p>
+                    </div>
+                  )}
+                  {(selectedBooking.pickupAddress ||
+                    selectedBooking.pickup) && (
+                    <div className="col-span-2">
+                      <label className="font-semibold">Pickup Location</label>
+                      {selectedBooking.pickupAddress ? (
                         <p>
-                          {formatDateLong(
-                            selectedBooking.startsAt,
-                            selectedBooking.timezone,
-                          )}
+                          {selectedBooking.pickupAddress}
+                          {selectedBooking.pickupCity
+                            ? `, ${selectedBooking.pickupCity}`
+                            : ""}
+                          {selectedBooking.pickupCountry
+                            ? `, ${selectedBooking.pickupCountry}`
+                            : ""}
                         </p>
-                      </div>
-                      <div>
-                        <label className="font-semibold">Time</label>
-                        <p>
-                          {formatBookingTimeRange(
-                            selectedBooking.startsAt,
-                            selectedBooking.endsAt,
-                            selectedBooking.timezone,
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="font-semibold">Duration</label>
-                        <p>{selectedBooking.eventType.durationMin} minutes</p>
-                      </div>
-                      {(selectedBooking.subtotalCents != null ||
-                        selectedBooking.amountPaid != null ||
-                        selectedBooking.eventType.priceCents != null) && (
-                        <div className="col-span-2">
-                          <label className="font-semibold">
-                            Price breakdown
-                          </label>
-                          {selectedBooking.subtotalCents != null &&
-                          selectedBooking.taxCents != null &&
-                          selectedBooking.taxRate != null ? (
-                            <div className="mt-1 text-sm text-gray-700 space-y-0.5">
-                              <p>
-                                <span className="text-gray-600">Subtotal:</span>{" "}
-                                $
-                                {(selectedBooking.subtotalCents / 100).toFixed(
-                                  2,
-                                )}{" "}
-                                {(
-                                  selectedBooking.currency ?? "cad"
-                                ).toUpperCase()}
-                              </p>
-                              <p>
-                                <span className="text-gray-600">
-                                  {(selectedBooking.currency ?? "cad") === "usd"
-                                    ? "Sales tax"
-                                    : "HST"}{" "}
-                                  ({(selectedBooking.taxRate * 100).toFixed(0)}
-                                  %):
-                                </span>{" "}
-                                ${(selectedBooking.taxCents / 100).toFixed(
-                                  2,
-                                )}{" "}
-                                {(
-                                  selectedBooking.currency ?? "cad"
-                                ).toUpperCase()}
-                              </p>
-                              <p className="font-semibold text-gray-900">
-                                Total: $
-                                {(
-                                  (selectedBooking.amountPaid ??
-                                    selectedBooking.subtotalCents +
-                                      selectedBooking.taxCents) / 100
-                                ).toFixed(2)}{" "}
-                                {(
-                                  selectedBooking.currency ?? "cad"
-                                ).toUpperCase()}
-                              </p>
-                            </div>
-                          ) : (
-                            <p>
-                              $
-                              {(
-                                (selectedBooking.amountPaid ??
-                                  selectedBooking.eventType.priceCents ??
-                                  0) / 100
-                              ).toFixed(2)}
-                            </p>
-                          )}
-                        </div>
+                      ) : (
+                        <p>{selectedBooking.pickup}</p>
                       )}
                     </div>
-
-                    {/* Edit booking: date/time + pickup location */}
-                    {selectedBooking.status !== "CANCELED" && (
-                      <div className="rounded-lg border border-cyan-200 bg-cyan-50/40 p-4 space-y-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="font-semibold text-gray-900">
-                            Edit booking
-                          </div>
-                          {editingBookingId === selectedBooking.id ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={cancelEditBooking}
-                              disabled={savingBookingEdit}
-                            >
-                              Cancel edit
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => startEditBooking(selectedBooking)}
-                            >
-                              Edit date / location
-                            </Button>
-                          )}
+                  )}
+                  {selectedBooking.notes && (
+                    <div className="col-span-2">
+                      <label className="font-semibold">Notes</label>
+                      <p>{selectedBooking.notes}</p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="font-semibold">Date</label>
+                    <p>
+                      {formatDateLong(
+                        selectedBooking.startsAt,
+                        selectedBooking.timezone,
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="font-semibold">Time</label>
+                    <p>
+                      {formatBookingTimeRange(
+                        selectedBooking.startsAt,
+                        selectedBooking.endsAt,
+                        selectedBooking.timezone,
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="font-semibold">Duration</label>
+                    <p>{selectedBooking.eventType.durationMin} minutes</p>
+                  </div>
+                  {(selectedBooking.subtotalCents != null ||
+                    selectedBooking.amountPaid != null ||
+                    selectedBooking.eventType.priceCents != null) && (
+                    <div className="col-span-2">
+                      <label className="font-semibold">Price breakdown</label>
+                      {selectedBooking.subtotalCents != null &&
+                      selectedBooking.taxCents != null &&
+                      selectedBooking.taxRate != null ? (
+                        <div className="mt-1 text-sm text-gray-700 space-y-0.5">
+                          <p>
+                            <span className="text-gray-600">Subtotal:</span> $
+                            {(selectedBooking.subtotalCents / 100).toFixed(2)}{" "}
+                            {(selectedBooking.currency ?? "cad").toUpperCase()}
+                          </p>
+                          <p>
+                            <span className="text-gray-600">
+                              {(selectedBooking.currency ?? "cad") === "usd"
+                                ? "Sales tax"
+                                : "HST"}{" "}
+                              ({(selectedBooking.taxRate * 100).toFixed(0)}
+                              %):
+                            </span>{" "}
+                            ${(selectedBooking.taxCents / 100).toFixed(2)}{" "}
+                            {(selectedBooking.currency ?? "cad").toUpperCase()}
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            Total: $
+                            {(
+                              (selectedBooking.amountPaid ??
+                                selectedBooking.subtotalCents +
+                                  selectedBooking.taxCents) / 100
+                            ).toFixed(2)}{" "}
+                            {(selectedBooking.currency ?? "cad").toUpperCase()}
+                          </p>
                         </div>
+                      ) : (
+                        <p>
+                          $
+                          {(
+                            (selectedBooking.amountPaid ??
+                              selectedBooking.eventType.priceCents ??
+                              0) / 100
+                          ).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-                        {editingBookingId === selectedBooking.id && (
-                          <div className="space-y-3">
-                            <p className="text-xs text-gray-600">
-                              Changing the date frees the old slot automatically
-                              — another customer can book it. The customer is
-                              not auto-notified; let them know separately.
-                            </p>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Date
-                                </label>
-                                <Input
-                                  type="date"
-                                  value={editBookingForm.dateLocal}
-                                  onChange={(e) =>
-                                    setEditBookingForm((p) => ({
-                                      ...p,
-                                      dateLocal: e.target.value,
-                                    }))
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Start time
-                                </label>
-                                <Input
-                                  type="time"
-                                  value={editBookingForm.startTimeLocal}
-                                  onChange={(e) =>
-                                    setEditBookingForm((p) => ({
-                                      ...p,
-                                      startTimeLocal: e.target.value,
-                                    }))
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  End time
-                                </label>
-                                <Input
-                                  type="time"
-                                  value={editBookingForm.endTimeLocal}
-                                  onChange={(e) =>
-                                    setEditBookingForm((p) => ({
-                                      ...p,
-                                      endTimeLocal: e.target.value,
-                                    }))
-                                  }
-                                />
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Pickup country
-                                </label>
-                                <Select
-                                  value={editBookingForm.pickupCountry}
-                                  onValueChange={(v) =>
-                                    setEditBookingForm((p) => ({
-                                      ...p,
-                                      pickupCountry: v,
-                                      pickupCity: "",
-                                    }))
-                                  }
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select country" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {Array.from(
-                                      new Set(
-                                        editBookingLocations.map(
-                                          (l) => l.country,
-                                        ),
-                                      ),
-                                    ).map((c) => (
-                                      <SelectItem key={c} value={c}>
-                                        {c}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Pickup city
-                                </label>
-                                <Select
-                                  value={editBookingForm.pickupCity}
-                                  onValueChange={(v) =>
-                                    setEditBookingForm((p) => ({
-                                      ...p,
-                                      pickupCity: v,
-                                    }))
-                                  }
-                                  disabled={!editBookingForm.pickupCountry}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select city" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {editBookingLocations
-                                      .filter(
-                                        (l) =>
-                                          l.country ===
-                                          editBookingForm.pickupCountry,
-                                      )
-                                      .map((l) => (
-                                        <SelectItem key={l.city} value={l.city}>
-                                          {l.city}
-                                        </SelectItem>
-                                      ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Pickup street address
-                              </label>
-                              <Input
-                                value={editBookingForm.pickupAddress}
-                                onChange={(e) =>
-                                  setEditBookingForm((p) => ({
-                                    ...p,
-                                    pickupAddress: e.target.value,
-                                  }))
-                                }
-                                placeholder="e.g. 75 Laurelcrest Street"
-                              />
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 justify-end">
-                              <Button
-                                size="sm"
-                                className="bg-cyan-600 hover:bg-cyan-700 text-white"
-                                disabled={savingBookingEdit}
-                                onClick={() => saveEditBooking(selectedBooking)}
-                              >
-                                {savingBookingEdit ? "Saving…" : "Save changes"}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
+                {/* Edit booking: date/time + pickup location */}
+                {selectedBooking.status !== "CANCELED" && (
+                  <div className="rounded-lg border border-cyan-200 bg-cyan-50/40 p-4 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="font-semibold text-gray-900">
+                        Edit booking
                       </div>
-                    )}
+                      {editingBookingId === selectedBooking.id ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={cancelEditBooking}
+                          disabled={savingBookingEdit}
+                        >
+                          Cancel edit
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditBooking(selectedBooking)}
+                        >
+                          Edit date / location
+                        </Button>
+                      )}
+                    </div>
 
-                    {/* Admin actions: cancel (no refunds) */}
-                    {selectedBooking.status !== "CANCELED" && (
-                      <div className="rounded-lg border bg-white p-4 space-y-3">
-                        <div className="font-semibold text-gray-900">
-                          Admin Actions
+                    {editingBookingId === selectedBooking.id && (
+                      <div className="space-y-3">
+                        <p className="text-xs text-gray-600">
+                          Changing the date frees the old slot automatically —
+                          another customer can book it. The customer is not
+                          auto-notified; let them know separately.
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Date
+                            </label>
+                            <Input
+                              type="date"
+                              value={editBookingForm.dateLocal}
+                              onChange={(e) =>
+                                setEditBookingForm((p) => ({
+                                  ...p,
+                                  dateLocal: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Start time
+                            </label>
+                            <Input
+                              type="time"
+                              value={editBookingForm.startTimeLocal}
+                              onChange={(e) =>
+                                setEditBookingForm((p) => ({
+                                  ...p,
+                                  startTimeLocal: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              End time
+                            </label>
+                            <Input
+                              type="time"
+                              value={editBookingForm.endTimeLocal}
+                              onChange={(e) =>
+                                setEditBookingForm((p) => ({
+                                  ...p,
+                                  endTimeLocal: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">
-                            Cancellation reason (optional)
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Pickup country
+                            </label>
+                            <Select
+                              value={editBookingForm.pickupCountry}
+                              onValueChange={(v) =>
+                                setEditBookingForm((p) => ({
+                                  ...p,
+                                  pickupCountry: v,
+                                  pickupCity: "",
+                                }))
+                              }
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select country" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from(
+                                  new Set(
+                                    editBookingLocations.map((l) => l.country),
+                                  ),
+                                ).map((c) => (
+                                  <SelectItem key={c} value={c}>
+                                    {c}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Pickup city
+                            </label>
+                            <Select
+                              value={editBookingForm.pickupCity}
+                              onValueChange={(v) =>
+                                setEditBookingForm((p) => ({
+                                  ...p,
+                                  pickupCity: v,
+                                }))
+                              }
+                              disabled={!editBookingForm.pickupCountry}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select city" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {editBookingLocations
+                                  .filter(
+                                    (l) =>
+                                      l.country ===
+                                      editBookingForm.pickupCountry,
+                                  )
+                                  .map((l) => (
+                                    <SelectItem key={l.city} value={l.city}>
+                                      {l.city}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Pickup street address
                           </label>
-                          <textarea
-                            value={cancelReason}
-                            onChange={(e) => setCancelReason(e.target.value)}
-                            rows={3}
-                            className="w-full border rounded-md px-3 py-2 text-sm"
-                            placeholder="Reason shown in internal notes / emails"
+                          <Input
+                            value={editBookingForm.pickupAddress}
+                            onChange={(e) =>
+                              setEditBookingForm((p) => ({
+                                ...p,
+                                pickupAddress: e.target.value,
+                              }))
+                            }
+                            placeholder="e.g. 75 Laurelcrest Street"
                           />
                         </div>
 
-                        <Button
-                          variant="destructive"
-                          className="w-full"
-                          onClick={() =>
-                            cancelBookingNoRefund(selectedBooking.id)
-                          }
-                        >
-                          <XCircle className="w-4 h-4 mr-2" />
-                          Cancel Booking (No Refund)
-                        </Button>
+                        <div className="flex flex-wrap gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                            disabled={savingBookingEdit}
+                            onClick={() => saveEditBooking(selectedBooking)}
+                          >
+                            {savingBookingEdit ? "Saving…" : "Save changes"}
+                          </Button>
+                        </div>
                       </div>
                     )}
+                  </div>
+                )}
 
-                    <div className="flex gap-2 pt-4">
-                      {selectedBooking.status === "PENDING" && (
-                        <>
-                          <Button
-                            onClick={() =>
-                              updateBookingStatus(
-                                selectedBooking.id,
-                                "CONFIRMED",
-                              )
-                            }
-                            className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl"
-                            disabled={
-                              selectedBooking.isExpiredHold ||
-                              (selectedBooking.paymentStatus &&
-                                selectedBooking.paymentStatus !== "COMPLETED")
-                            }
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Confirm Booking
-                          </Button>
-                        </>
-                      )}
-                      {(selectedBooking.status === "CANCELED" ||
-                        selectedBooking.isExpiredHold) && (
-                        <Button
-                          variant="destructive"
-                          onClick={() => deleteBooking(selectedBooking.id)}
-                          className="flex-1"
-                        >
-                          Delete
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        onClick={() => setSelectedBooking(null)}
-                        className="flex-1"
-                      >
-                        Close
-                      </Button>
+                {/* Admin actions: cancel (no refunds) */}
+                {selectedBooking.status !== "CANCELED" && (
+                  <div className="rounded-lg border bg-white p-4 space-y-3">
+                    <div className="font-semibold text-gray-900">
+                      Admin Actions
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Cancellation reason (optional)
+                      </label>
+                      <textarea
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        rows={3}
+                        className="w-full border rounded-md px-3 py-2 text-sm"
+                        placeholder="Reason shown in internal notes / emails"
+                      />
+                    </div>
+
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => cancelBookingNoRefund(selectedBooking.id)}
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Cancel Booking (No Refund)
+                    </Button>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-4">
+                  {selectedBooking.status === "PENDING" && (
+                    <>
+                      <Button
+                        onClick={() =>
+                          updateBookingStatus(selectedBooking.id, "CONFIRMED")
+                        }
+                        className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl"
+                        disabled={
+                          selectedBooking.isExpiredHold ||
+                          (selectedBooking.paymentStatus &&
+                            selectedBooking.paymentStatus !== "COMPLETED")
+                        }
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Confirm Booking
+                      </Button>
+                    </>
+                  )}
+                  {(selectedBooking.status === "CANCELED" ||
+                    selectedBooking.isExpiredHold) && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => deleteBooking(selectedBooking.id)}
+                      className="flex-1"
+                    >
+                      Delete
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => openInGoogleCalendar(selectedBooking)}
+                    className="flex-1"
+                    title="Opens Google Calendar with this booking pre-filled"
+                  >
+                    <CalendarPlus className="w-4 h-4 mr-2" />
+                    Google Calendar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedBooking(null)}
+                    className="flex-1"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

@@ -272,6 +272,10 @@ export function BookingCalendar({
   };
 
   const handleDatePick = (dateStr: string) => {
+    // Days before today aren't bookable — ignore the click instead of
+    // flashing an empty "no times" panel. Past cells are dimmed via
+    // .fc-day-past so they already read as inactive.
+    if (dateStr < localYmd(new Date())) return;
     // dateStr is FullCalendar's timezone-safe "YYYY-MM-DD" (arg.dateStr).
     // Build the display Date at LOCAL noon — never UTC midnight, which rolls
     // the day back for users east of UTC (the bug where a customer in
@@ -381,9 +385,6 @@ export function BookingCalendar({
                 fixedWeekCount={false}
                 showNonCurrentDates={false}
                 dayMaxEvents={true}
-                selectConstraint={{
-                  start: localYmd(new Date()),
-                }}
                 // datesSet fires whenever the visible range changes (month
                 // nav, initial mount, view changes). We use it as a signal
                 // to (re)paint cells via the useEffect below, since

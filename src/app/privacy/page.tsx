@@ -88,6 +88,23 @@ export default function PrivacyPage() {
               <li>Improve our website and services.</li>
               <li>Comply with legal obligations.</li>
             </ul>
+            <div className="space-y-2 pt-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Text messaging (SMS)
+              </h3>
+              <p>
+                With your consent, we send transactional ride text messages
+                (verification codes, pickup/drop-off, and trip updates) to the
+                phone number you provide. Message frequency varies. Message and
+                data rates may apply. Reply STOP to opt out at any time, or HELP
+                for help. Opting out of SMS won&apos;t affect your account — you
+                can still get notifications by email and in-app.
+              </p>
+              <p>
+                Mobile phone numbers and SMS consent are never shared with or
+                sold to third parties or affiliates for marketing purposes.
+              </p>
+            </div>
           </section>
 
           <section className="space-y-3">
@@ -124,6 +141,10 @@ export default function PrivacyPage() {
                 protect rights, safety, and security.
               </li>
             </ul>
+            <p>
+              Mobile phone numbers and SMS consent are never shared with or sold
+              to third parties or affiliates for marketing purposes.
+            </p>
             <p className="text-sm text-gray-600">
               We do not sell your personal information.
             </p>

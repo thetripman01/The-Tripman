@@ -31,6 +31,12 @@ describe("inferTimezone", () => {
     expect(inferTimezone("Belgium", "Brussels")).toBe("Europe/Brussels");
   });
 
+  it("maps the Monaco Riviera stop", () => {
+    expect(inferTimezone("Monaco", "Monaco")).toBe("Europe/Monaco");
+    expect(inferTimezone("France", "Nice")).toBe("Europe/Paris");
+    expect(inferTimezone("France", "Cannes")).toBe("Europe/Paris");
+  });
+
   it("normalizes case and whitespace", () => {
     expect(inferTimezone("  germany  ")).toBe("Europe/Berlin");
     expect(inferTimezone("FRANCE")).toBe("Europe/Paris");
@@ -67,6 +73,11 @@ describe("inferCurrency", () => {
     expect(inferCurrency("United States")).toBe("usd");
     expect(inferCurrency("us")).toBe("usd");
     expect(inferCurrency("  USA  ")).toBe("usd");
+  });
+
+  it("bills Monaco in EUR (new Riviera country)", () => {
+    expect(inferCurrency("Monaco")).toBe("eur");
+    expect(inferCurrency("France")).toBe("eur"); // Nice + Cannes
   });
 
   it("bills Canada and unknowns in CAD", () => {

@@ -104,9 +104,12 @@ export function classifySlotStatus(params: {
   if (pending.some((b) => overlaps(slotStart, slotEnd, b.start, b.end))) {
     return "pending";
   }
-  // Admin blocks are deliberate closures (vacation, private events).
+  // Admin blocks (vacation / tour travel days / private events) are deliberate
+  // full closures — HIDE the slot entirely (return null) rather than showing a
+  // greyed "unavailable" row, so a blocked day reads cleanly as "no times". We
+  // still surface booked/on-hold times (below) for transparency.
   if (blocks.some((b) => overlaps(slotStart, slotEnd, b.start, b.end))) {
-    return "unavailable";
+    return null;
   }
 
   // Inside the cooldown buffer around a booking, or overlapping an external

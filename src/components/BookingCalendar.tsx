@@ -40,18 +40,24 @@ interface ScheduleEntry {
 
 /**
  * Visually-distinct palette assigned to tour cities in the order they
- * appear in the schedule. Five tours visible at once is more than we'll
- * ever realistically run — if we exceed it the assignment wraps.
+ * appear in the schedule. Ten well-separated hues so a long tour (the Europe
+ * run has ~9 stops) gives every city its own colour before the assignment
+ * has to wrap.
  *
- * Picked from Tailwind's 300/500/700 lines so background + text contrast
- * pass WCAG AA without manual tweaking per color.
+ * Picked from Tailwind's 300 (bg) / 500 (dot+border) / 800-900 (text) lines
+ * so background + text contrast pass WCAG AA without manual tweaking.
  */
 const TOUR_COLORS = [
+  { bg: "#fda4af", border: "#f43f5e", dot: "#f43f5e", text: "#9f1239" }, // rose
   { bg: "#fdba74", border: "#f97316", dot: "#f97316", text: "#7c2d12" }, // orange
-  { bg: "#86efac", border: "#22c55e", dot: "#22c55e", text: "#14532d" }, // green
-  { bg: "#f0abfc", border: "#d946ef", dot: "#d946ef", text: "#701a75" }, // fuchsia
-  { bg: "#93c5fd", border: "#3b82f6", dot: "#3b82f6", text: "#1e3a8a" }, // blue
-  { bg: "#fde047", border: "#eab308", dot: "#eab308", text: "#713f12" }, // yellow
+  { bg: "#fcd34d", border: "#f59e0b", dot: "#f59e0b", text: "#78350f" }, // amber
+  { bg: "#bef264", border: "#84cc16", dot: "#84cc16", text: "#365314" }, // lime
+  { bg: "#6ee7b7", border: "#10b981", dot: "#10b981", text: "#065f46" }, // emerald
+  { bg: "#5eead4", border: "#14b8a6", dot: "#14b8a6", text: "#115e59" }, // teal
+  { bg: "#7dd3fc", border: "#0ea5e9", dot: "#0ea5e9", text: "#075985" }, // sky
+  { bg: "#a5b4fc", border: "#6366f1", dot: "#6366f1", text: "#3730a3" }, // indigo
+  { bg: "#c4b5fd", border: "#8b5cf6", dot: "#8b5cf6", text: "#5b21b6" }, // violet
+  { bg: "#f9a8d4", border: "#ec4899", dot: "#ec4899", text: "#9d174d" }, // pink
 ];
 
 type SlotStatus = "available" | "booked" | "pending" | "unavailable";

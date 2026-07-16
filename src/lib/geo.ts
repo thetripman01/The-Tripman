@@ -45,6 +45,7 @@ const COUNTRY_TIMEZONES: Record<string, string> = {
   belgium: "Europe/Brussels",
   belguim: "Europe/Brussels", // production typo — keep mapped
   france: "Europe/Paris",
+  monaco: "Europe/Monaco", // Riviera stop (Nice/Monaco/Cannes) — CET, same as Paris
   switzerland: "Europe/Zurich",
   swiss: "Europe/Zurich",
   italy: "Europe/Rome",
@@ -114,6 +115,7 @@ const EUR_COUNTRIES = new Set<string>([
   "belgium",
   "belguim",
   "france",
+  "monaco",
   "switzerland",
   "swiss",
   "italy",
@@ -248,6 +250,7 @@ export function canonicalCountryKey(
 const COUNTRY_DISPLAY_NAMES: Record<string, string> = {
   belgium: "Belgium",
   france: "France",
+  monaco: "Monaco",
   switzerland: "Switzerland",
   italy: "Italy",
   germany: "Germany",

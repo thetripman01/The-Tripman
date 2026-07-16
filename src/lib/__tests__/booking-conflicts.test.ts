@@ -168,7 +168,7 @@ describe("classifySlotStatus", () => {
     ).toBe("available");
   });
 
-  it("labels admin blocks as unavailable", () => {
+  it("HIDES admin-blocked slots entirely (returns null)", () => {
     const blocks = [
       {
         start: new Date("2026-08-02T10:00:00Z"),
@@ -177,7 +177,7 @@ describe("classifySlotStatus", () => {
     ];
     expect(
       classifySlotStatus({ ...base, blocks, ...slot("2026-08-02T10:00:00Z") }),
-    ).toBe("unavailable");
+    ).toBeNull();
   });
 
   it("returns available for a clear future slot", () => {

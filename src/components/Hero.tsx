@@ -25,7 +25,7 @@ export function Hero() {
           so the browser downloads the optimized file only once. */}
       <div className="relative w-full lg:w-1/2 aspect-square lg:aspect-auto lg:min-h-0 shrink-0 overflow-hidden">
         <Image
-          src="/tripman-europe-tour.jpg"
+          src="/tripman-europe-tour-2.jpg"
           alt=""
           aria-hidden
           fill
@@ -35,8 +35,8 @@ export function Hero() {
           quality={90}
         />
         <Image
-          src="/tripman-europe-tour.jpg"
-          alt="The Tripman Europe Tour — Brussels, Strasbourg, Zürich, Milano, Munich, Prague, Berlin, Cologne & Amsterdam. Tour dates and booking at trvoo.com"
+          src="/tripman-europe-tour-2.jpg"
+          alt="The Tripman Europe Tour — Brussels, Strasbourg, Zürich, Nice-Cannes & Monaco, Milano, Munich, Prague, Berlin, Cologne & Amsterdam. Tour dates and booking at trvoo.com"
           fill
           className="object-contain object-center"
           priority

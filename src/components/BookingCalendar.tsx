@@ -158,6 +158,28 @@ export function BookingCalendar({
     };
   }, []);
 
+  // One colour per unique DATE-WINDOW (tour "stop"), not per city. Cities that
+  // share the same dates — Nice, Cannes and Monaco all on Jul 20-21 — get the
+  // SAME colour, so a single day never shows three colours (which confused
+  // people). Colours are assigned in first-seen order.
+  const windowColors = useMemo(() => {
+    const m = new Map<string, (typeof TOUR_COLORS)[number]>();
+    let i = 0;
+    schedule.forEach((entry) => {
+      const key = `${entry.availableFrom ?? ""}|${entry.availableUntil ?? ""}`;
+      if (!m.has(key)) {
+        m.set(key, TOUR_COLORS[i % TOUR_COLORS.length]);
+        i += 1;
+      }
+    });
+    return m;
+  }, [schedule]);
+
+  const colorForWindow = (entry: ScheduleEntry) =>
+    windowColors.get(
+      `${entry.availableFrom ?? ""}|${entry.availableUntil ?? ""}`,
+    ) ?? TOUR_COLORS[0];
+
   // Build a map from YYYY-MM-DD → { city, color } so the day cell renderer
   // is O(1) instead of scanning the whole schedule per cell.
   const dayColorMap = useMemo(() => {
@@ -165,8 +187,8 @@ export function BookingCalendar({
       string,
       { city: string; color: (typeof TOUR_COLORS)[number] }
     >();
-    schedule.forEach((entry, idx) => {
-      const color = TOUR_COLORS[idx % TOUR_COLORS.length];
+    schedule.forEach((entry) => {
+      const color = colorForWindow(entry);
       const from = entry.availableFrom
         ? toBusinessCalendarDay(entry.availableFrom)
         : null;
@@ -185,16 +207,19 @@ export function BookingCalendar({
       }
     });
     return map;
-  }, [schedule]);
+    // colorForWindow closes over windowColors (derived from schedule).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schedule, windowColors]);
 
-  // Legend entries, deduped, in calendar-display order.
+  // Legend entries, in calendar-display order (same-day stops share a colour).
   const legend = useMemo(() => {
-    return schedule.map((entry, idx) => ({
+    return schedule.map((entry) => ({
       city: entry.city,
       country: entry.country,
-      color: TOUR_COLORS[idx % TOUR_COLORS.length],
+      color: colorForWindow(entry),
     }));
-  }, [schedule]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schedule, windowColors]);
 
   // Bumped by FullCalendar's `datesSet` callback (mount + month nav) so
   // the recolor effect below re-runs even when the dayColorMap reference

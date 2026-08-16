@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { businessDayStartUtc, toBusinessCalendarDay } from "@/lib/timezone";
 
 // GET /api/service-locations/schedule
 //
-// Public. Returns the upcoming "tour" locations — every isActive location
-// that has at least one of availableFrom / availableUntil set, sorted by
-// availableFrom ascending. The public booking calendar uses this list to
-// color-code day cells (Ottawa = orange, Montreal = green, …).
+// Public. Returns the UPCOMING "tour" locations — every isActive location
+// that has at least one of availableFrom / availableUntil set AND hasn't
+// finished yet, sorted by availableFrom ascending. The public booking
+// calendar uses this list to color-code day cells (Ottawa = orange, …).
 //
 // Always-on cities (the default GTA) intentionally do NOT appear here —
 // they're the visual baseline. Only date-windowed tours need a color.
+//
+// Finished tours are excluded so the calendar goes back to its plain
+// Toronto/GTA look once a tour wraps. Without this the legend kept showing
+// every past stop (the whole Europe run stayed coloured after it ended) —
+// admin no longer has to deactivate each city by hand.
 //
 // We expose availableFrom / availableUntil as ISO strings so the client
 // can paint the calendar without a second round-trip per day.
@@ -17,15 +23,34 @@ import { db } from "@/lib/db";
 // Internal admin notes are NOT included (avoid leaking tour plans before
 // they're announced; admin notes can contain unannounced details).
 
+// Date-dependent: never let this be statically optimized at build time.
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
+    // Start of today in the business timezone. A tour whose last day is today
+    // stays listed (its availableUntil is today's end-of-day); one that ended
+    // yesterday or earlier drops off.
+    const todayStart = businessDayStartUtc(toBusinessCalendarDay(new Date()));
+
     const locations = await db.serviceLocation.findMany({
       where: {
         isActive: true,
-        // Tour-only: at least one bound must be set.
-        OR: [
-          { availableFrom: { not: null } },
-          { availableUntil: { not: null } },
+        AND: [
+          // Tour-only: at least one bound must be set.
+          {
+            OR: [
+              { availableFrom: { not: null } },
+              { availableUntil: { not: null } },
+            ],
+          },
+          // Not already finished (open-ended tours have no end date).
+          {
+            OR: [
+              { availableUntil: null },
+              { availableUntil: { gte: todayStart } },
+            ],
+          },
         ],
       },
       orderBy: [{ availableFrom: "asc" }, { city: "asc" }],

@@ -15,17 +15,16 @@ export function Hero() {
       className="relative min-h-screen flex flex-col lg:flex-row items-stretch overflow-hidden pt-20"
       aria-label="Hero section"
     >
-      {/* Left: Tour poster. The poster is a 1:1 square with text near the
-          edges, so it must never be cropped: below lg the container is an
-          exact square (poster covers it fully), on lg+ the column
-          stretches to the section height (ratio varies ~0.75–1.15 by
-          screen) and the poster is object-contained over a blurred,
-          zoomed copy of itself — gaps fill with matching imagery
-          instead of black bars. Same src/sizes/quality on both images
-          so the browser downloads the optimized file only once. */}
-      <div className="relative w-full lg:w-1/2 aspect-square lg:aspect-auto lg:min-h-0 shrink-0 overflow-hidden">
+      {/* Left: hero photo. Below lg the container matches the photo's own 3:4
+          portrait ratio so it fills edge-to-edge with no letterboxing. On lg+
+          the column stretches to the section height (ratio varies by screen),
+          so the photo is object-contained over a blurred, zoomed copy of
+          itself — any gap fills with matching imagery instead of black bars.
+          Same src/sizes/quality on both images so the browser downloads the
+          optimized file only once. */}
+      <div className="relative w-full lg:w-1/2 aspect-[3/4] lg:aspect-auto lg:min-h-0 shrink-0 overflow-hidden">
         <Image
-          src="/tripman-europe-tour-2.jpg"
+          src="/tripman-background.jpg"
           alt=""
           aria-hidden
           fill
@@ -35,8 +34,8 @@ export function Hero() {
           quality={90}
         />
         <Image
-          src="/tripman-europe-tour-2.jpg"
-          alt="The Tripman Europe Tour — Brussels, Strasbourg, Zürich, Nice-Cannes & Monaco, Milano, Munich, Prague, Berlin, Cologne & Amsterdam. Tour dates and booking at trvoo.com"
+          src="/tripman-background.jpg"
+          alt="The Tripman standing in front of his car — book your ride at trvoo.com"
           fill
           className="object-contain object-center"
           priority

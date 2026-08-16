@@ -127,7 +127,7 @@ export function BookingCalendar({
   // server returns the tour city's timezone (e.g. Europe/Brussels) so the
   // times below render in the correct local time instead of Toronto's.
   const [timeZone, setTimeZone] = useState<string>("America/Toronto");
-  const [tzLabel, setTzLabel] = useState<string>("Toronto (ET) — Canada");
+  const [tzLabel, setTzLabel] = useState<string>("Toronto (ET), Canada");
   const timesRef = useRef<HTMLDivElement>(null);
   // Wraps the FullCalendar so the recolor effect below can scope DOM
   // queries to *our* calendar instance only (no risk of bleeding into
@@ -566,7 +566,7 @@ export function BookingCalendar({
                   {slots.length > 0 &&
                     !slots.some((s) => s.status === "available") && (
                       <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
-                        Every time is taken for this date — please try another
+                        Every time is taken for this date. Please try another
                         day.
                       </div>
                     )}

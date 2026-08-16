@@ -196,14 +196,12 @@ export function TourBooking({ eventType, cities }: TourBookingProps) {
             </svg>
           </div>
           <h2 className="mb-2 text-2xl font-bold text-gray-900">
-            {awaitingPayment
-              ? "Almost there — one last step"
-              : "You're booked!"}
+            {awaitingPayment ? "Almost there, one last step" : "You're booked!"}
           </h2>
           <p className="mb-6 text-gray-600">
             {awaitingPayment
               ? "Your slot is reserved. Complete payment below to confirm it."
-              : "We'll see you soon — a confirmation email is on its way."}
+              : "We'll see you soon. A confirmation email is on its way."}
           </p>
 
           <div className="mb-6 rounded-xl border bg-gray-50 p-4 text-left text-sm text-gray-600">
@@ -264,7 +262,7 @@ export function TourBooking({ eventType, cities }: TourBookingProps) {
       <div className="mx-auto max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center text-amber-900">
         <p className="font-semibold">No upcoming dates right now.</p>
         <p className="mt-1 text-sm">
-          This tour stop has wrapped — follow The Tripman for the next round of
+          This tour stop has wrapped. Follow The Tripman for the next round of
           dates.
         </p>
       </div>
@@ -394,7 +392,7 @@ export function TourBooking({ eventType, cities }: TourBookingProps) {
                 )}
                 {slots.length > 0 && availableCount === 0 && (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center text-sm text-amber-800">
-                    Every time is taken for this date — try another day above.
+                    Every time is taken for this date. Try another day above.
                   </div>
                 )}
               </div>

@@ -33,7 +33,7 @@ export default function TermsPage() {
               </li>
               <li>
                 <strong>Accurate information</strong>: you agree to provide
-                accurate booking details — including your full name, contact
+                accurate booking details, including your full name, contact
                 info, date/time, pickup country, pickup city, and street
                 address.
               </li>
@@ -54,7 +54,7 @@ export default function TermsPage() {
               time to time we run tour windows in additional cities (for example
               Ottawa, Montreal, New York). The country/city list shown in the
               booking form on a given date is the authoritative source for where
-              we can pick up — only cities visible there can be booked.
+              we can pick up. Only cities visible there can be booked.
             </p>
             <p>
               If your city is not listed on your chosen date, please contact us
@@ -129,8 +129,8 @@ export default function TermsPage() {
               </strong>{" "}
               The flat-rate price covers the ride itself only. Whether your ride
               is filmed, edited, posted, or featured depends on the energy of
-              the night, technical conditions, and our editorial discretion —
-              there is no obligation, deadline, or refund tied to whether or
+              the night, technical conditions, and our editorial discretion.
+              There is no obligation, deadline, or refund tied to whether or
               when content from your ride is published. By booking, you grant
               The Tripman a perpetual, royalty-free license to use any
               recordings or images captured during your ride for the purposes

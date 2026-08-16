@@ -14,12 +14,12 @@ const faqs = [
   {
     question: "Is tax included in the price?",
     answer:
-      "No — the $99 CAD (or $110 USD) is the base ride price. 13% HST (Canada) or 13% sales tax (USA) is added on top at checkout, shown as its own line so you see exactly what you're paying. Your Stripe receipt also itemizes the breakdown.",
+      "No. The $99 CAD (or $110 USD) is the base ride price. 13% HST (Canada) or 13% sales tax (USA) is added on top at checkout, shown as its own line so you see exactly what you're paying. Your Stripe receipt also itemizes the breakdown.",
   },
   {
     question: "Will I be featured in a Tripman video?",
     answer:
-      "Being featured is not guaranteed. Whether a moment from your ride ends up posted on our channels depends on the energy of the night and a bit of luck. Some rides become highlights, some stay private — that’s part of the experience.",
+      "Being featured is not guaranteed. Whether a moment from your ride ends up posted on our channels depends on the energy of the night and a bit of luck. Some rides become highlights, some stay private, and that’s part of the experience.",
   },
   {
     question: "How far in advance should I book?",
@@ -39,12 +39,12 @@ const faqs = [
   {
     question: "What areas do you serve?",
     answer:
-      "We pick up across the Greater Toronto Area — currently Toronto, Mississauga, Vaughan, Markham, and Richmond Hill. When you start a booking, the city dropdown will show every area we're servicing on your selected date (including occasional tour stops in cities like Ottawa, Montreal, New York, etc.).",
+      "We pick up across the Greater Toronto Area: currently Toronto, Mississauga, Vaughan, Markham, and Richmond Hill. When you start a booking, the city dropdown will show every area we're servicing on your selected date (including occasional tour stops in cities like Ottawa, Montreal, New York, etc.).",
   },
   {
     question: "What if my city isn't in the list?",
     answer:
-      "Our pickup cities are managed in real time, so the dropdown shows only the areas we can actually service on your chosen date. If your city isn't listed and you'd still like to ride, send us a message from the Contact section below (or via WhatsApp) — we'll let you know if we can make it work or if a tour is coming through your area soon.",
+      "Our pickup cities are managed in real time, so the dropdown shows only the areas we can actually service on your chosen date. If your city isn't listed and you'd still like to ride, send us a message from the Contact section below (or via WhatsApp) and we'll let you know if we can make it work or if a tour is coming through your area soon.",
   },
   {
     question: "What payment methods do you accept?",

@@ -359,8 +359,8 @@ export async function GET(request: NextRequest) {
       "zzz",
     );
     const timezoneLabel = operating.location
-      ? `${operating.location.city} — ${countryDisplayName(operating.location.country)} (${tzAbbrev})`
-      : `Toronto / GTA — Canada (${tzAbbrev})`;
+      ? `${operating.location.city}, ${countryDisplayName(operating.location.country)} (${tzAbbrev})`
+      : `Toronto / GTA, Canada (${tzAbbrev})`;
 
     return NextResponse.json({
       timezone: timeZone,

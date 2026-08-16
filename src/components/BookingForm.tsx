@@ -367,8 +367,8 @@ export function BookingForm({
               );
             })()}
             <p className="text-xs text-gray-500 mt-1">
-              Video feature is not guaranteed — based on the energy and a bit of
-              luck.
+              Video feature is not guaranteed. It depends on the energy and a
+              bit of luck.
             </p>
           </div>
         </div>

@@ -81,7 +81,7 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
               Choose Your Package
             </h2>
             <p className="text-lg text-gray-600">
-              Pick your vibe — then choose a date & time.
+              Pick your vibe, then choose a date & time.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -152,7 +152,7 @@ export function EventCards({ onEventSelect }: EventCardsProps) {
             Choose Your Package
           </h2>
           <p className="text-lg text-gray-600">
-            Pick your vibe — then choose a date & time.
+            Pick your vibe, then choose a date & time.
           </p>
         </div>
 

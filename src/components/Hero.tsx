@@ -15,29 +15,17 @@ export function Hero() {
       className="relative min-h-screen flex flex-col lg:flex-row items-stretch overflow-hidden pt-20"
       aria-label="Hero section"
     >
-      {/* Left: hero photo. Below lg the container matches the photo's own 3:4
-          portrait ratio so it fills edge-to-edge with no letterboxing. On lg+
-          the column stretches to the section height (ratio varies by screen),
-          so the photo is object-contained over a blurred, zoomed copy of
-          itself — any gap fills with matching imagery instead of black bars.
-          Same src/sizes/quality on both images so the browser downloads the
-          optimized file only once. */}
+      {/* Left: hero photo. It's a plain portrait shot with no text in it, so it
+          can be cropped freely: object-cover fills the column edge to edge at
+          every size (no letterboxing or blurred filler bars). Below lg the
+          container keeps the photo's own 3:4 ratio, so nothing is cropped
+          there either. */}
       <div className="relative w-full lg:w-1/2 aspect-[3/4] lg:aspect-auto lg:min-h-0 shrink-0 overflow-hidden">
         <Image
           src="/tripman-background.jpg"
-          alt=""
-          aria-hidden
+          alt="The Tripman standing in front of his car. Book your ride at trvoo.com"
           fill
-          className="object-cover object-center scale-110 blur-lg brightness-75"
-          priority
-          sizes="(max-width: 1024px) 100vw, 50vw"
-          quality={90}
-        />
-        <Image
-          src="/tripman-background.jpg"
-          alt="The Tripman standing in front of his car — book your ride at trvoo.com"
-          fill
-          className="object-contain object-center"
+          className="object-cover object-center"
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
           quality={90}

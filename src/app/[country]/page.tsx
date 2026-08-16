@@ -133,7 +133,7 @@ export async function generateMetadata({
 
   const allDays = tour.cities.flatMap((c) => c.days);
   const range = daysSummary(allDays);
-  const title = `The Tripman in ${tour.displayName}${range ? ` — ${range}` : ""}`;
+  const title = `The Tripman in ${tour.displayName}${range ? `: ${range}` : ""}`;
   const description = `The Tripman is bringing car karaoke, party lights and unforgettable vibes to ${tour.displayName}. Pick a tour date and book your ride.`;
 
   return {
@@ -201,7 +201,7 @@ export default async function TourCountryPage({
             <span className="text-cyan-600">{tour.displayName}</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg font-light text-gray-600">
-            One hour of car karaoke, party lights and pure chaos — your city,
+            One hour of car karaoke, party lights and pure chaos. Your city,
             your night. Grab one of the limited tour dates below.
           </p>
           {range && (

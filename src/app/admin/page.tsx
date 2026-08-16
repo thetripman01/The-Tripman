@@ -910,7 +910,7 @@ export default function AdminPage() {
       .join("\n");
     window.open(
       googleCalendarEventUrl({
-        title: `${b.eventType.name} — ${b.fullName}`,
+        title: `${b.eventType.name}, ${b.fullName}`,
         start: b.startsAt,
         end: b.endsAt,
         timezone: b.timezone,
@@ -959,7 +959,7 @@ export default function AdminPage() {
           {stats && (
             <div
               className="grid grid-cols-3 gap-3"
-              title="Confirmed bookings only — pending holds and cancellations excluded."
+              title="Confirmed bookings only. Pending holds and cancellations excluded."
             >
               {[
                 { label: "Total bookings", value: stats.total },
@@ -1053,7 +1053,7 @@ export default function AdminPage() {
               <div className="rounded-lg border p-4">
                 <div className="text-sm text-gray-600">Current admin email</div>
                 <div className="font-semibold text-gray-900">
-                  {accountEmail || "—"}
+                  {accountEmail || "Not set"}
                 </div>
               </div>
 
@@ -1456,7 +1456,7 @@ export default function AdminPage() {
                   Manage the countries and cities customers can choose for
                   pickup. Leave the date range empty for permanently-serviced
                   cities (e.g. GTA). Set a date range for tour windows (e.g.
-                  Ottawa Jul 12–14) — the city becomes bookable only for those
+                  Ottawa Jul 12-14), the city becomes bookable only for those
                   dates.
                 </p>
               </CardHeader>
@@ -1626,8 +1626,8 @@ export default function AdminPage() {
                   {locationForm.exclusive && (
                     <p className="mt-2 text-xs text-purple-800 bg-purple-50 border border-purple-200 rounded-md p-2">
                       <strong>Tour mode:</strong> While this city&apos;s date
-                      window is active, only exclusive cities will be bookable —
-                      every other city is hidden until the window ends.
+                      window is active, only exclusive cities will be bookable.
+                      Every other city is hidden until the window ends.
                     </p>
                   )}
                 </div>
@@ -1691,7 +1691,7 @@ export default function AdminPage() {
                                   )}
                                 </div>
                                 <div className="font-semibold text-gray-900">
-                                  {loc.country} — {loc.city}
+                                  {loc.country}, {loc.city}
                                 </div>
                                 <div className="mt-0.5 text-xs text-gray-500">
                                   Timezone:{" "}
@@ -1895,7 +1895,7 @@ export default function AdminPage() {
                                   <p className="text-xs text-purple-800 bg-purple-50 border border-purple-200 rounded-md p-2">
                                     <strong>Tour mode:</strong> While this
                                     city&apos;s date window is active, only
-                                    exclusive cities will be bookable — every
+                                    exclusive cities will be bookable. Every
                                     other city is hidden until the window ends.
                                   </p>
                                 )}
@@ -1967,7 +1967,7 @@ export default function AdminPage() {
                       if (p.kind === "booking") {
                         info.el.setAttribute(
                           "title",
-                          `${p.customer} — ${p.ride}\n${p.dateLabel}\n${p.timeRange}`,
+                          `${p.customer}, ${p.ride}\n${p.dateLabel}\n${p.timeRange}`,
                         );
                         return;
                       }
@@ -2517,7 +2517,7 @@ export default function AdminPage() {
                           {booking.pickupCity ??
                             booking.pickupAddress ??
                             booking.pickup ??
-                            "—"}
+                            "-"}
                           {booking.pickupCountry &&
                           booking.pickupCountry !== "Canada"
                             ? ` (${booking.pickupCountry})`
@@ -2723,7 +2723,7 @@ export default function AdminPage() {
                     {editingBookingId === selectedBooking.id && (
                       <div className="space-y-3">
                         <p className="text-xs text-gray-600">
-                          Changing the date frees the old slot automatically —
+                          Changing the date frees the old slot automatically, so
                           another customer can book it. The customer is not
                           auto-notified; let them know separately.
                         </p>

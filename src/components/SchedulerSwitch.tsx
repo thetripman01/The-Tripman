@@ -255,7 +255,7 @@ export function SchedulerSwitch({ selectedEvent }: SchedulerSwitchProps) {
             Schedule {selectedEvent.name}
           </h2>
           <p className="text-lg text-gray-600">
-            Choose a date & time — we’ll show only what’s actually available.
+            Choose a date & time. We’ll show only what’s actually available.
           </p>
           <p className="text-sm text-gray-500 mt-2">
             Tip: If you don’t see times, check a different date (or we may be

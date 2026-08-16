@@ -48,14 +48,14 @@ export function About() {
                 </strong>
               </p>
               <p className="text-gray-600 leading-relaxed mb-6 text-lg">
-                So he found the easiest way to bring people into his world —{" "}
+                So he found the easiest way to bring people into his world:{" "}
                 <strong>rideshare apps</strong>. He started surprising
                 passengers with party lights, karaoke mics, and unexpected vibes
                 that turned regular rides into little pieces of magic.
               </p>
               <p className="text-gray-600 leading-relaxed text-lg">
                 Then he posted one video. Just one.{" "}
-                <strong>The very first Instagram clip went viral</strong> — and
+                <strong>The very first Instagram clip went viral</strong>, and
                 everything changed.
               </p>
             </div>

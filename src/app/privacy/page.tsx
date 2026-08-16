@@ -63,7 +63,7 @@ export default function PrivacyPage() {
             <p>
               Because The Tripman is a content-driven experience, audio, video,
               and photographs may be recorded during rides. Featuring your ride
-              in a Tripman video is <strong>not guaranteed</strong> — it depends
+              in a Tripman video is <strong>not guaranteed</strong>. It depends
               on the energy of the night and editorial choice. By booking, you
               grant The Tripman a perpetual, royalty-free license to use these
               recordings on our social channels, website, and promotional
@@ -72,8 +72,8 @@ export default function PrivacyPage() {
             <p>
               If you do not want to be filmed, please tell us before the ride
               begins. You can also request that already-published content
-              featuring you be reviewed by emailing us — we will consider such
-              requests in good faith.
+              featuring you be reviewed by emailing us, and we will consider
+              such requests in good faith.
             </p>
           </section>
 
@@ -97,7 +97,7 @@ export default function PrivacyPage() {
                 (verification codes, pickup/drop-off, and trip updates) to the
                 phone number you provide. Message frequency varies. Message and
                 data rates may apply. Reply STOP to opt out at any time, or HELP
-                for help. Opting out of SMS won&apos;t affect your account — you
+                for help. Opting out of SMS won&apos;t affect your account. You
                 can still get notifications by email and in-app.
               </p>
               <p>

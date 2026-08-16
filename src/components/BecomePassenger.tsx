@@ -94,8 +94,8 @@ export function BecomePassenger(props: {
                 <li>Choose your songs, bring your people (1–4).</li>
                 <li>Pick-up and drop-off at the same location.</li>
                 <li>
-                  Being featured in our videos isn&apos;t guaranteed — it
-                  depends on the energy of the night and a bit of luck.
+                  Being featured in our videos isn&apos;t guaranteed. It depends
+                  on the energy of the night and a bit of luck.
                 </li>
               </ul>
               <div className="mt-6 rounded-xl bg-cyan-50 border border-cyan-200 px-4 py-3 text-center text-gray-900 font-semibold">

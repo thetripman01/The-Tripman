@@ -174,7 +174,7 @@ export function InstagramVideo() {
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Check out our latest Instagram content to see the experience
-            firsthand — the energy, the moments, and everything that makes a
+            firsthand: the energy, the moments, and everything that makes a
             Tripman ride unforgettable.
           </p>
         </div>
